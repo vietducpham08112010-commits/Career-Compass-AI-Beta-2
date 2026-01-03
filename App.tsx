@@ -10,7 +10,7 @@ import emailjs from '@emailjs/browser';
 // IMPORTANT: keys provided by user
 const EMAILJS_CONFIG = {
   SERVICE_ID: 'service_u6njafq',
-  TEMPLATE_ID: 'template_uao5ewl',
+  TEMPLATE_ID: 'template_7yqlm9c', // Updated Correct Template ID
   PUBLIC_KEY: '8ABxIIEqUTEI3I-oL'
 };
 
@@ -239,9 +239,10 @@ export default function App() {
               EMAILJS_CONFIG.PUBLIC_KEY
           );
           setIsResetSent(true);
-      } catch (error) {
+      } catch (error: any) {
           console.error("Email Error:", error);
-          setAuthError('Failed to send email. Check API Config.');
+          // Show explicit error to the user
+          setAuthError(`Email Error: ${error?.text || error?.message || JSON.stringify(error)}`);
       } finally {
           setIsResetSending(false);
       }
