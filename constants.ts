@@ -100,6 +100,13 @@ export const TRANSLATIONS = {
   [Language.EN]: {
     appName: 'Career Compass AI', tagline: 'Career guidance for everyone.', subTagline: 'Pause or cancel your confusion anytime. Available 24/7.', getStarted: 'Get Started', login: 'Login', register: 'Register', guestLogin: 'Try as Guest', email: 'Email Address', password: 'Password', forgotPassword: 'Forgot Password?', loginWithGoogle: 'Login with Google', or: 'or', dontHaveAccount: "Don't have an account?", alreadyHaveAccount: 'Already have an account?', chatMode: 'Chat Consultant', voiceMode: 'Live Consultation', profile: 'My Profile', welcomeBack: 'Welcome Back,', greeting: "I'm your AI career counselor. Ask me anything.", greetingSub: "I can help you identify strengths, explore passions, and plan your career path.", typeMessage: 'Type your career question...', startVoice: 'Start Live Conversation', endVoice: 'End Conversation', listening: 'Listening...', speaking: 'Speaking...', connecting: 'Connecting to Career Compass...', disconnecting: 'Disconnecting...', micPermission: 'Please allow microphone access to use voice mode.', error: 'An error occurred. Please try again.', hotIndustries: 'Trending Industries', dailyQuote: 'Daily Inspiration', chatHistory: 'Chat History', switchToVoice: 'Switch to Live Voice', newChat: 'New Chat', footerDisclaimer: 'AI can make mistakes. All information is for reference only, the decision is yours.', thinking: 'Thinking...', profileName: 'Full Name', careerGoal: 'Career Goal', prefLang: 'Preferred Language', saveChanges: 'Save Changes', guestMode: 'Guest Mode', selectMic: 'Select Microphone', transcript: 'Live Transcript',
     
+    // Auth - Forgot Password
+    resetPasswordTitle: 'Reset Password',
+    resetPasswordDesc: 'Enter your email address and we will send you instructions to reset your password.',
+    sendLink: 'Send Reset Link',
+    backToLogin: 'Back to Login',
+    linkSent: 'Success! Please check your email for the reset link.',
+
     // New Translations
     heroBadge: 'AI-Powered Guidance',
     heroTitlePrefix: 'Career clarity for ',
@@ -127,6 +134,13 @@ export const TRANSLATIONS = {
   [Language.VI]: {
     appName: 'Career Compass AI', tagline: 'Hướng nghiệp cho mọi người.', subTagline: 'Xóa tan mọi sự bối rối về sự nghiệp. Sẵn sàng 24/7.', getStarted: 'Bắt đầu ngay', login: 'Đăng nhập', register: 'Đăng ký', guestLogin: 'Dùng thử ngay', email: 'Địa chỉ Email', password: 'Mật khẩu', forgotPassword: 'Quên mật khẩu?', loginWithGoogle: 'Đăng nhập bằng Google', or: 'hoặc', dontHaveAccount: "Chưa có tài khoản?", alreadyHaveAccount: 'Đã có tài khoản?', chatMode: 'Trợ lý Chat', voiceMode: 'Hội thoại trực tiếp', profile: 'Hồ sơ cá nhân', welcomeBack: 'Chào mừng trở lại,', greeting: "Tôi là trợ lý hướng nghiệp AI của bạn. Hãy hỏi tôi bất cứ điều gì.", greetingSub: "Tôi có thể giúp bạn xác định điểm mạnh, khám phá đam mê và lập kế hoạch sự nghiệp.", typeMessage: 'Nhập câu hỏi của bạn...', startVoice: 'Bắt đầu cuộc gọi', endVoice: 'Kết thúc cuộc gọi', listening: 'Đang nghe...', speaking: 'Đang nói...', connecting: 'Đang kết nối...', disconnecting: 'Đang ngắt kết nối...', micPermission: 'Vui lòng cho phép truy cập micro.', error: 'Đã xảy ra lỗi. Vui lòng thử lại.', hotIndustries: 'Xu hướng nghề nghiệp', dailyQuote: 'Cảm Hứng Mỗi Ngày', chatHistory: 'Lịch sử trò chuyện', switchToVoice: 'Chuyển sang hội thoại', newChat: 'Cuộc trò chuyện mới', footerDisclaimer: 'AI có thể gây ra sai sót, mọi thông tin chỉ mang tính chất tham khảo, quyền quyết định thuộc về bạn.', thinking: 'Đang suy nghĩ...', profileName: 'Họ và tên', careerGoal: 'Mục tiêu sự nghiệp', prefLang: 'Ngôn ngữ ưu tiên', saveChanges: 'Lưu thay đổi', guestMode: 'Chế độ khách', selectMic: 'Chọn Micro', transcript: 'Hội thoại trực tiếp',
     
+    // Auth - Forgot Password
+    resetPasswordTitle: 'Đặt lại Mật khẩu',
+    resetPasswordDesc: 'Nhập địa chỉ email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.',
+    sendLink: 'Gửi liên kết',
+    backToLogin: 'Quay lại đăng nhập',
+    linkSent: 'Thành công! Vui lòng kiểm tra email của bạn để lấy liên kết.',
+
     // New Translations
     heroBadge: 'Định hướng bằng AI',
     heroTitlePrefix: 'Định hướng cho ',

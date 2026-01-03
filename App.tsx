@@ -1,9 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Language, Theme, AppMode, DashboardTab, ChatMessage, ChatSession, AuthState, Transcript } from './types';
+import { Language, Theme, AppMode, DashboardTab, ChatMessage, ChatSession, AuthState, Transcript, UserProfile } from './types';
 import { AVATARS, CAREER_TAGS, CAREER_QUOTES, SUGGESTION_PROMPTS, TRANSLATIONS, HOT_INDUSTRIES } from './constants';
 import { sendChatMessage, LiveSessionManager } from './services/geminiService';
 import { decode, encode, decodeAudioData, createPcmBlob } from './utils/audio';
 import { Visualizer } from './components/Visualizer';
+import emailjs from '@emailjs/browser';
+
+// --- CONFIGURATION ---
+// IMPORTANT: keys provided by user
+const EMAILJS_CONFIG = {
+  SERVICE_ID: 'service_u6njafq',
+  TEMPLATE_ID: 'template_uao5ewl',
+  PUBLIC_KEY: '8ABxIIEqUTEI3I-oL'
+};
 
 // --- Icons ---
 const Icons = {
@@ -52,7 +61,7 @@ const CompassLogo = ({ className = "w-24 h-24", needleClassName = "" }) => (
         </feMerge>
       </filter>
     </defs>
-    <circle cx="50" cy="50" r="45" stroke="url(#tech-grad)" strokeWidth="1.5" opacity="0.5" />
+    <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="1.5" opacity="0.1" className="text-indigo-500" />
     <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" className="text-gray-400 dark:text-gray-600" />
     <circle cx="50" cy="10" r="2" fill="#ec4899" />
     <circle cx="50" cy="90" r="2" fill="currentColor" className="text-gray-400" />
@@ -95,7 +104,12 @@ export default function App() {
   const [tab, setTab] = useState<DashboardTab>(DashboardTab.CHAT);
   
   const [auth, setAuth] = useState<AuthState>({ isAuthenticated: false, user: null });
-  const [authType, setAuthType] = useState<'login' | 'register'>('login');
+  const [authType, setAuthType] = useState<'login' | 'register' | 'forgot-password'>('login');
+  const [authError, setAuthError] = useState('');
+  
+  // Forgot Password State
+  const [isResetSending, setIsResetSending] = useState(false);
+  const [isResetSent, setIsResetSent] = useState(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
@@ -112,12 +126,26 @@ export default function App() {
   const liveSessionRef = useRef<LiveSessionManager | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
+  // Form Refs
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
     if (theme === Theme.DARK) { document.documentElement.classList.add('dark'); } 
     else { document.documentElement.classList.remove('dark'); }
   }, [theme]);
+
+  // Check for persistent login
+  useEffect(() => {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+          setAuth({ isAuthenticated: true, user: JSON.parse(storedUser) });
+          setMode(AppMode.DASHBOARD);
+      }
+  }, []);
 
   const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
   useEffect(() => { scrollToBottom(); }, [messages, isChatLoading]);
@@ -127,20 +155,123 @@ export default function App() {
   const toggleTheme = () => { setTheme(t => t === Theme.LIGHT ? Theme.DARK : Theme.LIGHT); };
   const getRandomAvatar = () => AVATARS[Math.floor(Math.random() * AVATARS.length)];
 
+  const getUsers = (): any[] => {
+      const users = localStorage.getItem('users');
+      return users ? JSON.parse(users) : [];
+  }
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    const name = nameRef.current?.value;
+    const email = emailRef.current?.value;
+    const password = passwordRef.current?.value;
+
+    if (!name || !email || !password) return setAuthError('Please fill all fields');
+
+    const users = getUsers();
+    if (users.find(u => u.email === email)) {
+        setAuthError('Email already registered');
+        return;
+    }
+
+    const newUser = { name, email, password, careerGoal: 'Undecided', avatar: getRandomAvatar() };
+    users.push(newUser);
+    localStorage.setItem('users', JSON.stringify(users));
+    
+    // Auto login
+    localStorage.setItem('currentUser', JSON.stringify(newUser));
+    setAuth({ isAuthenticated: true, user: newUser });
+    setMode(AppMode.DASHBOARD);
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setAuth({ isAuthenticated: true, user: { name: 'Alex Johnson', email: 'alex@example.com', careerGoal: 'Software Engineer', isGuest: false, avatar: getRandomAvatar() } });
-    setMode(AppMode.DASHBOARD);
+    setAuthError('');
+    const email = emailRef.current?.value;
+    const password = passwordRef.current?.value;
+
+    if (!email || !password) return setAuthError('Please fill all fields');
+
+    const users = getUsers();
+    const user = users.find(u => u.email === email && u.password === password);
+
+    if (user) {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        setAuth({ isAuthenticated: true, user });
+        setMode(AppMode.DASHBOARD);
+    } else {
+        setAuthError('Invalid email or password');
+    }
+  };
+  
+  const handleResetPassword = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setAuthError('');
+      const email = emailRef.current?.value;
+      if (!email) return setAuthError('Please enter your email');
+
+      // Check if user exists in our local "database"
+      const users = getUsers();
+      const user = users.find(u => u.email === email);
+      
+      if (!user) {
+          // Security practice: Don't reveal if email exists or not, but for this demo we will mimic success
+          // or you could show "If this email exists..."
+      }
+
+      setIsResetSending(true);
+
+      // --- SEND REAL EMAIL WITH EMAILJS ---
+      try {
+          if (EMAILJS_CONFIG.SERVICE_ID === 'YOUR_SERVICE_ID') {
+              throw new Error("EmailJS Configuration Missing. Please update constants.");
+          }
+
+          await emailjs.send(
+              EMAILJS_CONFIG.SERVICE_ID,
+              EMAILJS_CONFIG.TEMPLATE_ID,
+              {
+                  to_name: user ? user.name : 'User',
+                  to_email: email, // This corresponds to the variable in EmailJS template
+                  reset_link: `https://career-compass.ai/reset-password?token=${Date.now()}` // Mock link
+              },
+              EMAILJS_CONFIG.PUBLIC_KEY
+          );
+          setIsResetSent(true);
+      } catch (error) {
+          console.error("Email Error:", error);
+          setAuthError('Failed to send email. Check API Config.');
+      } finally {
+          setIsResetSending(false);
+      }
   };
 
   const handleGuestLogin = () => {
-    setAuth({ isAuthenticated: true, user: { name: 'Guest User', email: '', careerGoal: 'Exploring', isGuest: true, avatar: getRandomAvatar() } });
+    const guestUser = { name: 'Guest User', email: '', careerGoal: 'Exploring', isGuest: true, avatar: getRandomAvatar() };
+    setAuth({ isAuthenticated: true, user: guestUser });
     setMode(AppMode.DASHBOARD);
   };
 
-  const changeAvatar = () => { if (auth.user) { setAuth({ ...auth, user: { ...auth.user, avatar: getRandomAvatar() } }); } };
+  const changeAvatar = () => { 
+      if (auth.user) { 
+          const newUser = { ...auth.user, avatar: getRandomAvatar() };
+          setAuth({ ...auth, user: newUser }); 
+          // Update in local storage if not guest
+          if (!auth.user.isGuest) {
+              localStorage.setItem('currentUser', JSON.stringify(newUser));
+              const users = getUsers();
+              const idx = users.findIndex(u => u.email === newUser.email);
+              if (idx !== -1) {
+                  users[idx] = newUser;
+                  localStorage.setItem('users', JSON.stringify(users));
+              }
+          }
+      } 
+  };
 
   const handleLogout = () => {
+    localStorage.removeItem('currentUser');
     setAuth({ isAuthenticated: false, user: null });
     setMode(AppMode.LANDING);
     setMessages([]);
@@ -407,19 +538,62 @@ export default function App() {
             <div className="flex justify-center mb-6">
                 <CompassLogo className="w-16 h-16 text-indigo-500" />
             </div>
-            <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2 tracking-tight">{authType === 'login' ? t.login : t.register}</h2>
-            <p className="text-center text-gray-500 dark:text-gray-400 mb-8 text-sm">{t.tagline}</p>
-            <form onSubmit={handleLogin} className="space-y-4">
-                {authType === 'register' && (<div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Full Name</label><input type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="John Doe" /></div>)}
-                <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.email}</label><input type="email" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="you@example.com" /></div>
-                <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.password}</label><input type="password" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="••••••••" /></div>
-                {authType === 'login' && (<div className="flex justify-end"><button type="button" className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">{t.forgotPassword}</button></div>)}
-                <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 mt-2">{authType === 'login' ? t.login : t.register}</button>
-            </form>
-            <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-white/10"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-[#111] text-gray-500">{t.or}</span></div></div>
-            <button onClick={handleLogin} className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"><Icons.Google className="w-5 h-5" />{t.loginWithGoogle}</button>
-            <button onClick={handleGuestLogin} className="w-full mt-3 flex items-center justify-center gap-3 bg-transparent border border-dashed border-gray-300 dark:border-white/20 text-gray-500 dark:text-gray-400 font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">{t.guestLogin}</button>
-            <div className="mt-8 text-center text-sm"><span className="text-gray-500">{authType === 'login' ? t.dontHaveAccount : t.alreadyHaveAccount}{' '}</span><button onClick={() => setAuthType(authType === 'login' ? 'register' : 'login')} className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">{authType === 'login' ? t.register : t.login}</button></div>
+            <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2 tracking-tight">
+                {authType === 'login' ? t.login : authType === 'register' ? t.register : t.resetPasswordTitle}
+            </h2>
+            <p className="text-center text-gray-500 dark:text-gray-400 mb-8 text-sm">
+                {authType === 'forgot-password' ? t.resetPasswordDesc : t.tagline}
+            </p>
+            
+            {/* Error Message Display */}
+            {authError && (
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-xl text-center">
+                    <p className="text-red-600 dark:text-red-400 text-sm font-semibold">{authError}</p>
+                </div>
+            )}
+            
+            {authType === 'forgot-password' && isResetSent ? (
+                <div className="text-center animate-fade-in-up">
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <p className="text-green-600 dark:text-green-400 font-medium mb-6">{t.linkSent}</p>
+                    <button onClick={() => { setAuthType('login'); setIsResetSent(false); }} className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20">{t.backToLogin}</button>
+                </div>
+            ) : (
+                <form onSubmit={authType === 'forgot-password' ? handleResetPassword : authType === 'login' ? handleLogin : handleRegister} className="space-y-4">
+                    {authType === 'register' && (<div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Full Name</label><input ref={nameRef} type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="John Doe" /></div>)}
+                    
+                    <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.email}</label><input ref={emailRef} type="email" required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="you@example.com" /></div>
+                    
+                    {authType !== 'forgot-password' && (
+                        <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.password}</label><input ref={passwordRef} type="password" required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="••••••••" /></div>
+                    )}
+
+                    {authType === 'login' && (<div className="flex justify-end"><button type="button" onClick={() => setAuthType('forgot-password')} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">{t.forgotPassword}</button></div>)}
+                    
+                    <button type="submit" disabled={isResetSending} className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 mt-2 flex items-center justify-center gap-2">
+                        {isResetSending && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                        {authType === 'login' ? t.login : authType === 'register' ? t.register : t.sendLink}
+                    </button>
+                </form>
+            )}
+
+            {authType !== 'forgot-password' && (
+                <>
+                    <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-white/10"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-[#111] text-gray-500">{t.or}</span></div></div>
+                    <button onClick={handleLogin} className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"><Icons.Google className="w-5 h-5" />{t.loginWithGoogle}</button>
+                    <button onClick={handleGuestLogin} className="w-full mt-3 flex items-center justify-center gap-3 bg-transparent border border-dashed border-gray-300 dark:border-white/20 text-gray-500 dark:text-gray-400 font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">{t.guestLogin}</button>
+                    <div className="mt-8 text-center text-sm"><span className="text-gray-500">{authType === 'login' ? t.dontHaveAccount : t.alreadyHaveAccount}{' '}</span><button onClick={() => { setAuthType(authType === 'login' ? 'register' : 'login'); setAuthError(''); }} className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">{authType === 'login' ? t.register : t.login}</button></div>
+                </>
+            )}
+            
+            {authType === 'forgot-password' && !isResetSent && (
+                 <div className="mt-8 text-center text-sm">
+                    <button onClick={() => { setAuthType('login'); setAuthError(''); }} className="font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">{t.backToLogin}</button>
+                 </div>
+            )}
+            
         <div className="mt-6 text-center"><button onClick={() => setMode(AppMode.LANDING)} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">← Back to Home</button></div>
       </div>
     </div>
