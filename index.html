@@ -1,85 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Career Compass AI</title>
+    <meta name="description" content="Career Compass AI - Trợ lý hướng nghiệp thông minh sử dụng trí tuệ nhân tạo Gemini để tư vấn nghề nghiệp, phỏng vấn thử và định hướng tương lai.">
+    <meta name="keywords" content="Career Compass, AI Career Counselor, Hướng nghiệp AI, Gemini AI, Phỏng vấn xin việc, Tư vấn nghề nghiệp">
+    <meta name="theme-color" content="#111827">
+    <title>Career Compass AI - Định Hướng Tương Lai</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Buffer Polyfill (Required for Google GenAI SDK) -->
+    <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
+
+    <!-- Tailwind Configuration -->
     <script>
+      // Polyfill global and process for browser environment
+      window.global = window;
+      // In a real production build, use a bundler (Vite/Webpack) to inject process.env.API_KEY
+      window.process = { env: { API_KEY: 'AIzaSyCfjqJb-cNTOn9lTn9cGBtLvqgLWVLEqdU' } };
+      
+      if (typeof window.Buffer === 'undefined') { window.Buffer = buffer.Buffer; }
+
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
+            fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
             colors: {
-              primary: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-              },
-              secondary: {
-                500: '#6366f1',
-                600: '#4f46e5',
-              }
-            },
-            backgroundSize: {
-              'size-200': '200% 200%',
+              background: '#0f0f0f',
+              surface: '#1a1a1a',
+              primary: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
             },
             animation: {
-              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'bounce-small': 'bounce 1s infinite',
-              'spin-slow': 'spin 8s linear infinite',
-              'float': 'float 3s ease-in-out infinite',
-              'compass-wander': 'wander 10s ease-in-out infinite',
-              'gradient-x': 'gradient-x 5s ease infinite',
-              'slide-up': 'slide-up 0.5s ease-out',
-              'fade-in': 'fade-in 0.5s ease-out',
-              'orb-breath': 'breath 4s ease-in-out infinite',
-              'shimmer': 'shimmer 2s linear infinite',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float': 'float 6s ease-in-out infinite',
+              'marquee': 'marquee 25s linear infinite',
+              'marquee-reverse': 'marquee-reverse 25s linear infinite',
+              'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+              'spin-slow': 'spin 12s linear infinite',
             },
             keyframes: {
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-10px)' },
-              },
-              wander: {
-                '0%': { transform: 'rotate(0deg)' },
-                '20%': { transform: 'rotate(45deg)' },
-                '40%': { transform: 'rotate(10deg)' },
-                '60%': { transform: 'rotate(-30deg)' },
-                '80%': { transform: 'rotate(-10deg)' },
-                '100%': { transform: 'rotate(0deg)' }
-              },
-              'gradient-x': {
-                '0%, 100%': {
-                  'background-size': '200% 200%',
-                  'background-position': 'left center'
-                },
-                '50%': {
-                  'background-size': '200% 200%',
-                  'background-position': 'right center'
-                },
-              },
-              'slide-up': {
-                  '0%': { opacity: '0', transform: 'translateY(20px)' },
-                  '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
-              'fade-in': {
-                  '0%': { opacity: '0' },
-                  '100%': { opacity: '1' },
-              },
-              'breath': {
-                  '0%, 100%': { transform: 'scale(1)', opacity: '0.8' },
-                  '50%': { transform: 'scale(1.05)', opacity: '1' },
-              },
-              shimmer: {
-                '0%': { backgroundPosition: '-200% center' },
-                '100%': { backgroundPosition: '200% center' },
+              float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } },
+              marquee: { '0%': { transform: 'translateX(0%)' }, '100%': { transform: 'translateX(-100%)' } },
+              'marquee-reverse': { '0%': { transform: 'translateX(-100%)' }, '100%': { transform: 'translateX(0%)' } },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(40px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' }
               }
             }
           }
@@ -87,77 +58,43 @@
       }
     </script>
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        /* Default to light mode background to prevent flash */
-        background-color: #f8fafc;
-        transition: background-color 0.3s ease, color 0.3s ease;
-      }
-      .dark body {
-        background-color: #0f172a; /* Slate 900 */
-      }
+      body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; transition: background-color 0.3s ease, color 0.3s ease; }
+      .dark body { background-color: #050505; color: #f8fafc; }
+      
       /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      .dark ::-webkit-scrollbar-thumb { background: #333; }
+      
+      /* Utilities */
+      .text-balance { text-wrap: balance; }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #475569;
-      }
-      .dark ::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
+      .dark .glass-card {
+        background: rgba(20, 20, 20, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
       
-      /* Aurora Effect for Background */
-      .aurora-bg {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          z-index: 0;
-          overflow: hidden;
-          pointer-events: none;
+      .gradient-text {
+        background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
       }
-      .aurora-blob {
-          position: absolute;
-          filter: blur(80px);
-          opacity: 0.4;
-          border-radius: 50%;
-          animation: float 10s infinite ease-in-out;
-      }
-      .aurora-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #818cf8; animation-delay: 0s; }
-      .aurora-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: #ec4899; animation-delay: 2s; }
-      .aurora-3 { top: 40%; left: 40%; width: 40vw; height: 40vw; background: #6366f1; animation-delay: 4s; }
       
-      .dark .aurora-1 { background: #312e81; opacity: 0.2; }
-      .dark .aurora-2 { background: #831843; opacity: 0.2; }
-      .dark .aurora-3 { background: #3730a3; opacity: 0.2; }
-
-      .animate-shimmer-text {
-        background: linear-gradient(to right, #94a3b8 20%, #4f46e5 40%, #94a3b8 60%, #94a3b8 80%);
-        background-size: 200% auto;
-        color: transparent;
-        background-clip: text;
-        -webkit-background-clip: text;
-        animation: shimmer 3s linear infinite;
+      .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1.5rem;
       }
-      .dark .animate-shimmer-text {
-        background: linear-gradient(to right, #64748b 20%, #818cf8 40%, #64748b 60%, #64748b 80%);
-        background-size: 200% auto;
-        color: transparent;
-        background-clip: text;
-        -webkit-background-clip: text;
-        animation: shimmer 3s linear infinite;
+      @media (min-width: 768px) {
+        .bento-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .col-span-2 { grid-column: span 2 / span 2; }
       }
     </style>
   <script type="importmap">
@@ -173,5 +110,6 @@
 </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -46,3 +46,8 @@ export interface AuthState {
   isAuthenticated: boolean;
   user: UserProfile | null;
 }
+
+export interface Transcript {
+  isUser: boolean;
+  text: string;
+}
