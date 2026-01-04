@@ -2,14 +2,14 @@ import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
 import { Language } from "../types";
 
-export const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+export const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY }); // API Key managed in index.html
 
 export const sendChatMessage = async (history: { role: string; text: string }[], newMessage: string, language: Language) => {
   const ai = getAIClient();
   const t = TRANSLATIONS[language];
   try {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.5-flash',
         contents: [...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })), { role: 'user', parts: [{ text: newMessage }] }],
         config: { systemInstruction: t.systemInstruction }
     });

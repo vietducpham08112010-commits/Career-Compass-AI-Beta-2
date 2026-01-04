@@ -7,10 +7,9 @@ import { Visualizer } from './components/Visualizer';
 import emailjs from '@emailjs/browser';
 
 // --- CONFIGURATION ---
-// IMPORTANT: keys provided by user
 const EMAILJS_CONFIG = {
   SERVICE_ID: 'service_u6njafq',
-  TEMPLATE_ID: 'template_7yqlm9c', // Updated Correct Template ID
+  TEMPLATE_ID: 'template_7yqlm9c',
   PUBLIC_KEY: '8ABxIIEqUTEI3I-oL'
 };
 
@@ -21,7 +20,7 @@ const Icons = {
   User: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   LogOut: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
   Send: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-  Globe: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  Globe: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>,
   Sun: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
   Moon: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
   Google: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" {...props}><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>,
@@ -46,36 +45,50 @@ const Icons = {
   BookOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
 };
 
-const CompassLogo = ({ className = "w-24 h-24", needleClassName = "" }) => (
+// --- IMPRESSIVE FUTURISTIC COMPASS LOGO ---
+const CompassLogo = ({ className = "w-24 h-24", isThinking = false }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="tech-grad" x1="0" y1="0" x2="100" y2="100">
-        <stop offset="0%" stopColor="#6366f1" />
-        <stop offset="100%" stopColor="#ec4899" />
+      <linearGradient id="compass-ring-gradient" x1="0" y1="0" x2="100" y2="100">
+        <stop offset="0%" stopColor="#4f46e5" /> {/* Indigo-600 */}
+        <stop offset="100%" stopColor="#06b6d4" /> {/* Cyan-500 */}
       </linearGradient>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-        <feMerge>
-          <feMergeNode in="coloredBlur" />
-          <feMergeNode in="SourceGraphic" />
+      <linearGradient id="compass-needle-gradient" x1="50" y1="10" x2="50" y2="90">
+        <stop offset="0%" stopColor="#f43f5e" /> {/* Rose-500 */}
+        <stop offset="100%" stopColor="#c084fc" /> {/* Purple-400 */}
+      </linearGradient>
+      <filter id="drop-shadow-compass" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+        <feOffset dx="1" dy="2" result="offsetblur"/>
+        <feComponentTransfer>
+          <feFuncA type="linear" slope="0.3"/>
+        </feComponentTransfer>
+        <feMerge> 
+          <feMergeNode/>
+          <feMergeNode in="SourceGraphic"/> 
         </feMerge>
       </filter>
     </defs>
-    <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="1.5" opacity="0.1" className="text-indigo-500" />
-    <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" className="text-gray-400 dark:text-gray-600" />
-    <circle cx="50" cy="10" r="2" fill="#ec4899" />
-    <circle cx="50" cy="90" r="2" fill="currentColor" className="text-gray-400" />
-    <circle cx="90" cy="50" r="2" fill="currentColor" className="text-gray-400" />
-    <circle cx="10" cy="50" r="2" fill="currentColor" className="text-gray-400" />
-    <g className={needleClassName} style={{ transformOrigin: "50px 50px" }}>
-      <path d="M50 15 L58 50 L50 85 L42 50 Z" fill="url(#tech-grad)" filter="url(#glow)" />
-      <circle cx="50" cy="50" r="4" fill="white" />
+    
+    {/* Rotating Outer Tech Ring */}
+    <circle cx="50" cy="50" r="46" stroke="url(#compass-ring-gradient)" strokeWidth="2" strokeDasharray="20 10" strokeLinecap="round" className="animate-spin-slow origin-center" opacity="0.8" />
+    
+    {/* Inner Static Ring */}
+    <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
+    
+    {/* Cardinal Marks */}
+    <path d="M50 8 V16 M92 50 H84 M50 92 V84 M8 50 H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.5" />
+    
+    {/* Needle */}
+    <g className={isThinking ? "animate-compass-search origin-center" : "origin-center transition-transform duration-1000 ease-out"}>
+        <path d="M50 15 L60 50 L50 85 L40 50 Z" fill="url(#compass-needle-gradient)" filter="url(#drop-shadow-compass)" stroke="white" strokeWidth="1" />
+        <circle cx="50" cy="50" r="3" fill="white" />
     </g>
   </svg>
 );
 
 const ShimmerText = ({ text }: { text: string }) => (
-    <div className="inline-block animate-shimmer-text font-medium text-lg tracking-wide">
+    <div className="inline-block animate-shimmer-text font-medium text-lg tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-gray-400 via-white to-gray-400 bg-[length:200%_auto]">
         {text}
     </div>
 );
@@ -96,10 +109,34 @@ const FormattedText = ({ text }: { text: string }) => {
     );
 };
 
+// --- HELPER FOR THINKING TEXT ---
+const getThinkingMessage = (input: string, lang: Language) => {
+    const lower = input.toLowerCase();
+    const isVi = lang === Language.VI;
+    
+    if (lower.includes('đam mê') || lower.includes('passion') || lower.includes('thích') || lower.includes('like')) {
+        return isVi ? 'Đang khám phá đam mê của bạn...' : 'Exploring your passions...';
+    }
+    if (lower.includes('việc') || lower.includes('job') || lower.includes('career') || lower.includes('nghề')) {
+        return isVi ? 'Đang phân tích cơ hội nghề nghiệp...' : 'Analyzing career opportunities...';
+    }
+    if (lower.includes('lương') || lower.includes('salary') || lower.includes('money') || lower.includes('thu nhập')) {
+        return isVi ? 'Đang nghiên cứu thị trường lao động...' : 'Researching market compensation...';
+    }
+    if (lower.includes('cv') || lower.includes('hồ sơ') || lower.includes('resume')) {
+        return isVi ? 'Đang đánh giá hồ sơ của bạn...' : 'Reviewing your profile...';
+    }
+    if (lower.includes('học') || lower.includes('learn') || lower.includes('study') || lower.includes('trường')) {
+        return isVi ? 'Đang tìm kiếm lộ trình học tập...' : 'Mapping learning paths...';
+    }
+    
+    return isVi ? 'Đang suy nghĩ...' : 'Thinking...';
+};
+
 // --- Main Component ---
 export default function App() {
   const [lang, setLang] = useState<Language>(Language.EN);
-  const [theme, setTheme] = useState<Theme>(Theme.DARK); // Default to Dark for premium look
+  const [theme, setTheme] = useState<Theme>(Theme.DARK);
   const [mode, setMode] = useState<AppMode>(AppMode.LANDING);
   const [tab, setTab] = useState<DashboardTab>(DashboardTab.CHAT);
   
@@ -107,7 +144,6 @@ export default function App() {
   const [authType, setAuthType] = useState<'login' | 'register' | 'forgot-password'>('login');
   const [authError, setAuthError] = useState('');
   
-  // Forgot Password State
   const [isResetSending, setIsResetSending] = useState(false);
   const [isResetSent, setIsResetSent] = useState(false);
 
@@ -115,6 +151,7 @@ export default function App() {
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [thinkingText, setThinkingText] = useState(''); // New state for dynamic thinking text
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [isVoiceActive, setIsVoiceActive] = useState(false);
@@ -126,7 +163,6 @@ export default function App() {
   const liveSessionRef = useRef<LiveSessionManager | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
-  // Form Refs
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -138,7 +174,6 @@ export default function App() {
     else { document.documentElement.classList.remove('dark'); }
   }, [theme]);
 
-  // Check for persistent login
   useEffect(() => {
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
@@ -179,7 +214,6 @@ export default function App() {
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
     
-    // Auto login
     localStorage.setItem('currentUser', JSON.stringify(newUser));
     setAuth({ isAuthenticated: true, user: newUser });
     setMode(AppMode.DASHBOARD);
@@ -211,18 +245,11 @@ export default function App() {
       const email = emailRef.current?.value;
       if (!email) return setAuthError('Please enter your email');
 
-      // Check if user exists in our local "database"
       const users = getUsers();
       const user = users.find(u => u.email === email);
       
-      if (!user) {
-          // Security practice: Don't reveal if email exists or not, but for this demo we will mimic success
-          // or you could show "If this email exists..."
-      }
-
       setIsResetSending(true);
 
-      // --- SEND REAL EMAIL WITH EMAILJS ---
       try {
           if (EMAILJS_CONFIG.SERVICE_ID === 'YOUR_SERVICE_ID') {
               throw new Error("EmailJS Configuration Missing. Please update constants.");
@@ -233,15 +260,14 @@ export default function App() {
               EMAILJS_CONFIG.TEMPLATE_ID,
               {
                   to_name: user ? user.name : 'User',
-                  to_email: email, // This corresponds to the variable in EmailJS template
-                  reset_link: `https://career-compass.ai/reset-password?token=${Date.now()}` // Mock link
+                  to_email: email,
+                  reset_link: `https://career-compass.ai/reset-password?token=${Date.now()}`
               },
               EMAILJS_CONFIG.PUBLIC_KEY
           );
           setIsResetSent(true);
       } catch (error: any) {
           console.error("Email Error:", error);
-          // Show explicit error to the user
           setAuthError(`Email Error: ${error?.text || error?.message || JSON.stringify(error)}`);
       } finally {
           setIsResetSending(false);
@@ -258,7 +284,6 @@ export default function App() {
       if (auth.user) { 
           const newUser = { ...auth.user, avatar: getRandomAvatar() };
           setAuth({ ...auth, user: newUser }); 
-          // Update in local storage if not guest
           if (!auth.user.isGuest) {
               localStorage.setItem('currentUser', JSON.stringify(newUser));
               const users = getUsers();
@@ -303,6 +328,10 @@ export default function App() {
     const textToSend = overrideText || inputMsg;
     if (!textToSend.trim()) return;
     if (!overrideText) setInputMsg('');
+    
+    // Set dynamic thinking text based on input
+    setThinkingText(getThinkingMessage(textToSend, lang));
+    
     const newMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: textToSend, timestamp: new Date() };
     setMessages(prev => [...prev, newMsg]);
     setIsChatLoading(true);
@@ -359,14 +388,11 @@ export default function App() {
 
   useEffect(() => { return () => { liveSessionRef.current?.disconnect(); }; }, []);
 
-  // --- Render Functions ---
-
   const renderLanding = () => {
     return (
       <div className="min-h-screen bg-white dark:bg-[#050505] text-slate-900 dark:text-white transition-colors duration-500 overflow-x-hidden">
-        {/* Navbar */}
         <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-sm bg-white/70 dark:bg-[#050505]/70 border-b border-gray-200 dark:border-white/5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.reload()}>
             <CompassLogo className="w-8 h-8" />
             <span className="font-bold text-xl tracking-tight">CareerCompass</span>
           </div>
@@ -383,7 +409,6 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Hero Section */}
         <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
 
@@ -412,7 +437,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Marquee Section */}
         <div className="py-10 bg-gray-50 dark:bg-[#0a0a0a] border-y border-gray-200 dark:border-white/5 overflow-hidden">
             <div className="flex gap-8 whitespace-nowrap animate-marquee">
                 {[...CAREER_TAGS, ...CAREER_TAGS].map((tag, i) => (
@@ -421,7 +445,6 @@ export default function App() {
             </div>
         </div>
         
-        {/* Hot Industries Section */}
         <section className="py-20 px-6 max-w-7xl mx-auto">
              <div className="mb-12 text-center md:text-left">
                 <h2 className="text-3xl md:text-5xl font-bold mb-4">{t.hotIndustriesTitle}</h2>
@@ -430,7 +453,6 @@ export default function App() {
              
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  {HOT_INDUSTRIES.map((industry) => {
-                     // Dynamically select icon component
                      // @ts-ignore
                      const IconComponent = Icons[industry.icon] || Icons.TrendingUp;
                      
@@ -451,7 +473,6 @@ export default function App() {
              </div>
         </section>
 
-        {/* How it Works / Features (Bento Grid) */}
         <section className="py-24 px-6 max-w-7xl mx-auto">
              <div className="mb-16">
                  <h2 className="text-4xl md:text-5xl font-bold mb-6 text-balance">{t.featureHeader} <br/><span className="text-indigo-500 italic">{t.featureHeaderHighlight}</span> {t.featureHeaderSuffix}</h2>
@@ -459,7 +480,6 @@ export default function App() {
              </div>
 
              <div className="bento-grid">
-                 {/* Card 1: Voice */}
                  <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-indigo-500/50 transition-colors col-span-2">
                      <div className="relative z-10">
                          <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center mb-6">
@@ -471,7 +491,6 @@ export default function App() {
                      <div className="absolute right-0 bottom-0 w-64 h-64 bg-gradient-to-tl from-red-500/10 to-transparent rounded-full translate-x-20 translate-y-20"></div>
                  </div>
 
-                 {/* Card 2: 24/7 */}
                  <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors">
                      <div className="relative z-10">
                         <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6">
@@ -482,7 +501,6 @@ export default function App() {
                      </div>
                  </div>
 
-                 {/* Card 3: Analysis */}
                  <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
                      <div className="relative z-10">
                         <div className="w-12 h-12 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center mb-6">
@@ -493,7 +511,6 @@ export default function App() {
                      </div>
                  </div>
 
-                  {/* Card 4: Roadmap */}
                  <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-green-500/50 transition-colors col-span-2">
                      <div className="relative z-10">
                          <div className="w-12 h-12 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center mb-6">
@@ -507,7 +524,6 @@ export default function App() {
              </div>
         </section>
 
-        {/* Quote Section */}
         <section className="py-20 px-6 bg-gray-100 dark:bg-[#0a0a0a]">
              <div className="max-w-4xl mx-auto text-center">
                  <p className="text-2xl md:text-4xl font-serif italic leading-relaxed text-gray-800 dark:text-gray-200">
@@ -521,7 +537,6 @@ export default function App() {
              </div>
         </section>
 
-        {/* Footer */}
         <footer className="py-12 px-6 border-t border-gray-200 dark:border-white/5 text-center">
              <div className="flex items-center justify-center gap-2 mb-6 opacity-50">
                  <CompassLogo className="w-6 h-6" />
@@ -537,7 +552,7 @@ export default function App() {
     <div className="min-h-screen bg-white dark:bg-[#050505] flex items-center justify-center p-4 transition-colors duration-300 relative">
       <div className="glass-card bg-white/50 dark:bg-[#111]/80 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-white/10 relative z-10 p-8">
             <div className="flex justify-center mb-6">
-                <CompassLogo className="w-16 h-16 text-indigo-500" />
+                <CompassLogo className="w-16 h-16" />
             </div>
             <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2 tracking-tight">
                 {authType === 'login' ? t.login : authType === 'register' ? t.register : t.resetPasswordTitle}
@@ -546,7 +561,6 @@ export default function App() {
                 {authType === 'forgot-password' ? t.resetPasswordDesc : t.tagline}
             </p>
             
-            {/* Error Message Display */}
             {authError && (
                 <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-xl text-center">
                     <p className="text-red-600 dark:text-red-400 text-sm font-semibold">{authError}</p>
@@ -648,7 +662,18 @@ export default function App() {
                             </div>
                         </div>
                     ))}
-                    {isChatLoading && (<div className="flex w-full justify-start"><div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center mt-1"><CompassLogo className="w-5 h-5 animate-spin-slow text-white" /></div><div className="px-6 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl rounded-tl-none"><ShimmerText text={t.thinking} /></div></div>)}
+                    {isChatLoading && (
+                        <div className="flex w-full justify-start items-center">
+                            <div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center mt-1">
+                                {/* Pass isThinking=true to animate the logo */}
+                                <CompassLogo className="w-5 h-5 text-white" isThinking={true} />
+                            </div>
+                            <div className="px-6 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5">
+                                {/* Use the dynamic thinkingText */}
+                                <ShimmerText text={thinkingText} />
+                            </div>
+                        </div>
+                    )}
                     <div ref={messagesEndRef} className="h-4" />
                 </div>
                 <div className="p-6 bg-white dark:bg-[#050505] w-full flex justify-center border-t border-gray-200 dark:border-white/5 relative">

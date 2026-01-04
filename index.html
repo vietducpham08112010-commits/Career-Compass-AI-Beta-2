@@ -22,7 +22,7 @@
       // Polyfill global and process for browser environment
       window.global = window;
       // In a real production build, use a bundler (Vite/Webpack) to inject process.env.API_KEY
-      window.process = { env: { API_KEY: 'AIzaSyCfjqJb-cNTOn9lTn9cGBtLvqgLWVLEqdU' } };
+      window.process = { env: { API_KEY: 'AIzaSyAyNncB2gnBDdPYeffrsFkM1V3toYvdU3U' } };
       
       if (typeof window.Buffer === 'undefined') { window.Buffer = buffer.Buffer; }
 
@@ -43,6 +43,7 @@
               'marquee-reverse': 'marquee-reverse 25s linear infinite',
               'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
               'spin-slow': 'spin 12s linear infinite',
+              'compass-search': 'compassSearch 4s ease-in-out infinite',
             },
             keyframes: {
               float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } },
@@ -51,6 +52,14 @@
               fadeInUp: {
                 '0%': { opacity: '0', transform: 'translateY(40px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' }
+              },
+              compassSearch: {
+                '0%': { transform: 'rotate(0deg)' },
+                '20%': { transform: 'rotate(60deg)' },
+                '40%': { transform: 'rotate(-20deg)' },
+                '60%': { transform: 'rotate(100deg)' },
+                '80%': { transform: 'rotate(-40deg)' },
+                '100%': { transform: 'rotate(0deg)' }
               }
             }
           }
