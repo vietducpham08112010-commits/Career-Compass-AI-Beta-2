@@ -596,7 +596,7 @@ export default function App() {
             </div>
             <h1 className="text-6xl md:text-8xl font-bold leading-[1.1] tracking-tight text-balance">
               {t.heroTitlePrefix}
-              <span className="italic font-serif text-indigo-500">{t.heroTitleSuffix}</span>.
+              <span className="italic font-serif text-indigo-500">{t.heroTitleSuffix}</span>
             </h1>
             <p className="text-xl text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed">
               {t.subTagline}
@@ -975,24 +975,24 @@ export default function App() {
                             <div className="p-6 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                     <Icons.Server className="w-5 h-5 text-indigo-500" />
-                                    AI Model Configuration (Advanced)
+                                    {t.aiConfigTitle}
                                 </h3>
                                 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">AI Provider</label>
+                                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.aiProvider}</label>
                                         <div className="grid grid-cols-2 gap-3">
                                             <button 
                                                 onClick={() => updateUserProfile({ aiProvider: AIProvider.GEMINI })}
                                                 className={`py-3 px-4 rounded-xl border font-medium text-sm transition-all ${(!auth.user?.aiProvider || auth.user.aiProvider === AIProvider.GEMINI) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-indigo-500'}`}
                                             >
-                                                Google Gemini
+                                                {t.providerGemini}
                                             </button>
                                             <button 
                                                 onClick={() => updateUserProfile({ aiProvider: AIProvider.CUSTOM })}
                                                 className={`py-3 px-4 rounded-xl border font-medium text-sm transition-all ${auth.user?.aiProvider === AIProvider.CUSTOM ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-indigo-500'}`}
                                             >
-                                                Custom (Self-Hosted)
+                                                {t.providerCustom}
                                             </button>
                                         </div>
                                     </div>
@@ -1000,17 +1000,17 @@ export default function App() {
                                     {auth.user?.aiProvider === AIProvider.CUSTOM && (
                                         <div className="space-y-4 animate-fade-in-up">
                                             <div>
-                                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Endpoint URL (OpenAI Compatible)</label>
+                                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.endpointUrl}</label>
                                                 <input 
                                                     value={customEndpoint} 
                                                     onChange={(e) => setCustomEndpoint(e.target.value)} 
                                                     placeholder="http://localhost:11434/v1/chat/completions"
                                                     className="w-full px-6 py-4 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
                                                 />
-                                                <p className="mt-1 text-[10px] text-gray-400">Compatible with Ollama, vLLM, or LM Studio.</p>
+                                                <p className="mt-1 text-[10px] text-gray-400">{t.endpointNote}</p>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Model Name</label>
+                                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.modelName}</label>
                                                 <input 
                                                     value={customModelName} 
                                                     onChange={(e) => setCustomModelName(e.target.value)} 

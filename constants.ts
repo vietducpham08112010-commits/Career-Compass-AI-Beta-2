@@ -121,6 +121,15 @@ export const TRANSLATIONS = {
     backToLogin: 'Back to Login',
     linkSent: 'Success! Please check your email for the reset link.',
 
+    // AI Config
+    aiConfigTitle: 'AI Model Configuration (Advanced)',
+    aiProvider: 'AI Provider',
+    providerGemini: 'Google Gemini',
+    providerCustom: 'Custom (Self-Hosted)',
+    endpointUrl: 'Endpoint URL (OpenAI Compatible)',
+    endpointNote: 'Compatible with Ollama, vLLM, or LM Studio.',
+    modelName: 'Model Name',
+
     // New Translations
     heroBadge: 'AI-Powered Guidance',
     heroTitlePrefix: 'Career clarity for ',
@@ -154,6 +163,15 @@ export const TRANSLATIONS = {
     sendLink: 'Gửi liên kết',
     backToLogin: 'Quay lại đăng nhập',
     linkSent: 'Thành công! Vui lòng kiểm tra email của bạn để lấy liên kết.',
+
+    // AI Config
+    aiConfigTitle: 'Cấu hình Mô hình AI (Nâng cao)',
+    aiProvider: 'Nhà cung cấp AI',
+    providerGemini: 'Google Gemini',
+    providerCustom: 'Tùy chỉnh (Tự lưu trữ)',
+    endpointUrl: 'Đường dẫn Endpoint (Tương thích OpenAI)',
+    endpointNote: 'Tương thích với Ollama, vLLM, hoặc LM Studio.',
+    modelName: 'Tên Mô hình',
 
     // New Translations
     heroBadge: 'Định hướng bằng AI',
