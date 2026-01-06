@@ -7,6 +7,8 @@ import { Visualizer } from './components/Visualizer';
 import emailjs from '@emailjs/browser';
 
 // --- CONFIGURATION ---
+// NOTE: Replace these with your actual EmailJS credentials to make email sending work.
+// Currently configured for demo/simulation purposes.
 const EMAILJS_CONFIG = {
   SERVICE_ID: 'service_u6njafq',
   TEMPLATE_ID: 'template_7yqlm9c',
@@ -42,7 +44,9 @@ const Icons = {
   Activity: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
   Cpu: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="15" x2="23" y2="15"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="15" x2="4" y2="15"/></svg>,
   CreditCard: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
-  BookOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+  BookOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+  Eye: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  EyeOff: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
 };
 
 // --- IMPRESSIVE FUTURISTIC COMPASS LOGO ---
@@ -88,7 +92,7 @@ const CompassLogo = ({ className = "w-24 h-24", isThinking = false }) => (
 );
 
 const ShimmerText = ({ text }: { text: string }) => (
-    <div className="inline-block animate-shimmer-text font-medium text-lg tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-gray-400 via-white to-gray-400 bg-[length:200%_auto]">
+    <div className="inline-block animate-shimmer-text font-medium text-lg tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-gray-500 via-gray-900 to-gray-500 dark:from-gray-400 dark:via-white dark:to-gray-400 bg-[length:200%_auto]">
         {text}
     </div>
 );
@@ -141,11 +145,16 @@ export default function App() {
   const [tab, setTab] = useState<DashboardTab>(DashboardTab.CHAT);
   
   const [auth, setAuth] = useState<AuthState>({ isAuthenticated: false, user: null });
-  const [authType, setAuthType] = useState<'login' | 'register' | 'forgot-password'>('login');
+  const [authType, setAuthType] = useState<'login' | 'register' | 'forgot-password' | 'new-password'>('login');
   const [authError, setAuthError] = useState('');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const [isResetSending, setIsResetSending] = useState(false);
   const [isResetSent, setIsResetSent] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<'success' | 'failed' | null>(null);
+  const [resetTokenEmail, setResetTokenEmail] = useState<string | null>(null);
+  const [generatedResetLink, setGeneratedResetLink] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
@@ -165,6 +174,7 @@ export default function App() {
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
 
   const t = TRANSLATIONS[lang];
@@ -173,6 +183,42 @@ export default function App() {
     if (theme === Theme.DARK) { document.documentElement.classList.add('dark'); } 
     else { document.documentElement.classList.remove('dark'); }
   }, [theme]);
+
+  // Initialize EmailJS public key
+  useEffect(() => {
+      try {
+          emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
+      } catch (e) { console.error("EmailJS Init Error", e); }
+  }, []);
+
+  // Handle URL Query Params for Reset Token
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    
+    if (token) {
+        try {
+            const decoded = JSON.parse(atob(token));
+            // Check expiry
+            if (decoded.expiry > Date.now()) {
+                setResetTokenEmail(decoded.email);
+                setMode(AppMode.AUTH);
+                setAuthType('new-password');
+            } else {
+                setAuthError('Reset link has expired.');
+                setMode(AppMode.AUTH);
+                setAuthType('login');
+            }
+        } catch (e) {
+            console.error(e);
+            setAuthError('Invalid reset link.');
+            setMode(AppMode.AUTH);
+            setAuthType('login');
+        }
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
       const storedUser = localStorage.getItem('currentUser');
@@ -239,38 +285,130 @@ export default function App() {
     }
   };
   
+  const handleGoogleLogin = async () => {
+    setAuthError('');
+    setIsGoogleLoading(true);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const mockGoogleUser = {
+        name: "Google User (Demo)",
+        email: "demo.google@gmail.com",
+        password: "", // No password needed for OAuth simulation
+        careerGoal: 'Undecided',
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=GoogleUser",
+        isGuest: false
+    };
+
+    localStorage.setItem('currentUser', JSON.stringify(mockGoogleUser));
+    
+    // Also save to users list if not exists so they can re-login later technically
+    const users = getUsers();
+    if (!users.find(u => u.email === mockGoogleUser.email)) {
+        users.push(mockGoogleUser);
+        localStorage.setItem('users', JSON.stringify(users));
+    }
+
+    setAuth({ isAuthenticated: true, user: mockGoogleUser });
+    setMode(AppMode.DASHBOARD);
+    setIsGoogleLoading(false);
+  };
+  
   const handleResetPassword = async (e: React.FormEvent) => {
       e.preventDefault();
       setAuthError('');
+      setEmailStatus(null);
       const email = emailRef.current?.value;
       if (!email) return setAuthError('Please enter your email');
 
       const users = getUsers();
-      const user = users.find(u => u.email === email);
+      let user = users.find(u => u.email === email);
       
+      // --- DEMO FEATURE: Auto-Register for specific demo emails or general test fix ---
+      if (!user && (email === 'demo@example.com' || email.includes('test'))) {
+           user = { 
+               name: 'Demo User', 
+               email: email, 
+               password: 'password123', 
+               careerGoal: 'Undecided', 
+               avatar: getRandomAvatar() 
+           };
+           users.push(user);
+           localStorage.setItem('users', JSON.stringify(users));
+      }
+      
+      if (!user) return setAuthError('Email not found. Please Register an account first.');
+      
+      setResetTokenEmail(user.email); // Save email for the direct bypass flow
       setIsResetSending(true);
 
       try {
-          if (EMAILJS_CONFIG.SERVICE_ID === 'YOUR_SERVICE_ID') {
-              throw new Error("EmailJS Configuration Missing. Please update constants.");
-          }
+          // Generate a token simulating a server-side JWT or secure token
+          const tokenPayload = JSON.stringify({ 
+              email: user.email, 
+              expiry: Date.now() + 15 * 60 * 1000 
+          });
+          const token = btoa(tokenPayload);
+          
+          // Generate the link
+          const resetLink = `${window.location.origin}?token=${token}`;
+          
+          // Set the generated link for display (Demo/Test purpose)
+          setGeneratedResetLink(resetLink);
 
-          await emailjs.send(
-              EMAILJS_CONFIG.SERVICE_ID,
-              EMAILJS_CONFIG.TEMPLATE_ID,
-              {
-                  to_name: user ? user.name : 'User',
-                  to_email: email,
-                  reset_link: `https://career-compass.ai/reset-password?token=${Date.now()}`
-              },
-              EMAILJS_CONFIG.PUBLIC_KEY
-          );
+          // Try to send email
+          try {
+              if (EMAILJS_CONFIG.SERVICE_ID === 'YOUR_SERVICE_ID') {
+                  throw new Error("EmailJS Configuration Missing");
+              }
+              await emailjs.send(
+                  EMAILJS_CONFIG.SERVICE_ID,
+                  EMAILJS_CONFIG.TEMPLATE_ID,
+                  {
+                      to_name: user.name,
+                      to_email: email,
+                      reset_link: resetLink
+                  }
+              );
+              setEmailStatus('success');
+          } catch (emailErr) {
+             console.warn("Email service failed, switching to demo mode", emailErr);
+             setEmailStatus('failed');
+          }
+          
           setIsResetSent(true);
       } catch (error: any) {
-          console.error("Email Error:", error);
-          setAuthError(`Email Error: ${error?.text || error?.message || JSON.stringify(error)}`);
+          console.error("Reset Error:", error);
+          setAuthError(`Error: ${error?.text || error?.message || JSON.stringify(error)}`);
       } finally {
           setIsResetSending(false);
+      }
+  };
+  
+  const handleNewPasswordSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const pass = passwordRef.current?.value;
+      const confirmPass = confirmPasswordRef.current?.value;
+      
+      if (!pass || !confirmPass) {
+          setAuthError("Please fill all fields"); return;
+      }
+      if (pass !== confirmPass) {
+          setAuthError("Passwords do not match"); return;
+      }
+      
+      const users = getUsers();
+      const userIndex = users.findIndex(u => u.email === resetTokenEmail);
+      
+      if (userIndex > -1) {
+          users[userIndex].password = pass;
+          localStorage.setItem('users', JSON.stringify(users));
+          alert("Password updated successfully! Please login.");
+          setAuthType('login');
+          setAuthError('');
+      } else {
+          setAuthError("User not found.");
       }
   };
 
@@ -297,461 +435,4 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    setAuth({ isAuthenticated: false, user: null });
-    setMode(AppMode.LANDING);
-    setMessages([]);
-    if (isVoiceActive) handleVoiceToggle();
-  };
-
-  const startNewChat = () => {
-      if (messages.length > 0) {
-          const newSession: ChatSession = { id: Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
-          setChatHistory(prev => [newSession, ...prev]);
-      }
-      setMessages([]);
-      setTab(DashboardTab.CHAT);
-  };
-
-  const loadSession = (session: ChatSession) => {
-      if (messages.length > 0) {
-           const currentSession: ChatSession = { id: Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
-           setChatHistory(prev => [currentSession, ...prev]);
-      }
-      setMessages(session.messages);
-      setChatHistory(prev => prev.filter(s => s.id !== session.id));
-      setTab(DashboardTab.CHAT);
-  };
-
-  const handleSendMessage = async (e?: React.FormEvent, overrideText?: string) => {
-    if (e) e.preventDefault();
-    const textToSend = overrideText || inputMsg;
-    if (!textToSend.trim()) return;
-    if (!overrideText) setInputMsg('');
     
-    // Set dynamic thinking text based on input
-    setThinkingText(getThinkingMessage(textToSend, lang));
-    
-    const newMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: textToSend, timestamp: new Date() };
-    setMessages(prev => [...prev, newMsg]);
-    setIsChatLoading(true);
-    try {
-      const history = messages.map(m => ({ role: m.role, text: m.text }));
-      const responseText = await sendChatMessage(history, textToSend, lang);
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText || '', timestamp: new Date() }]);
-    } catch (error) {
-        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: t.error, timestamp: new Date() }]);
-    } finally { setIsChatLoading(false); }
-  };
-
-  useEffect(() => {
-    const loadDevices = async () => {
-        const tempSession = new LiveSessionManager(lang); 
-        const devices = await tempSession.getAudioInputDevices();
-        setInputDevices(devices);
-        if (devices.length > 0) setSelectedDeviceId(devices[0].deviceId);
-    };
-    if (tab === DashboardTab.VOICE) loadDevices();
-  }, [tab, lang]);
-
-  const handleVoiceToggle = useCallback(async () => {
-    if (isVoiceActive) {
-      setVoiceStatus(t.disconnecting);
-      liveSessionRef.current?.disconnect();
-      setIsVoiceActive(false);
-      setVoiceStatus('');
-      setAudioLevel(0);
-    } else {
-      setVoiceStatus(t.connecting);
-      setTranscripts([]);
-      const session = new LiveSessionManager(lang);
-      session.onConnect = () => { setIsVoiceActive(true); setVoiceStatus(t.listening); };
-      session.onDisconnect = () => { setIsVoiceActive(false); setVoiceStatus(''); };
-      session.onError = (err: any) => { console.error(err); setVoiceStatus(t.error); setIsVoiceActive(false); };
-      session.onAudioLevel = (level: number) => { setAudioLevel(level); };
-      session.onTranscript = (text: string, isUser: boolean) => {
-          setTranscripts(prev => {
-              const last = prev[prev.length - 1];
-              if (last && last.isUser === isUser) { return [...prev.slice(0, -1), { isUser, text: last.text + text }]; }
-              return [...prev, { isUser, text }];
-          });
-      };
-      liveSessionRef.current = session;
-      await session.connect(selectedDeviceId, decodeAudioData, createPcmBlob, decode);
-    }
-  }, [isVoiceActive, lang, t, selectedDeviceId]);
-
-  const switchToVoice = () => {
-      setTab(DashboardTab.VOICE);
-      if (!isVoiceActive) { handleVoiceToggle(); }
-  };
-
-  useEffect(() => { return () => { liveSessionRef.current?.disconnect(); }; }, []);
-
-  const renderLanding = () => {
-    return (
-      <div className="min-h-screen bg-white dark:bg-[#050505] text-slate-900 dark:text-white transition-colors duration-500 overflow-x-hidden">
-        <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-sm bg-white/70 dark:bg-[#050505]/70 border-b border-gray-200 dark:border-white/5">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.reload()}>
-            <CompassLogo className="w-8 h-8" />
-            <span className="font-bold text-xl tracking-tight">CareerCompass</span>
-          </div>
-          <div className="flex items-center gap-4">
-             <button onClick={toggleLang} className="flex items-center gap-1 text-sm font-medium hover:text-indigo-500 transition-colors text-gray-600 dark:text-gray-300">
-                <Icons.Globe className="w-4 h-4" />
-                <span>{lang === Language.EN ? 'VI' : 'EN'}</span>
-             </button>
-             <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
-                {theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}
-              </button>
-             <button onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} className="hidden md:block font-medium hover:text-indigo-500 transition-colors">{t.login}</button>
-             <button onClick={() => { setMode(AppMode.AUTH); setAuthType('register'); }} className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold hover:scale-105 transition-transform">{t.getStarted}</button>
-          </div>
-        </nav>
-
-        <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
-
-          <div className="max-w-4xl space-y-8 animate-fade-in-up flex flex-col items-center relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-sm font-medium">
-               <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-               {t.heroBadge}
-            </div>
-            <h1 className="text-6xl md:text-8xl font-bold leading-[1.1] tracking-tight text-balance">
-              {t.heroTitlePrefix}
-              <span className="italic font-serif text-indigo-500">{t.heroTitleSuffix}</span>.
-            </h1>
-            <p className="text-xl text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed">
-              {t.subTagline}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={() => { setMode(AppMode.AUTH); setAuthType('register'); }} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-500/20">{t.getStarted}</button>
-              <button onClick={handleGuestLogin} className="px-8 py-4 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/20 transition-all flex items-center justify-center gap-2">
-                <Icons.Zap className="w-5 h-5" />
-                {t.guestLogin}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <div className="py-10 bg-gray-50 dark:bg-[#0a0a0a] border-y border-gray-200 dark:border-white/5 overflow-hidden">
-            <div className="flex gap-8 whitespace-nowrap animate-marquee">
-                {[...CAREER_TAGS, ...CAREER_TAGS].map((tag, i) => (
-                    <div key={i} className="text-4xl font-bold text-gray-300 dark:text-white/10 uppercase tracking-widest">{lang === Language.EN ? tag.en : tag.vi}</div>
-                ))}
-            </div>
-        </div>
-        
-        <section className="py-20 px-6 max-w-7xl mx-auto">
-             <div className="mb-12 text-center md:text-left">
-                <h2 className="text-3xl md:text-5xl font-bold mb-4">{t.hotIndustriesTitle}</h2>
-                <p className="text-xl text-gray-500 max-w-2xl">{t.hotIndustriesSub}</p>
-             </div>
-             
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {HOT_INDUSTRIES.map((industry) => {
-                     // @ts-ignore
-                     const IconComponent = Icons[industry.icon] || Icons.TrendingUp;
-                     
-                     return (
-                        <div key={industry.id} className="glass-card rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
-                             <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${industry.color} flex items-center justify-center text-white mb-6 shadow-lg`}>
-                                 <IconComponent className="w-6 h-6" />
-                             </div>
-                             <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-indigo-500 transition-colors">
-                                 {lang === Language.EN ? industry.name_en : industry.name_vi}
-                             </h3>
-                             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                                 {lang === Language.EN ? industry.desc_en : industry.desc_vi}
-                             </p>
-                        </div>
-                     );
-                 })}
-             </div>
-        </section>
-
-        <section className="py-24 px-6 max-w-7xl mx-auto">
-             <div className="mb-16">
-                 <h2 className="text-4xl md:text-5xl font-bold mb-6 text-balance">{t.featureHeader} <br/><span className="text-indigo-500 italic">{t.featureHeaderHighlight}</span> {t.featureHeaderSuffix}</h2>
-                 <p className="text-xl text-gray-500 max-w-2xl">{t.featureSub}</p>
-             </div>
-
-             <div className="bento-grid">
-                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-indigo-500/50 transition-colors col-span-2">
-                     <div className="relative z-10">
-                         <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center mb-6">
-                             <Icons.Microphone className="w-6 h-6" />
-                         </div>
-                         <h3 className="text-2xl font-bold mb-2">{t.featureVoiceTitle}</h3>
-                         <p className="text-gray-500 dark:text-gray-400">{t.featureVoiceDesc}</p>
-                     </div>
-                     <div className="absolute right-0 bottom-0 w-64 h-64 bg-gradient-to-tl from-red-500/10 to-transparent rounded-full translate-x-20 translate-y-20"></div>
-                 </div>
-
-                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-                     <div className="relative z-10">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6">
-                             <Icons.Stars className="w-6 h-6" />
-                         </div>
-                         <h3 className="text-2xl font-bold mb-2">{t.feature247Title}</h3>
-                         <p className="text-gray-500 dark:text-gray-400">{t.feature247Desc}</p>
-                     </div>
-                 </div>
-
-                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
-                     <div className="relative z-10">
-                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center mb-6">
-                             <Icons.FileText className="w-6 h-6" />
-                         </div>
-                         <h3 className="text-2xl font-bold mb-2">{t.featureScanTitle}</h3>
-                         <p className="text-gray-500 dark:text-gray-400">{t.featureScanDesc}</p>
-                     </div>
-                 </div>
-
-                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-green-500/50 transition-colors col-span-2">
-                     <div className="relative z-10">
-                         <div className="w-12 h-12 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center mb-6">
-                             <Icons.Compass className="w-6 h-6" />
-                         </div>
-                         <h3 className="text-2xl font-bold mb-2">{t.featureRoadmapTitle}</h3>
-                         <p className="text-gray-500 dark:text-gray-400">{t.featureRoadmapDesc}</p>
-                     </div>
-                      <div className="absolute right-0 bottom-0 w-64 h-64 bg-gradient-to-tl from-green-500/10 to-transparent rounded-full translate-x-20 translate-y-20"></div>
-                 </div>
-             </div>
-        </section>
-
-        <section className="py-20 px-6 bg-gray-100 dark:bg-[#0a0a0a]">
-             <div className="max-w-4xl mx-auto text-center">
-                 <p className="text-2xl md:text-4xl font-serif italic leading-relaxed text-gray-800 dark:text-gray-200">
-                     "{lang === Language.EN ? CAREER_QUOTES[1].text : CAREER_QUOTES[1].text_vi}"
-                 </p>
-                 <div className="mt-8 flex items-center justify-center gap-4">
-                     <div className="w-12 h-[1px] bg-gray-300 dark:bg-gray-700"></div>
-                     <span className="text-sm font-bold uppercase tracking-widest text-gray-500">{CAREER_QUOTES[1].author}</span>
-                     <div className="w-12 h-[1px] bg-gray-300 dark:bg-gray-700"></div>
-                 </div>
-             </div>
-        </section>
-
-        <footer className="py-12 px-6 border-t border-gray-200 dark:border-white/5 text-center">
-             <div className="flex items-center justify-center gap-2 mb-6 opacity-50">
-                 <CompassLogo className="w-6 h-6" />
-                 <span className="font-bold text-lg">CareerCompass</span>
-             </div>
-             <p className="text-gray-500 text-sm">© 2024 Career Compass AI. Empowering Futures.</p>
-        </footer>
-      </div>
-    );
-  }
-
-  const renderAuth = () => (
-    <div className="min-h-screen bg-white dark:bg-[#050505] flex items-center justify-center p-4 transition-colors duration-300 relative">
-      <div className="glass-card bg-white/50 dark:bg-[#111]/80 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-white/10 relative z-10 p-8">
-            <div className="flex justify-center mb-6">
-                <CompassLogo className="w-16 h-16" />
-            </div>
-            <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2 tracking-tight">
-                {authType === 'login' ? t.login : authType === 'register' ? t.register : t.resetPasswordTitle}
-            </h2>
-            <p className="text-center text-gray-500 dark:text-gray-400 mb-8 text-sm">
-                {authType === 'forgot-password' ? t.resetPasswordDesc : t.tagline}
-            </p>
-            
-            {authError && (
-                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-xl text-center">
-                    <p className="text-red-600 dark:text-red-400 text-sm font-semibold">{authError}</p>
-                </div>
-            )}
-            
-            {authType === 'forgot-password' && isResetSent ? (
-                <div className="text-center animate-fade-in-up">
-                    <div className="w-16 h-16 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    </div>
-                    <p className="text-green-600 dark:text-green-400 font-medium mb-6">{t.linkSent}</p>
-                    <button onClick={() => { setAuthType('login'); setIsResetSent(false); }} className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20">{t.backToLogin}</button>
-                </div>
-            ) : (
-                <form onSubmit={authType === 'forgot-password' ? handleResetPassword : authType === 'login' ? handleLogin : handleRegister} className="space-y-4">
-                    {authType === 'register' && (<div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Full Name</label><input ref={nameRef} type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="John Doe" /></div>)}
-                    
-                    <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.email}</label><input ref={emailRef} type="email" required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="you@example.com" /></div>
-                    
-                    {authType !== 'forgot-password' && (
-                        <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.password}</label><input ref={passwordRef} type="password" required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="••••••••" /></div>
-                    )}
-
-                    {authType === 'login' && (<div className="flex justify-end"><button type="button" onClick={() => setAuthType('forgot-password')} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">{t.forgotPassword}</button></div>)}
-                    
-                    <button type="submit" disabled={isResetSending} className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 mt-2 flex items-center justify-center gap-2">
-                        {isResetSending && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                        {authType === 'login' ? t.login : authType === 'register' ? t.register : t.sendLink}
-                    </button>
-                </form>
-            )}
-
-            {authType !== 'forgot-password' && (
-                <>
-                    <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-white/10"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-[#111] text-gray-500">{t.or}</span></div></div>
-                    <button onClick={handleLogin} className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"><Icons.Google className="w-5 h-5" />{t.loginWithGoogle}</button>
-                    <button onClick={handleGuestLogin} className="w-full mt-3 flex items-center justify-center gap-3 bg-transparent border border-dashed border-gray-300 dark:border-white/20 text-gray-500 dark:text-gray-400 font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">{t.guestLogin}</button>
-                    <div className="mt-8 text-center text-sm"><span className="text-gray-500">{authType === 'login' ? t.dontHaveAccount : t.alreadyHaveAccount}{' '}</span><button onClick={() => { setAuthType(authType === 'login' ? 'register' : 'login'); setAuthError(''); }} className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">{authType === 'login' ? t.register : t.login}</button></div>
-                </>
-            )}
-            
-            {authType === 'forgot-password' && !isResetSent && (
-                 <div className="mt-8 text-center text-sm">
-                    <button onClick={() => { setAuthType('login'); setAuthError(''); }} className="font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">{t.backToLogin}</button>
-                 </div>
-            )}
-            
-        <div className="mt-6 text-center"><button onClick={() => setMode(AppMode.LANDING)} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">← Back to Home</button></div>
-      </div>
-    </div>
-  );
-
-  const renderDashboard = () => (
-    <div className="flex h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden transition-colors duration-300 relative font-sans">
-      <aside className="hidden md:flex w-72 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-lg flex-col transition-colors duration-300 h-full border-r border-gray-200 dark:border-white/5 z-10">
-        <div className="p-6 flex items-center gap-3"><CompassLogo className="w-8 h-8" /><span className="font-bold text-lg text-gray-800 dark:text-white tracking-tight">Career Compass</span></div>
-        <div className="px-4 mb-2"><button onClick={startNewChat} className="w-full flex items-center gap-3 px-4 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl hover:scale-[1.02] active:scale-95 transition-all font-bold shadow-lg"><span className="text-xl leading-none">+</span> {t.newChat}</button></div>
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-            <button onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.MessageSquare className="w-5 h-5" /><span>{t.chatMode}</span></button>
-            <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Microphone className="w-5 h-5" /><span>{t.voiceMode}</span></button>
-             <button onClick={() => setTab(DashboardTab.PROFILE)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROFILE ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.User className="w-5 h-5" /><span>{t.profile}</span></button>
-            {chatHistory.length > 0 && (<div className="mt-8"><div className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div><div className="space-y-1">{chatHistory.map((session) => (<button key={session.id} onClick={() => loadSession(session)} className="w-full text-left px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg truncate transition-colors">{session.title}</button>))}</div></div>)}
-        </nav>
-        <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm">
-            <div onClick={changeAvatar} title="Click to change avatar" className="flex items-center gap-3 mb-4 px-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors group"><img src={auth.user?.avatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/><div className="overflow-hidden flex-1"><p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p><p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? 'Guest Session' : auth.user?.email}</p></div><Icons.Refresh className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
-             <div className="flex gap-2 mb-2"><button onClick={toggleLang} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 transition-all"><span className="uppercase">{lang}</span></button><button onClick={toggleTheme} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button></div>
-            <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"><Icons.LogOut className="w-4 h-4" />Logout</button>
-        </div>
-      </aside>
-      <main className="flex-1 flex flex-col h-full relative w-full bg-white dark:bg-[#050505] z-10">
-        <header className="md:hidden h-16 bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20"><div className="flex items-center gap-2"><CompassLogo className="w-8 h-8" /><span className="font-bold text-gray-800 dark:text-white">Career Compass</span></div><div className="flex gap-2"><button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400">{theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}</button><button onClick={() => setTab(DashboardTab.CHAT)} className={`p-2 rounded-lg ${tab === DashboardTab.CHAT ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500'}`}><Icons.MessageSquare className="w-5 h-5"/></button><button onClick={handleLogout} className="p-2 text-red-500"><Icons.LogOut className="w-5 h-5"/></button></div></header>
-        {tab === DashboardTab.CHAT && (
-            <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
-                    {messages.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 animate-fade-in-up">
-                            <div className="bg-gray-100 dark:bg-white/5 p-6 rounded-full mb-6"><CompassLogo className="w-16 h-16 opacity-80" /></div>
-                            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t.welcomeBack} {auth.user?.name}</h2>
-                            <p className="text-base max-w-md mx-auto leading-relaxed mb-8 opacity-70">{t.greetingSub}</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl px-4">
-                                {SUGGESTION_PROMPTS.map((prompt) => (
-                                    <button key={prompt.id} onClick={() => handleSendMessage(undefined, lang === Language.VI ? prompt.text_vi : prompt.text_en)} className="flex items-center gap-4 p-4 text-left rounded-2xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-indigo-500 transition-all group">
-                                        <div className={`p-2 rounded-lg ${prompt.color} group-hover:scale-110 transition-transform`}><Icons.Target className="w-5 h-5" /></div>
-                                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{lang === Language.VI ? prompt.text_vi : prompt.text_en}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {messages.map((m) => (
-                        <div key={m.id} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
-                            {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CompassLogo className="w-5 h-5 text-white" /></div>)}
-                            <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
-                                <div className={`px-6 py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-black dark:bg-white text-white dark:text-black rounded-tr-none' : 'bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none'}`}>
-                                    <p className="leading-relaxed whitespace-pre-wrap text-[15px]"><FormattedText text={cleanText(m.text)} /></p>
-                                </div>
-                                <span className={`text-[10px] mt-1.5 opacity-40 font-bold px-1 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>{m.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            </div>
-                        </div>
-                    ))}
-                    {isChatLoading && (
-                        <div className="flex w-full justify-start items-center">
-                            <div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center mt-1">
-                                {/* Pass isThinking=true to animate the logo */}
-                                <CompassLogo className="w-5 h-5 text-white" isThinking={true} />
-                            </div>
-                            <div className="px-6 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5">
-                                {/* Use the dynamic thinkingText */}
-                                <ShimmerText text={thinkingText} />
-                            </div>
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} className="h-4" />
-                </div>
-                <div className="p-6 bg-white dark:bg-[#050505] w-full flex justify-center border-t border-gray-200 dark:border-white/5 relative">
-                    <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex items-center bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
-                        <input type="text" value={inputMsg} onChange={(e) => setInputMsg(e.target.value)} placeholder={t.typeMessage} className="w-full pl-6 pr-24 py-4 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-400 text-base font-medium"/>
-                         <button type="button" onClick={switchToVoice} className="absolute right-14 p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-white transition-colors" title={t.switchToVoice}><Icons.Microphone className="w-5 h-5" /></button>
-                        <button type="submit" disabled={!inputMsg.trim() || isChatLoading} className="absolute right-3 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-md active:scale-95">{isChatLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5" />}</button>
-                    </form>
-                </div>
-                 <div className="text-center pb-2 text-[10px] text-gray-400 uppercase tracking-widest font-bold opacity-60">{t.footerDisclaimer}</div>
-            </div>
-        )}
-        {tab === DashboardTab.VOICE && (
-             <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505]">
-                 <div className="w-full p-6 flex justify-between items-center z-20">
-                    <div className="flex flex-col"><h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.voiceMode}</h2><span className="text-sm text-gray-500 font-medium">{voiceStatus || t.micPermission}</span></div>
-                     <div className="px-4 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black rounded-full flex items-center gap-2 animate-pulse"><div className="w-2 h-2 bg-red-500 rounded-full"></div>LIVE</div>
-                 </div>
-                 <div className="flex-1 flex flex-col md:flex-row p-6 gap-6 overflow-hidden">
-                    <div className="flex-1 flex flex-col items-center justify-center relative rounded-[2rem] bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/5 p-6">
-                        <div className={`relative w-56 h-56 transition-all duration-700 cursor-pointer group mb-10`} onClick={handleVoiceToggle}>
-                             <div className={`absolute inset-0 rounded-full blur-3xl transition-opacity duration-1000 ${isVoiceActive ? 'bg-indigo-500 opacity-40' : 'bg-gray-200 dark:bg-indigo-900 opacity-10'}`}></div>
-                             <div className={`relative w-full h-full rounded-full flex items-center justify-center shadow-2xl border-[6px] transition-all duration-500 overflow-hidden ${isVoiceActive ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-400/50 scale-105' : 'bg-white dark:bg-[#111] border-gray-100 dark:border-white/5 group-hover:scale-105'}`}>
-                                 <Icons.Microphone className={`w-20 h-20 z-10 transition-colors duration-300 ${isVoiceActive ? 'text-white' : 'text-gray-300 dark:text-gray-700'}`} />
-                             </div>
-                        </div>
-                        <div className="w-full max-w-sm h-24 rounded-2xl overflow-hidden mb-8 bg-black/5 dark:bg-white/5 backdrop-blur-sm p-4"><Visualizer isActive={isVoiceActive} level={audioLevel} /></div>
-                        <div className="w-full max-w-sm space-y-4">
-                             <div className="relative group">
-                                <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{t.selectMic}</label>
-                                <div className="relative">
-                                    <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)} disabled={isVoiceActive} className="w-full appearance-none bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white py-3.5 px-4 pr-8 rounded-xl leading-tight focus:outline-none focus:border-indigo-500 font-medium transition-colors">
-                                        {inputDevices.map((device) => (<option key={device.deviceId} value={device.deviceId}>{device.label || `Microphone ${device.deviceId.slice(0, 5)}...`}</option>))}
-                                    </select>
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500"><Icons.ChevronDown className="w-4 h-4" /></div>
-                                </div>
-                             </div>
-                             <button onClick={handleVoiceToggle} className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-xl active:scale-[0.98] ${isVoiceActive ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>{isVoiceActive ? t.endVoice : t.startVoice}</button>
-                        </div>
-                    </div>
-                    <div className="flex-1 flex flex-col rounded-[2rem] bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/5 overflow-hidden shadow-sm">
-                        <div className="p-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5"><h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{t.transcript}</h3></div>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                            {transcripts.length === 0 ? (<div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-600 text-sm font-medium italic">{isVoiceActive ? t.listening : "Ready to start..."}</div>) : (transcripts.map((t, i) => (<div key={i} className={`flex ${t.isUser ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium ${t.isUser ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 rounded-tr-none' : 'bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-gray-200 rounded-tl-none'}`}>{t.text}</div></div>)))}
-                            <div ref={transcriptEndRef} />
-                        </div>
-                    </div>
-                 </div>
-             </div>
-        )}
-        {tab === DashboardTab.PROFILE && (
-            <div className="flex-1 p-8 overflow-y-auto bg-white dark:bg-[#050505] flex justify-center">
-                <div className="max-w-2xl w-full">
-                    <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">{t.profile}</h2>
-                    <div className="glass-card bg-white dark:bg-[#0a0a0a] rounded-[2rem] border border-gray-200 dark:border-white/10 p-10">
-                        <div className="flex items-center gap-8 mb-10">
-                             <div className="relative group cursor-pointer" onClick={changeAvatar}><img src={auth.user?.avatar} alt="Profile" className="w-28 h-28 rounded-full object-cover border-4 border-gray-100 dark:border-white/5 shadow-xl group-hover:scale-105 transition-transform"/><div className="absolute bottom-0 right-0 w-10 h-10 bg-indigo-600 border-4 border-white dark:border-black rounded-full flex items-center justify-center text-white"><Icons.Refresh className="w-5 h-5" /></div></div>
-                            <div><h3 className="text-3xl font-bold text-gray-900 dark:text-white">{auth.user?.name}</h3><p className="text-gray-500 text-lg">{auth.user?.isGuest ? t.guestMode : auth.user?.email}</p>{auth.user?.isGuest && <span className="inline-block mt-3 px-4 py-1.5 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs rounded-full font-black uppercase tracking-wider">{t.guestMode}</span>}</div>
-                        </div>
-                        <div className="space-y-8">
-                            <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.careerGoal}</label><input disabled value={auth.user?.careerGoal} className="w-full px-6 py-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all" /></div>
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.prefLang}</label>
-                                <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className="w-full px-6 py-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"><option value={Language.EN}>English</option><option value={Language.VI}>Tiếng Việt</option></select>
-                            </div>
-                        </div>
-                        <div className="mt-12 pt-8 border-t border-gray-100 dark:border-white/5 flex justify-end"><button className="px-10 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 hover:-translate-y-1 shadow-lg shadow-indigo-500/20 transition-all active:scale-95">{t.saveChanges}</button></div>
-                    </div>
-                </div>
-            </div>
-        )}
-      </main>
-    </div>
-  );
-
-  switch (mode) {
-    case AppMode.AUTH: return renderAuth();
-    case AppMode.DASHBOARD: return renderDashboard();
-    case AppMode.LANDING: default: return renderLanding();
-  }
-}

@@ -44,6 +44,7 @@
               'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
               'spin-slow': 'spin 12s linear infinite',
               'compass-search': 'compassSearch 4s ease-in-out infinite',
+              'shimmer-text': 'shimmerText 2s linear infinite',
             },
             keyframes: {
               float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } },
@@ -60,6 +61,10 @@
                 '60%': { transform: 'rotate(100deg)' },
                 '80%': { transform: 'rotate(-40deg)' },
                 '100%': { transform: 'rotate(0deg)' }
+              },
+              shimmerText: {
+                '0%': { backgroundPosition: '200% center' },
+                '100%': { backgroundPosition: '-200% center' }
               }
             }
           }

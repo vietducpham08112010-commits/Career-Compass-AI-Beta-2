@@ -7,6 +7,20 @@ export const AVATARS = [
   "https://api.dicebear.com/7.x/micah/svg?seed=George",
   "https://api.dicebear.com/7.x/notionists/svg?seed=Molly",
   "https://api.dicebear.com/7.x/bottts/svg?seed=Tech",
+  "https://api.dicebear.com/7.x/lorelei/svg?seed=Sasha",
+  "https://api.dicebear.com/7.x/open-peeps/svg?seed=Alex",
+  "https://api.dicebear.com/7.x/miniavs/svg?seed=Jace",
+  "https://api.dicebear.com/7.x/big-ears/svg?seed=Oliver",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Willow",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe",
+  "https://api.dicebear.com/7.x/notionists/svg?seed=Leo",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Chloe",
+  "https://api.dicebear.com/7.x/lorelei/svg?seed=Max",
+  "https://api.dicebear.com/7.x/open-peeps/svg?seed=Sam",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Robot01",
+  "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Happy",
+  "https://api.dicebear.com/7.x/thumbs/svg?seed=Buddy",
+  "https://api.dicebear.com/7.x/personas/svg?seed=Maria"
 ];
 
 // Updated to Object for localization
