@@ -20,6 +20,11 @@ export enum DashboardTab {
   PROFILE = 'PROFILE'
 }
 
+export enum AIProvider {
+  GEMINI = 'GEMINI',
+  CUSTOM = 'CUSTOM' // For Llama 3, Mistral, Ollama, etc.
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
@@ -40,6 +45,9 @@ export interface UserProfile {
   careerGoal?: string;
   isGuest?: boolean;
   avatar?: string;
+  aiProvider?: AIProvider;
+  customEndpoint?: string; // e.g., http://localhost:11434/v1/chat/completions
+  customModelName?: string; // e.g., llama3
 }
 
 export interface AuthState {

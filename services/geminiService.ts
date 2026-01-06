@@ -1,17 +1,75 @@
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
-import { Language } from "../types";
+import { Language, AIProvider, UserProfile } from "../types";
 
 export const getAIClient = () => new GoogleGenAI({ apiKey: "AIzaSyAyNncB2gnBDdPYeffrsFkM1V3toYvdU3U" });
 
-export const sendChatMessage = async (history: { role: string; text: string }[], newMessage: string, language: Language) => {
-  const ai = getAIClient();
+// Function to call a generic OpenAI-compatible API (Works with Ollama, vLLM, LocalAI)
+const sendCustomModelMessage = async (
+  endpoint: string,
+  modelName: string,
+  history: { role: string; text: string }[],
+  newMessage: string,
+  systemInstruction: string
+) => {
+  try {
+    // Map 'model' role to 'assistant' for standard OpenAI format
+    const messages = [
+      { role: "system", content: systemInstruction },
+      ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.text })),
+      { role: "user", content: newMessage }
+    ];
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Add "Authorization": "Bearer YOUR_KEY" here if using a secured custom server
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: messages,
+        stream: false,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Custom API Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    // Support standard OpenAI response format or Ollama format
+    return data.choices?.[0]?.message?.content || data.message?.content || "No response from model.";
+  } catch (error) {
+    console.error("Custom Model Error:", error);
+    throw error;
+  }
+};
+
+export const sendChatMessage = async (
+  history: { role: string; text: string }[], 
+  newMessage: string, 
+  language: Language,
+  userProfile?: UserProfile | null
+) => {
   const t = TRANSLATIONS[language];
+  const systemInstruction = t.systemInstruction;
+
+  // Check if user is configured to use a Custom Model
+  if (userProfile?.aiProvider === AIProvider.CUSTOM && userProfile.customEndpoint) {
+    const endpoint = userProfile.customEndpoint;
+    const modelName = userProfile.customModelName || "llama3";
+    return await sendCustomModelMessage(endpoint, modelName, history, newMessage, systemInstruction);
+  }
+
+  // Default: Use Google Gemini
+  const ai = getAIClient();
   try {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: [...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })), { role: 'user', parts: [{ text: newMessage }] }],
-        config: { systemInstruction: t.systemInstruction }
+        config: { systemInstruction: systemInstruction }
     });
     return response.text;
   } catch (error) {
@@ -66,6 +124,7 @@ export class LiveSessionManager {
       const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
+      // NOTE: Live API currently only supports Gemini. Custom models would require a WebSocket implementation.
       this.sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
