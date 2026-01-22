@@ -125,9 +125,12 @@ export const TRANSLATIONS = {
     aiConfigTitle: 'AI Model Configuration (Advanced)',
     aiProvider: 'AI Provider',
     providerGemini: 'Google Gemini',
-    providerCustom: 'Custom (Self-Hosted)',
-    endpointUrl: 'Endpoint URL (OpenAI Compatible)',
+    providerCustom: 'Custom (OpenAI)',
+    providerN8N: 'n8n Workflow',
+    endpointUrl: 'Endpoint URL',
+    n8nWebhookUrl: 'n8n Webhook URL (POST)',
     endpointNote: 'Compatible with Ollama, vLLM, or LM Studio.',
+    n8nNote: 'Requires a Webhook node (POST) returning a JSON property "output" or "text".',
     modelName: 'Model Name',
 
     // New Translations
@@ -168,9 +171,12 @@ export const TRANSLATIONS = {
     aiConfigTitle: 'Cấu hình Mô hình AI (Nâng cao)',
     aiProvider: 'Nhà cung cấp AI',
     providerGemini: 'Google Gemini',
-    providerCustom: 'Tùy chỉnh (Tự lưu trữ)',
-    endpointUrl: 'Đường dẫn Endpoint (Tương thích OpenAI)',
+    providerCustom: 'Tùy chỉnh (OpenAI)',
+    providerN8N: 'n8n Workflow',
+    endpointUrl: 'Đường dẫn Endpoint',
+    n8nWebhookUrl: 'n8n Webhook URL (POST)',
     endpointNote: 'Tương thích với Ollama, vLLM, hoặc LM Studio.',
+    n8nNote: 'Yêu cầu Webhook (POST) trả về JSON có thuộc tính "output" hoặc "text".',
     modelName: 'Tên Mô hình',
 
     // New Translations

@@ -2,7 +2,7 @@ import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
 
-export const getAIClient = () => new GoogleGenAI({ apiKey: "AIzaSyAyNncB2gnBDdPYeffrsFkM1V3toYvdU3U" });
+export const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Function to call a generic OpenAI-compatible API (Works with Ollama, vLLM, LocalAI)
 const sendCustomModelMessage = async (
@@ -47,6 +47,72 @@ const sendCustomModelMessage = async (
   }
 };
 
+// Function to call n8n Webhook
+const sendN8NMessage = async (
+  webhookUrl: string,
+  history: { role: string; text: string }[],
+  newMessage: string,
+  systemInstruction: string,
+  userProfile?: UserProfile | null
+) => {
+  try {
+    const payload = {
+        message: newMessage,
+        history: history,
+        systemInstruction: systemInstruction,
+        userEmail: userProfile?.email || 'guest',
+        timestamp: new Date().toISOString()
+    };
+
+    const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`n8n Webhook Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // Check for common output fields n8n users typically map to
+    if (data.output && typeof data.output === 'string') return data.output;
+    if (data.text && typeof data.text === 'string') return data.text;
+    if (data.response && typeof data.response === 'string') return data.response;
+    if (data.message && typeof data.message === 'string') return data.message;
+    
+    // If n8n returns a generic object that looks like OpenAI format
+    if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
+
+    return JSON.stringify(data); // Fallback to raw JSON if no text field found
+  } catch (error) {
+    console.error("n8n Error:", error);
+    throw error;
+  }
+};
+
+// Helper: Ensure strict User -> Model -> User alternation for Gemini
+const formatHistoryForGemini = (history: { role: string; text: string }[], newMessage: string) => {
+  const raw = [...history, { role: 'user', text: newMessage }];
+  const formatted: { role: string; parts: { text: string }[] }[] = [];
+  
+  for (const msg of raw) {
+      // Normalize role: Gemini uses 'user' and 'model'
+      const role = msg.role === 'model' ? 'model' : 'user';
+      
+      if (formatted.length > 0 && formatted[formatted.length - 1].role === role) {
+          // Merge consecutive messages of the same role
+          formatted[formatted.length - 1].parts[0].text += `\n\n${msg.text}`;
+      } else {
+          formatted.push({ role, parts: [{ text: msg.text }] });
+      }
+  }
+  return formatted;
+};
+
 export const sendChatMessage = async (
   history: { role: string; text: string }[], 
   newMessage: string, 
@@ -56,7 +122,11 @@ export const sendChatMessage = async (
   const t = TRANSLATIONS[language];
   const systemInstruction = t.systemInstruction;
 
-  // Check if user is configured to use a Custom Model
+  // Check Provider
+  if (userProfile?.aiProvider === AIProvider.N8N && userProfile.customEndpoint) {
+      return await sendN8NMessage(userProfile.customEndpoint, history, newMessage, systemInstruction, userProfile);
+  }
+
   if (userProfile?.aiProvider === AIProvider.CUSTOM && userProfile.customEndpoint) {
     const endpoint = userProfile.customEndpoint;
     const modelName = userProfile.customModelName || "llama3";
@@ -66,9 +136,10 @@ export const sendChatMessage = async (
   // Default: Use Google Gemini
   const ai = getAIClient();
   try {
+    const contents = formatHistoryForGemini(history, newMessage);
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })), { role: 'user', parts: [{ text: newMessage }] }],
+        contents: contents,
         config: { systemInstruction: systemInstruction }
     });
     return response.text;
@@ -124,9 +195,9 @@ export class LiveSessionManager {
       const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // NOTE: Live API currently only supports Gemini. Custom models would require a WebSocket implementation.
+      // Using the latest model as per request
       this.sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         callbacks: {
           onopen: () => { this.startAudioStreaming(createBlobFn); if (this.onConnect) this.onConnect(); },
           onmessage: async (message: LiveServerMessage) => {

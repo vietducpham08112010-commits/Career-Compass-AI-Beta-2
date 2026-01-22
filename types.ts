@@ -22,7 +22,8 @@ export enum DashboardTab {
 
 export enum AIProvider {
   GEMINI = 'GEMINI',
-  CUSTOM = 'CUSTOM' // For Llama 3, Mistral, Ollama, etc.
+  CUSTOM = 'CUSTOM', // For Llama 3, Mistral, Ollama, etc.
+  N8N = 'N8N' // n8n Workflow Webhook
 }
 
 export interface ChatMessage {
@@ -46,8 +47,8 @@ export interface UserProfile {
   isGuest?: boolean;
   avatar?: string;
   aiProvider?: AIProvider;
-  customEndpoint?: string; // e.g., http://localhost:11434/v1/chat/completions
-  customModelName?: string; // e.g., llama3
+  customEndpoint?: string; // e.g., http://localhost:11434/v1/chat/completions OR n8n Webhook URL
+  customModelName?: string; // e.g., llama3 (Not used for n8n)
 }
 
 export interface AuthState {
