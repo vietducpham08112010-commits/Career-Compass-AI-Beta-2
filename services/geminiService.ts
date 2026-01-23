@@ -138,17 +138,33 @@ export const sendChatMessage = async (
 
   // Default: Use Google Gemini
   const ai = getAIClient();
+  const contents = formatHistoryForGemini(history, newMessage);
+
   try {
-    const contents = formatHistoryForGemini(history, newMessage);
+    // Attempt 1: Try the latest preview model (Gemini 3 Flash)
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: contents,
         config: { systemInstruction: systemInstruction }
     });
     return response.text;
-  } catch (error) {
-    console.error("Chat Error:", error);
-    throw error;
+  } catch (error: any) {
+    console.warn("Primary model (gemini-3-flash-preview) failed. Attempting fallback...", error);
+    
+    try {
+        // Attempt 2: Fallback to Gemini 2.5 Flash (Stable)
+        // 'gemini-flash-latest' maps to the latest stable flash model
+        const response = await ai.models.generateContent({
+            model: 'gemini-flash-latest',
+            contents: contents,
+            config: { systemInstruction: systemInstruction }
+        });
+        return response.text;
+    } catch (fallbackError: any) {
+        console.error("Fallback model also failed:", fallbackError);
+        // Re-throw the original error to show to user, or a combined message
+        throw new Error(`Gemini API Error: ${error.message || "Network Error"}`);
+    }
   }
 };
 

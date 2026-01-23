@@ -502,13 +502,18 @@ export default function App() {
     setMessages(prev => [...prev, newMsg]);
     setIsChatLoading(true);
     try {
-      const history = messages.map(m => ({ role: m.role, text: m.text }));
+      // IMPORTANT: Filter out previous error messages from history to prevent context pollution
+      const history = messages
+        .filter(m => !m.text.startsWith('⚠️ Error'))
+        .map(m => ({ role: m.role, text: m.text }));
+        
       const responseText = await sendChatMessage(history, textToSend, lang, auth.user);
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText || '', timestamp: new Date() }]);
     } catch (error: any) {
         // Show clearer error message
         const errorMsg = error.message || JSON.stringify(error) || t.error;
-        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `⚠️ Error: ${errorMsg}`, timestamp: new Date() }]);
+        console.error("Chat Error UI:", error);
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `⚠️ Error: ${errorMsg}\n(Please check your connection or try again later)`, timestamp: new Date() }]);
     } finally { setIsChatLoading(false); }
   };
 
