@@ -2,7 +2,10 @@ import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
 
-export const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Explicitly configured API Key
+const API_KEY = 'AIzaSyAyNncB2gnBDdPYeffrsFkM1V3toYvdU3U';
+
+export const getAIClient = () => new GoogleGenAI({ apiKey: API_KEY });
 
 // Function to call a generic OpenAI-compatible API (Works with Ollama, vLLM, LocalAI)
 const sendCustomModelMessage = async (
