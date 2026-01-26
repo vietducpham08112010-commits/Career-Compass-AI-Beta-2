@@ -4,7 +4,7 @@ import { Language, AIProvider, UserProfile } from "../types";
 
 // Explicitly configured API Key
 // Updated per user request
-const API_KEY = 'AIzaSyB2lhSQpETs7j6V4lCKjgpeNu-L2z0d3oI';
+const API_KEY = 'AIzaSyD86p_5M0oPf1paYInfQKxbF1Il9HOBkHY';
 
 export const getAIClient = () => new GoogleGenAI({ apiKey: API_KEY });
 
