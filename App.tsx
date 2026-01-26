@@ -13,10 +13,6 @@ const EMAILJS_CONFIG = {
   PUBLIC_KEY: '8ABxIIEqUTEI3I-oL'
 };
 
-// --- SECURITY: FIXED RESET CODE (Requested by User) ---
-// WARNING: This is a fixed code for all users. Not recommended for production.
-const FIXED_RESET_CODE = '19283746';
-
 // --- Icons ---
 const Icons = {
   Microphone: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
@@ -158,8 +154,9 @@ export default function App() {
   const [emailStatus, setEmailStatus] = useState<'success' | 'failed' | null>(null);
   const [resetTokenEmail, setResetTokenEmail] = useState<string | null>(null);
   
-  // State for Fixed Code Verification
+  // State for Random Code Verification
   const [resetCodeInput, setResetCodeInput] = useState('');
+  const [generatedResetCode, setGeneratedResetCode] = useState<string | null>(null);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -360,7 +357,7 @@ export default function App() {
     setIsGoogleLoading(false);
   };
   
-  // Send Verification Code (Simulated)
+  // Send Verification Code (ACTUAL Implementation with Random Code)
   const handleSendResetCode = async (e: React.FormEvent) => {
       e.preventDefault();
       setAuthError('');
@@ -389,31 +386,42 @@ export default function App() {
       setResetTokenEmail(user.email);
       setIsResetSending(true);
 
-      // Simulate network delay for sending email
+      // GENERATE RANDOM 8-DIGIT CODE
+      const randomCode = Math.floor(10000000 + Math.random() * 90000000).toString();
+      setGeneratedResetCode(randomCode);
+
       try {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          // Here you would normally call EmailJS to send `FIXED_RESET_CODE`
-          // e.g. await emailjs.send(..., { code: FIXED_RESET_CODE, to_email: email });
-          // For now, we simulate success.
+          // ACTUALLY SEND THE EMAIL via EmailJS
+          // Ensure your EmailJS template accepts {{code}} or {{message}} variables
+          await emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID,
+            EMAILJS_CONFIG.TEMPLATE_ID,
+            {
+                to_email: email, // Targeted email
+                reply_to: email, 
+                message: `Your verification code is: ${randomCode}`, // Fallback message
+                code: randomCode, // Specific variable for the code
+                to_name: user.name || 'User'
+            }
+          );
           
           setIsResetSent(true);
           setEmailStatus('success');
       } catch (error) {
-          console.error("Error sending code:", error);
-          setAuthError("Failed to send code. Please try again.");
+          console.error("EmailJS Error:", error);
+          setAuthError("Failed to send email. Please check your internet connection or try again later.");
       } finally {
           setIsResetSending(false);
       }
   };
 
-  // Verify Fixed Code
+  // Verify Code
   const handleVerifyCode = (e: React.FormEvent) => {
       e.preventDefault();
       setIsVerifyingCode(true);
       
       setTimeout(() => {
-          if (resetCodeInput === FIXED_RESET_CODE) {
+          if (resetCodeInput === generatedResetCode) {
               setAuthType('new-password');
               setResetCodeInput(''); // Clear for security
           } else {
@@ -446,6 +454,7 @@ export default function App() {
           setAuthError('');
           setIsResetSent(false); // Reset flow state
           setResetCodeInput('');
+          setGeneratedResetCode(null); // Clear the code
       } else {
           setAuthError("User not found.");
       }
@@ -789,8 +798,6 @@ export default function App() {
                             placeholder="00000000"
                             autoFocus
                         />
-                        {/* Demo Hint */}
-                        <p className="text-[10px] text-indigo-400 font-mono opacity-80">(Demo Code: {FIXED_RESET_CODE})</p>
                     </div>
 
                     <button 
