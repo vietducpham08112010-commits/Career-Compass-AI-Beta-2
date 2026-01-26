@@ -13,6 +13,10 @@ const EMAILJS_CONFIG = {
   PUBLIC_KEY: '8ABxIIEqUTEI3I-oL'
 };
 
+// --- SECURITY: FIXED RESET CODE (Requested by User) ---
+// WARNING: This is a fixed code for all users. Not recommended for production.
+const FIXED_RESET_CODE = '19283746';
+
 // --- Icons ---
 const Icons = {
   Microphone: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
@@ -153,7 +157,10 @@ export default function App() {
   const [isResetSent, setIsResetSent] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'success' | 'failed' | null>(null);
   const [resetTokenEmail, setResetTokenEmail] = useState<string | null>(null);
-  const [generatedResetLink, setGeneratedResetLink] = useState<string | null>(null);
+  
+  // State for Fixed Code Verification
+  const [resetCodeInput, setResetCodeInput] = useState('');
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
@@ -200,7 +207,7 @@ export default function App() {
       if (auth.user?.customModelName) setCustomModelName(auth.user.customModelName);
   }, [auth.user]);
 
-  // Handle URL Query Params for Reset Token
+  // Handle URL Query Params for Reset Token (Keep for legacy/link compatibility)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
@@ -333,7 +340,7 @@ export default function App() {
         email: "demo.google@gmail.com",
         // @ts-ignore
         password: "", 
-        careerGoal: 'Undecided',
+        careerGoal: 'Undecided', 
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=GoogleUser",
         isGuest: false,
         aiProvider: AIProvider.GEMINI
@@ -353,7 +360,8 @@ export default function App() {
     setIsGoogleLoading(false);
   };
   
-  const handleResetPassword = async (e: React.FormEvent) => {
+  // Send Verification Code (Simulated)
+  const handleSendResetCode = async (e: React.FormEvent) => {
       e.preventDefault();
       setAuthError('');
       setEmailStatus(null);
@@ -363,7 +371,7 @@ export default function App() {
       const users = getUsers();
       let user = users.find(u => u.email === email);
       
-      // --- DEMO FEATURE: Auto-Register for specific demo emails or general test fix ---
+      // Auto-Register demo user for testing
       if (!user && (email === 'demo@example.com' || email.includes('test'))) {
            user = { 
                name: 'Demo User', 
@@ -378,50 +386,41 @@ export default function App() {
       
       if (!user) return setAuthError('Email not found. Please Register an account first.');
       
-      setResetTokenEmail(user.email); // Save email for the direct bypass flow
+      setResetTokenEmail(user.email);
       setIsResetSending(true);
 
+      // Simulate network delay for sending email
       try {
-          // Generate a token simulating a server-side JWT or secure token
-          const tokenPayload = JSON.stringify({ 
-              email: user.email, 
-              expiry: Date.now() + 15 * 60 * 1000 
-          });
-          const token = btoa(tokenPayload);
+          await new Promise(resolve => setTimeout(resolve, 1500));
           
-          // Generate the link
-          const resetLink = `${window.location.origin}?token=${token}`;
-          
-          // Set the generated link for display (Demo/Test purpose)
-          setGeneratedResetLink(resetLink);
-
-          // Try to send email
-          try {
-              if (EMAILJS_CONFIG.SERVICE_ID === 'YOUR_SERVICE_ID') {
-                  throw new Error("EmailJS Configuration Missing");
-              }
-              await emailjs.send(
-                  EMAILJS_CONFIG.SERVICE_ID,
-                  EMAILJS_CONFIG.TEMPLATE_ID,
-                  {
-                      to_name: user.name,
-                      to_email: email,
-                      reset_link: resetLink
-                  }
-              );
-              setEmailStatus('success');
-          } catch (emailErr) {
-             console.warn("Email service failed, switching to demo mode", emailErr);
-             setEmailStatus('failed');
-          }
+          // Here you would normally call EmailJS to send `FIXED_RESET_CODE`
+          // e.g. await emailjs.send(..., { code: FIXED_RESET_CODE, to_email: email });
+          // For now, we simulate success.
           
           setIsResetSent(true);
-      } catch (error: any) {
-          console.error("Reset Error:", error);
-          setAuthError(`Error: ${error?.text || error?.message || JSON.stringify(error)}`);
+          setEmailStatus('success');
+      } catch (error) {
+          console.error("Error sending code:", error);
+          setAuthError("Failed to send code. Please try again.");
       } finally {
           setIsResetSending(false);
       }
+  };
+
+  // Verify Fixed Code
+  const handleVerifyCode = (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsVerifyingCode(true);
+      
+      setTimeout(() => {
+          if (resetCodeInput === FIXED_RESET_CODE) {
+              setAuthType('new-password');
+              setResetCodeInput(''); // Clear for security
+          } else {
+              setAuthError('Invalid verification code.');
+          }
+          setIsVerifyingCode(false);
+      }, 800);
   };
   
   const handleNewPasswordSubmit = (e: React.FormEvent) => {
@@ -445,6 +444,8 @@ export default function App() {
           alert("Password updated successfully! Please login.");
           setAuthType('login');
           setAuthError('');
+          setIsResetSent(false); // Reset flow state
+          setResetCodeInput('');
       } else {
           setAuthError("User not found.");
       }
@@ -759,7 +760,7 @@ export default function App() {
                 {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? 'Reset Password' : t.resetPasswordTitle}
             </h2>
             <p className="text-center text-gray-500 dark:text-gray-400 mb-8 text-sm">
-                {authType === 'forgot-password' ? t.resetPasswordDesc : authType === 'new-password' ? 'Enter your new password below.' : t.tagline}
+                {authType === 'forgot-password' ? (isResetSent ? 'Enter the 8-digit code sent to your email.' : t.resetPasswordDesc) : authType === 'new-password' ? 'Enter your new password below.' : t.tagline}
             </p>
             
             {authError && (
@@ -769,44 +770,41 @@ export default function App() {
             )}
             
             {authType === 'forgot-password' && isResetSent ? (
-                <div className="text-center animate-fade-in-up">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${emailStatus === 'failed' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400'}`}>
-                        {emailStatus === 'failed' ? (
-                             <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        ) : (
-                             <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                        )}
+                <form onSubmit={handleVerifyCode} className="text-center animate-fade-in-up space-y-6">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                         <div className="bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 p-2 rounded-full">
+                            <Icons.Zap className="w-5 h-5" />
+                         </div>
+                         <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Code sent!</span>
                     </div>
-                    
-                    {emailStatus === 'failed' ? (
-                        <p className="text-amber-600 dark:text-amber-400 font-medium mb-2">Email simulation active</p>
-                    ) : (
-                        <p className="text-green-600 dark:text-green-400 font-medium mb-6">{t.linkSent}</p>
-                    )}
-                    
-                    {generatedResetLink && (
-                        <div className="mb-6 p-4 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 text-left">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                                {emailStatus === 'failed' ? "Use this link to reset password:" : "Development / Demo Link:"}
-                            </p>
-                            <div className="break-all text-indigo-600 dark:text-indigo-400 font-mono text-xs bg-white dark:bg-black p-2 rounded border border-gray-200 dark:border-white/10 select-all cursor-text mb-3">
-                                {generatedResetLink}
-                            </div>
-                            
-                            {/* BYPASS BUTTON: Solves the issue where clicking the link doesn't work in some environments */}
-                            <button 
-                                onClick={() => { setIsResetSent(false); setAuthType('new-password'); }} 
-                                className="w-full py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 rounded-lg text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Icons.Zap className="w-3 h-3" />
-                                Simulate "Clicking Link" (Open Reset Screen)
-                            </button>
-                        </div>
-                    )}
-                    <button onClick={() => { setAuthType('login'); setIsResetSent(false); setGeneratedResetLink(null); setEmailStatus(null); }} className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20">{t.backToLogin}</button>
-                </div>
+
+                    <div className="space-y-4">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">Verification Code</label>
+                        <input 
+                            type="text" 
+                            maxLength={8}
+                            value={resetCodeInput}
+                            onChange={(e) => setResetCodeInput(e.target.value.replace(/[^0-9]/g, ''))}
+                            className="w-full text-center text-3xl tracking-[0.5em] font-mono font-bold px-4 py-4 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-300" 
+                            placeholder="00000000"
+                            autoFocus
+                        />
+                        {/* Demo Hint */}
+                        <p className="text-[10px] text-indigo-400 font-mono opacity-80">(Demo Code: {FIXED_RESET_CODE})</p>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={isVerifyingCode || resetCodeInput.length !== 8} 
+                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isVerifyingCode ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Verify Code'}
+                    </button>
+
+                    <button type="button" onClick={() => { setIsResetSent(false); setResetCodeInput(''); setAuthError(''); }} className="text-xs text-gray-400 hover:text-indigo-500 underline">Resend Code / Change Email</button>
+                </form>
             ) : (
-                <form onSubmit={authType === 'forgot-password' ? handleResetPassword : authType === 'new-password' ? handleNewPasswordSubmit : authType === 'login' ? handleLogin : handleRegister} className="space-y-4">
+                <form onSubmit={authType === 'forgot-password' ? handleSendResetCode : authType === 'new-password' ? handleNewPasswordSubmit : authType === 'login' ? handleLogin : handleRegister} className="space-y-4">
                     {authType === 'register' && (<div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Full Name</label><input ref={nameRef} type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="John Doe" /></div>)}
                     
                     {authType === 'new-password' ? (
@@ -840,11 +838,11 @@ export default function App() {
                         </div>
                     )}
 
-                    {authType === 'login' && (<div className="flex justify-end"><button type="button" onClick={() => setAuthType('forgot-password')} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">{t.forgotPassword}</button></div>)}
+                    {authType === 'login' && (<div className="flex justify-end"><button type="button" onClick={() => { setAuthType('forgot-password'); setIsResetSent(false); setAuthError(''); }} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">{t.forgotPassword}</button></div>)}
                     
                     <button type="submit" disabled={isResetSending} className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 mt-2 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95">
                         {isResetSending && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                        {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? 'Update Password' : t.sendLink}
+                        {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? 'Update Password' : "Send Verification Code"}
                     </button>
                 </form>
             )}
