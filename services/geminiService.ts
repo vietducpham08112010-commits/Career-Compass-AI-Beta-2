@@ -3,12 +3,14 @@ import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
 
 // Explicitly configured API Key
-const API_KEY = 'AIzaSyAyNncB2gnBDdPYeffrsFkM1V3toYvdU3U';
+// Updated per user request
+const API_KEY = 'AIzaSyB2lhSQpETs7j6V4lCKjgpeNu-L2z0d3oI';
 
 export const getAIClient = () => new GoogleGenAI({ apiKey: API_KEY });
 
-// Function to call a generic OpenAI-compatible API (Works with Ollama, vLLM, LocalAI)
-const sendCustomModelMessage = async (
+// Function to call a Generic External API (For Custom/Self-Hosted providers only)
+// Note: This is ONLY used if the user manually selects "Custom" provider in settings.
+const sendExternalApiMessage = async (
   endpoint: string,
   modelName: string,
   history: { role: string; text: string }[],
@@ -16,7 +18,7 @@ const sendCustomModelMessage = async (
   systemInstruction: string
 ) => {
   try {
-    // Map 'model' role to 'assistant' for standard OpenAI format
+    // Format payload for generic API endpoints (compatible with standard formats)
     const messages = [
       { role: "system", content: systemInstruction },
       ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.text })),
@@ -27,7 +29,6 @@ const sendCustomModelMessage = async (
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // Add "Authorization": "Bearer YOUR_KEY" here if using a secured custom server
       },
       body: JSON.stringify({
         model: modelName,
@@ -38,14 +39,13 @@ const sendCustomModelMessage = async (
     });
 
     if (!response.ok) {
-      throw new Error(`Custom API Error: ${response.statusText}`);
+      throw new Error(`External API Error: ${response.statusText}`);
     }
 
     const data = await response.json();
-    // Support standard OpenAI response format or Ollama format
-    return data.choices?.[0]?.message?.content || data.message?.content || "No response from model.";
+    return data.choices?.[0]?.message?.content || data.message?.content || "No response from external model.";
   } catch (error) {
-    console.error("Custom Model Error:", error);
+    console.error("External Model Error:", error);
     throw error;
   }
 };
@@ -87,7 +87,7 @@ const sendN8NMessage = async (
     if (data.response && typeof data.response === 'string') return data.response;
     if (data.message && typeof data.message === 'string') return data.message;
     
-    // If n8n returns a generic object that looks like OpenAI format
+    // If n8n returns a generic object that looks like standard format
     if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
 
     return JSON.stringify(data); // Fallback to raw JSON if no text field found
@@ -125,7 +125,7 @@ export const sendChatMessage = async (
   const t = TRANSLATIONS[language];
   const systemInstruction = t.systemInstruction;
 
-  // Check Provider
+  // Check Provider - ONLY use external APIs if user explicitly configured them
   if (userProfile?.aiProvider === AIProvider.N8N && userProfile.customEndpoint) {
       return await sendN8NMessage(userProfile.customEndpoint, history, newMessage, systemInstruction, userProfile);
   }
@@ -133,27 +133,27 @@ export const sendChatMessage = async (
   if (userProfile?.aiProvider === AIProvider.CUSTOM && userProfile.customEndpoint) {
     const endpoint = userProfile.customEndpoint;
     const modelName = userProfile.customModelName || "llama3";
-    return await sendCustomModelMessage(endpoint, modelName, history, newMessage, systemInstruction);
+    return await sendExternalApiMessage(endpoint, modelName, history, newMessage, systemInstruction);
   }
 
-  // Default: Use Google Gemini
+  // --- DEFAULT: GOOGLE GEMINI ---
   const ai = getAIClient();
   const contents = formatHistoryForGemini(history, newMessage);
 
   try {
-    // Attempt 1: Try the latest preview model (Gemini 3 Flash)
+    // Attempt 1: Use Gemini 2.0 Flash (often referred to as 2.5/Pro in terms of performance/cost)
+    // This model is highly efficient and cost-effective.
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.0-flash', 
         contents: contents,
         config: { systemInstruction: systemInstruction }
     });
     return response.text;
   } catch (error: any) {
-    console.warn("Primary model (gemini-3-flash-preview) failed. Attempting fallback...", error);
+    console.warn("Primary model (gemini-2.0-flash) failed. Attempting fallback...", error);
     
     try {
-        // Attempt 2: Fallback to Gemini 2.5 Flash (Stable)
-        // 'gemini-flash-latest' maps to the latest stable flash model
+        // Attempt 2: Fallback to the latest stable Flash model if the newer one is region-locked
         const response = await ai.models.generateContent({
             model: 'gemini-flash-latest',
             contents: contents,
@@ -161,9 +161,8 @@ export const sendChatMessage = async (
         });
         return response.text;
     } catch (fallbackError: any) {
-        console.error("Fallback model also failed:", fallbackError);
-        // Re-throw the original error to show to user, or a combined message
-        throw new Error(`Gemini API Error: ${error.message || "Network Error"}`);
+        console.error("All Gemini models failed:", fallbackError);
+        throw new Error(`Gemini API Error: ${error.message || "Network Error - Please check your connection or API Key"}`);
     }
   }
 };
@@ -214,7 +213,7 @@ export class LiveSessionManager {
       const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Using the latest model as per request
+      // Using Gemini 2.5 Flash Native Audio Preview (Multimodal Live)
       this.sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         callbacks: {

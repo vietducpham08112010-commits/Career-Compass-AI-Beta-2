@@ -22,7 +22,8 @@
       // Polyfill global and process for browser environment
       window.global = window;
       // In a real production build, use a bundler (Vite/Webpack) to inject process.env.API_KEY
-      window.process = { env: { API_KEY: 'AIzaSyAyNncB2gnBDdPYeffrsFkM1V3toYvdU3U' } };
+      // Updated API Key per user request
+      window.process = { env: { API_KEY: 'AIzaSyB2lhSQpETs7j6V4lCKjgpeNu-L2z0d3oI' } };
       
       if (typeof window.Buffer === 'undefined') { window.Buffer = buffer.Buffer; }
 
