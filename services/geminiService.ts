@@ -1,42 +1,56 @@
 
-import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
+import { LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
 
-// --- DYNAMIC API KEY MANAGEMENT ---
-// This function prioritizes:
-// 1. Random key from environment variable (load balancing/rotation)
-const getDynamicApiKey = (): string => {
-  // Use Environment Variable Pool
-  // Expects keys separated by commas: "KEY_1,KEY_2,KEY_3"
-  const envKeys = process.env.API_KEY || "";
-  
-  if (!envKeys) {
-    // We do NOT throw here immediately to allow the UI to prompt the user
-    // returning empty string will cause GoogleGenAI to throw a specific error we can catch
-    return "";
+// --- API CLIENT (Backend Proxy) ---
+
+export const sendChatMessage = async (
+  history: { role: string; text: string }[], 
+  newMessage: string, 
+  language: Language,
+  userProfile?: UserProfile | null
+) => {
+  const t = TRANSLATIONS[language];
+  const systemInstruction = t.systemInstruction;
+
+  // Check Provider - ONLY use external APIs if user explicitly configured them
+  if (userProfile?.aiProvider === AIProvider.N8N && userProfile.customEndpoint) {
+      return await sendN8NMessage(userProfile.customEndpoint, history, newMessage, systemInstruction, userProfile);
   }
 
-  // Split and Pick Random
-  const keys = envKeys.split(',').map(k => k.trim()).filter(k => k.length > 0);
-  if (keys.length === 0) return "";
-  
-  const randomIndex = Math.floor(Math.random() * keys.length);
-  return keys[randomIndex];
-};
-
-export const getAIClient = () => {
-  const apiKey = getDynamicApiKey();
-  
-  if (!apiKey) {
-    console.error("API Key is missing.");
-    throw new Error("Missing System API Key.");
+  if (userProfile?.aiProvider === AIProvider.CUSTOM && userProfile.customEndpoint) {
+    const endpoint = userProfile.customEndpoint;
+    const modelName = userProfile.customModelName || "llama3";
+    return await sendExternalApiMessage(endpoint, modelName, history, newMessage, systemInstruction);
   }
-  return new GoogleGenAI({ apiKey });
+
+  // --- DEFAULT: GOOGLE GEMINI (VIA BACKEND) ---
+  try {
+    const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            history,
+            message: newMessage,
+            systemInstruction
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Server Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.text;
+  } catch (error: any) {
+    console.error("Chat API Error:", error);
+    throw new Error(error.message || "Failed to communicate with the server.");
+  }
 };
 
 // Function to call a Generic External API (For Custom/Self-Hosted providers only)
-// Note: This is ONLY used if the user manually selects "Custom" provider in settings.
 const sendExternalApiMessage = async (
   endpoint: string,
   modelName: string,
@@ -45,7 +59,6 @@ const sendExternalApiMessage = async (
   systemInstruction: string
 ) => {
   try {
-    // Format payload for generic API endpoints (compatible with standard formats)
     const messages = [
       { role: "system", content: systemInstruction },
       ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.text })),
@@ -54,9 +67,7 @@ const sendExternalApiMessage = async (
 
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: modelName,
         messages: messages,
@@ -65,10 +76,7 @@ const sendExternalApiMessage = async (
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`External API Error: ${response.statusText}`);
-    }
-
+    if (!response.ok) throw new Error(`External API Error: ${response.statusText}`);
     const data = await response.json();
     return data.choices?.[0]?.message?.content || data.message?.content || "No response from external model.";
   } catch (error) {
@@ -96,115 +104,29 @@ const sendN8NMessage = async (
 
     const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
 
-    if (!response.ok) {
-        throw new Error(`n8n Webhook Error: ${response.statusText}`);
-    }
-
+    if (!response.ok) throw new Error(`n8n Webhook Error: ${response.statusText}`);
     const data = await response.json();
     
-    // Check for common output fields n8n users typically map to
     if (data.output && typeof data.output === 'string') return data.output;
     if (data.text && typeof data.text === 'string') return data.text;
     if (data.response && typeof data.response === 'string') return data.response;
     if (data.message && typeof data.message === 'string') return data.message;
-    
-    // If n8n returns a generic object that looks like standard format
     if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
 
-    return JSON.stringify(data); // Fallback to raw JSON if no text field found
+    return JSON.stringify(data);
   } catch (error) {
     console.error("n8n Error:", error);
     throw error;
   }
 };
 
-// Helper: Ensure strict User -> Model -> User alternation for Gemini
-const formatHistoryForGemini = (history: { role: string; text: string }[], newMessage: string) => {
-  const raw = [...history, { role: 'user', text: newMessage }];
-  const formatted: { role: string; parts: { text: string }[] }[] = [];
-  
-  for (const msg of raw) {
-      // Normalize role: Gemini uses 'user' and 'model'
-      const role = msg.role === 'model' ? 'model' : 'user';
-      
-      if (formatted.length > 0 && formatted[formatted.length - 1].role === role) {
-          // Merge consecutive messages of the same role
-          formatted[formatted.length - 1].parts[0].text += `\n\n${msg.text}`;
-      } else {
-          formatted.push({ role, parts: [{ text: msg.text }] });
-      }
-  }
-  return formatted;
-};
-
-export const sendChatMessage = async (
-  history: { role: string; text: string }[], 
-  newMessage: string, 
-  language: Language,
-  userProfile?: UserProfile | null
-) => {
-  const t = TRANSLATIONS[language];
-  const systemInstruction = t.systemInstruction;
-
-  // Check Provider - ONLY use external APIs if user explicitly configured them
-  if (userProfile?.aiProvider === AIProvider.N8N && userProfile.customEndpoint) {
-      return await sendN8NMessage(userProfile.customEndpoint, history, newMessage, systemInstruction, userProfile);
-  }
-
-  if (userProfile?.aiProvider === AIProvider.CUSTOM && userProfile.customEndpoint) {
-    const endpoint = userProfile.customEndpoint;
-    const modelName = userProfile.customModelName || "llama3";
-    return await sendExternalApiMessage(endpoint, modelName, history, newMessage, systemInstruction);
-  }
-
-  // --- DEFAULT: GOOGLE GEMINI ---
-  try {
-    const ai = getAIClient();
-    const contents = formatHistoryForGemini(history, newMessage);
-
-    // Attempt 1: Use Gemini 2.0 Flash
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash', 
-        contents: contents,
-        config: { systemInstruction: systemInstruction }
-    });
-    return response.text;
-  } catch (error: any) {
-    console.warn("Primary model failed. Checking error...", error);
-    
-    // Check if it's an API Key error
-    if (error.message?.includes('API Key') || error.message?.includes('403') || error.message?.includes('400')) {
-         throw new Error("System API Key Issue. Please contact support.");
-    }
-    
-    try {
-        const ai = getAIClient();
-        // Attempt 2: Fallback
-        const response = await ai.models.generateContent({
-            model: 'gemini-flash-latest',
-            contents: formatHistoryForGemini(history, newMessage), // Re-format
-            config: { systemInstruction: systemInstruction }
-        });
-        return response.text;
-    } catch (fallbackError: any) {
-        console.error("All Gemini models failed:", fallbackError);
-         if (fallbackError.message?.includes('API Key')) {
-            throw new Error("System API Key Issue. Please contact support.");
-        }
-        throw new Error(`Gemini API Error: ${error.message || "Network Error"}`);
-    }
-  }
-};
-
 export class LiveSessionManager {
   language: Language;
-  sessionPromise: any;
+  ws: WebSocket | null;
   inputContext: AudioContext | null;
   outputContext: AudioContext | null;
   inputSource: MediaStreamAudioSourceNode | null;
@@ -220,7 +142,7 @@ export class LiveSessionManager {
 
   constructor(language: Language) { 
     this.language = language;
-    this.sessionPromise = null;
+    this.ws = null;
     this.inputContext = null;
     this.outputContext = null;
     this.inputSource = null;
@@ -242,41 +164,63 @@ export class LiveSessionManager {
     const t = TRANSLATIONS[this.language];
 
     try {
-      const ai = getAIClient(); // This will throw if no key is found
-      
       this.inputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       this.outputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Using Gemini 2.5 Flash Native Audio Preview (Multimodal Live)
-      this.sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-        callbacks: {
-          onopen: () => { this.startAudioStreaming(createBlobFn); if (this.onConnect) this.onConnect(); },
-          onmessage: async (message: LiveServerMessage) => {
-            if (message.serverContent?.outputTranscription) {
-                const text = message.serverContent.outputTranscription.text;
+      // Connect to Backend WebSocket
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      this.ws = new WebSocket(wsUrl);
+
+      this.ws.onopen = () => {
+        // Send Config
+        this.ws?.send(JSON.stringify({
+            type: 'config',
+            systemInstruction: t.voiceSystemInstruction,
+            voiceName: 'Kore'
+        }));
+      };
+
+      this.ws.onmessage = async (event) => {
+        const message = JSON.parse(event.data);
+
+        if (message.type === 'connected') {
+            this.startAudioStreaming(createBlobFn);
+            if (this.onConnect) this.onConnect();
+            return;
+        }
+
+        if (message.error) {
+            if (this.onError) this.onError(message.error);
+            return;
+        }
+
+        // Handle LiveServerMessage structure
+        const serverContent = message.serverContent;
+        if (serverContent) {
+            if (serverContent.outputTranscription) {
+                const text = serverContent.outputTranscription.text;
                 if (text && this.onTranscript) this.onTranscript(text, false);
-            } else if (message.serverContent?.inputTranscription) {
-                const text = message.serverContent.inputTranscription.text;
+            } else if (serverContent.inputTranscription) {
+                const text = serverContent.inputTranscription.text;
                 if (text && this.onTranscript) this.onTranscript(text, true);
             }
-            const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+            
+            const base64Audio = serverContent.modelTurn?.parts?.[0]?.inlineData?.data;
             if (base64Audio && this.outputContext) {
               const audioBuffer = await decodeAudioDataFn(decodeFn(base64Audio), this.outputContext, 24000, 1);
               this.playAudio(audioBuffer);
             }
-            if (message.serverContent?.interrupted) this.stopCurrentAudio();
-          },
-          onclose: () => { this.cleanup(); if (this.onDisconnect) this.onDisconnect(); },
-          onerror: (err: any) => { if (this.onError) this.onError(err); this.cleanup(); }
-        },
-        config: {
-          responseModalities: [Modality.AUDIO], outputAudioTranscription: {}, inputAudioTranscription: {},
-          systemInstruction: t.voiceSystemInstruction, speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
+            
+            if (serverContent.interrupted) this.stopCurrentAudio();
         }
-      });
+      };
+
+      this.ws.onclose = () => { this.cleanup(); if (this.onDisconnect) this.onDisconnect(); };
+      this.ws.onerror = (err) => { if (this.onError) this.onError(err); this.cleanup(); };
+
     } catch (e) { if (this.onError) this.onError(e); }
   }
 
@@ -288,8 +232,12 @@ export class LiveSessionManager {
       const inputData = e.inputBuffer.getChannelData(0);
       let sum = 0; for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
       if (this.onAudioLevel) this.onAudioLevel(Math.sqrt(sum / inputData.length));
+      
       const pcmBlob = createBlobFn(inputData);
-      this.sessionPromise?.then((session: any) => { session.sendRealtimeInput({ media: pcmBlob }); });
+      // Send to WebSocket
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({ realtimeInput: { media: pcmBlob } }));
+      }
     };
     this.inputSource.connect(this.processor);
     this.processor.connect(this.inputContext.destination);
@@ -313,7 +261,12 @@ export class LiveSessionManager {
       if (this.outputContext) this.nextStartTime = this.outputContext.currentTime;
   }
 
-  disconnect() { this.sessionPromise?.then((session: any) => session.close()); this.cleanup(); }
+  disconnect() { 
+      if (this.ws) {
+          this.ws.close();
+      }
+      this.cleanup(); 
+  }
 
   cleanup() {
       this.processor?.disconnect(); this.inputSource?.disconnect();
@@ -321,5 +274,6 @@ export class LiveSessionManager {
       this.inputContext?.close(); this.outputContext?.close();
       this.inputContext = null; this.outputContext = null; this.stream = null; this.processor = null;
       this.sources.clear(); this.nextStartTime = 0;
+      this.ws = null;
   }
 }
