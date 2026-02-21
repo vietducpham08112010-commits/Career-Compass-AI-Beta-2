@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Language, Theme, AppMode, DashboardTab, ChatMessage, ChatSession, AuthState, Transcript, UserProfile, AIProvider } from './types';
 import { AVATARS, CAREER_TAGS, CAREER_QUOTES, SUGGESTION_PROMPTS, TRANSLATIONS, HOT_INDUSTRIES } from './constants';
@@ -5,6 +6,8 @@ import { sendChatMessage, LiveSessionManager } from './services/geminiService';
 import { decode, encode, decodeAudioData, createPcmBlob } from './utils/audio';
 import { Visualizer } from './components/Visualizer';
 import emailjs from '@emailjs/browser';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 
 // --- CONFIGURATION ---
 const EMAILJS_CONFIG = {
@@ -13,8 +16,32 @@ const EMAILJS_CONFIG = {
   PUBLIC_KEY: '8ABxIIEqUTEI3I-oL'
 };
 
+// --- FIREBASE CONFIGURATION ---
+// Restoring hardcoded config to ensure the app runs immediately for you.
+const firebaseConfig = {
+  apiKey: "AIzaSyCT-Aw--rfLeQQVVy_ozrmQJ7dFwVGaa3Q",
+  authDomain: "career-compass-ai-40718.firebaseapp.com",
+  projectId: "career-compass-ai-40718",
+  storageBucket: "career-compass-ai-40718.firebasestorage.app",
+  messagingSenderId: "20883129610",
+  appId: "1:20883129610:web:f88ef27af7f011858526f3",
+  measurementId: "G-CWQHNXHX5R"
+};
+
+// Initialize Firebase safely
+let firebaseAuth: any;
+let googleProvider: any;
+try {
+    const app = initializeApp(firebaseConfig);
+    firebaseAuth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+} catch (error) {
+    console.warn("Firebase initialization failed:", error);
+}
+
 // --- Icons ---
 const Icons = {
+  Home: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   Microphone: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
   MessageSquare: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
   User: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
@@ -45,7 +72,8 @@ const Icons = {
   BookOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
   Eye: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
   EyeOff: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
-  Server: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+  Server: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
+  Key: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
 };
 
 // --- IMPRESSIVE FUTURISTIC COMPASS LOGO ---
@@ -139,7 +167,8 @@ const getThinkingMessage = (input: string, lang: Language) => {
 // --- Main Component ---
 export default function App() {
   const [lang, setLang] = useState<Language>(Language.EN);
-  const [theme, setTheme] = useState<Theme>(Theme.DARK);
+  // Default to LIGHT theme to avoid "black screen" feeling
+  const [theme, setTheme] = useState<Theme>(Theme.LIGHT);
   const [mode, setMode] = useState<AppMode>(AppMode.LANDING);
   const [tab, setTab] = useState<DashboardTab>(DashboardTab.CHAT);
   
@@ -183,7 +212,7 @@ export default function App() {
   // Custom Model State
   const [customEndpoint, setCustomEndpoint] = useState('http://localhost:11434/v1/chat/completions');
   const [customModelName, setCustomModelName] = useState('llama3');
-
+  
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
@@ -198,13 +227,39 @@ export default function App() {
       } catch (e) { console.error("EmailJS Init Error", e); }
   }, []);
   
-  // Sync custom model state with auth user if available
+  // Listen for Firebase Auth State Changes
+  useEffect(() => {
+      if (!firebaseAuth) return;
+      const unsubscribe = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
+          if (firebaseUser) {
+              const user: UserProfile = {
+                  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "User",
+                  email: firebaseUser.email || "",
+                  avatar: firebaseUser.photoURL || AVATARS[Math.floor(Math.random() * AVATARS.length)],
+                  careerGoal: 'Undecided',
+                  isGuest: false,
+                  aiProvider: AIProvider.GEMINI
+              };
+              
+              setAuth({ isAuthenticated: true, user });
+              localStorage.setItem('currentUser', JSON.stringify(user));
+              
+              if (mode === AppMode.AUTH) {
+                  setMode(AppMode.DASHBOARD);
+              }
+          } else {
+              setAuth({ isAuthenticated: false, user: null });
+          }
+      });
+      return () => unsubscribe();
+  }, [mode]);
+
   useEffect(() => {
       if (auth.user?.customEndpoint) setCustomEndpoint(auth.user.customEndpoint);
       if (auth.user?.customModelName) setCustomModelName(auth.user.customModelName);
   }, [auth.user]);
 
-  // Handle URL Query Params for Reset Token (Keep for legacy/link compatibility)
+  // Handle URL Query Params for Reset Token
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
@@ -212,7 +267,6 @@ export default function App() {
     if (token) {
         try {
             const decoded = JSON.parse(atob(token));
-            // Check expiry
             if (decoded.expiry > Date.now()) {
                 setResetTokenEmail(decoded.email);
                 setMode(AppMode.AUTH);
@@ -228,16 +282,18 @@ export default function App() {
             setMode(AppMode.AUTH);
             setAuthType('login');
         }
-        // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
   useEffect(() => {
       const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-          setAuth({ isAuthenticated: true, user: JSON.parse(storedUser) });
-          setMode(AppMode.DASHBOARD);
+      if (storedUser && !firebaseAuth?.currentUser) { 
+          const userObj = JSON.parse(storedUser);
+          if (userObj.isGuest) {
+              setAuth({ isAuthenticated: true, user: userObj });
+              setMode(AppMode.DASHBOARD);
+          }
       }
   }, []);
 
@@ -327,37 +383,22 @@ export default function App() {
   
   const handleGoogleLogin = async () => {
     setAuthError('');
-    setIsGoogleLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const mockGoogleUser: UserProfile = {
-        name: "Google User (Demo)",
-        email: "demo.google@gmail.com",
-        // @ts-ignore
-        password: "", 
-        careerGoal: 'Undecided', 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=GoogleUser",
-        isGuest: false,
-        aiProvider: AIProvider.GEMINI
-    };
-
-    localStorage.setItem('currentUser', JSON.stringify(mockGoogleUser));
-    
-    // Also save to users list if not exists so they can re-login later technically
-    const users = getUsers();
-    if (!users.find(u => u.email === mockGoogleUser.email)) {
-        users.push(mockGoogleUser);
-        localStorage.setItem('users', JSON.stringify(users));
+    if (!firebaseAuth || !googleProvider) {
+        setAuthError("Firebase not configured. Please check console.");
+        return;
     }
 
-    setAuth({ isAuthenticated: true, user: mockGoogleUser });
-    setMode(AppMode.DASHBOARD);
-    setIsGoogleLoading(false);
+    setIsGoogleLoading(true);
+    try {
+        await signInWithPopup(firebaseAuth, googleProvider);
+    } catch (error: any) {
+        console.error("Google Auth Error", error);
+        setAuthError(`Login Failed: ${error.message}`);
+    } finally {
+        setIsGoogleLoading(false);
+    }
   };
   
-  // Send Verification Code (ACTUAL Implementation with Random Code)
   const handleSendResetCode = async (e: React.FormEvent) => {
       e.preventDefault();
       setAuthError('');
@@ -368,15 +409,8 @@ export default function App() {
       const users = getUsers();
       let user = users.find(u => u.email === email);
       
-      // Auto-Register demo user for testing
       if (!user && (email === 'demo@example.com' || email.includes('test'))) {
-           user = { 
-               name: 'Demo User', 
-               email: email, 
-               password: 'password123', 
-               careerGoal: 'Undecided', 
-               avatar: getRandomAvatar() 
-           };
+           user = { name: 'Demo User', email: email, password: 'password123', careerGoal: 'Undecided', avatar: getRandomAvatar() };
            users.push(user);
            localStorage.setItem('users', JSON.stringify(users));
       }
@@ -386,23 +420,14 @@ export default function App() {
       setResetTokenEmail(user.email);
       setIsResetSending(true);
 
-      // GENERATE RANDOM 8-DIGIT CODE
       const randomCode = Math.floor(10000000 + Math.random() * 90000000).toString();
       setGeneratedResetCode(randomCode);
 
       try {
-          // ACTUALLY SEND THE EMAIL via EmailJS
-          // Ensure your EmailJS template accepts {{code}} or {{message}} variables
           await emailjs.send(
             EMAILJS_CONFIG.SERVICE_ID,
             EMAILJS_CONFIG.TEMPLATE_ID,
-            {
-                to_email: email, // Targeted email
-                reply_to: email, 
-                message: `Your verification code is: ${randomCode}`, // Fallback message
-                code: randomCode, // Specific variable for the code
-                to_name: user.name || 'User'
-            }
+            { to_email: email, reply_to: email, message: `Your verification code is: ${randomCode}`, code: randomCode, to_name: user.name || 'User' }
           );
           
           setIsResetSent(true);
@@ -415,15 +440,13 @@ export default function App() {
       }
   };
 
-  // Verify Code
   const handleVerifyCode = (e: React.FormEvent) => {
       e.preventDefault();
       setIsVerifyingCode(true);
-      
       setTimeout(() => {
           if (resetCodeInput === generatedResetCode) {
               setAuthType('new-password');
-              setResetCodeInput(''); // Clear for security
+              setResetCodeInput(''); 
           } else {
               setAuthError('Invalid verification code.');
           }
@@ -452,9 +475,9 @@ export default function App() {
           alert("Password updated successfully! Please login.");
           setAuthType('login');
           setAuthError('');
-          setIsResetSent(false); // Reset flow state
+          setIsResetSent(false); 
           setResetCodeInput('');
-          setGeneratedResetCode(null); // Clear the code
+          setGeneratedResetCode(null); 
       } else {
           setAuthError("User not found.");
       }
@@ -470,7 +493,12 @@ export default function App() {
       updateUserProfile({ avatar: getRandomAvatar() });
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+        if (firebaseAuth) await signOut(firebaseAuth);
+    } catch (e) {
+        console.error("Firebase logout error", e);
+    }
     localStorage.removeItem('currentUser');
     setAuth({ isAuthenticated: false, user: null });
     setMode(AppMode.LANDING);
@@ -499,20 +527,18 @@ export default function App() {
 
   const handleSendMessage = async (e?: React.FormEvent, overrideText?: string) => {
     if (e) e.preventDefault();
-    if (isChatLoading) return; // Prevent double submission
+    if (isChatLoading) return; 
     
     const textToSend = overrideText || inputMsg;
     if (!textToSend.trim()) return;
     if (!overrideText) setInputMsg('');
     
-    // Set dynamic thinking text based on input
     setThinkingText(getThinkingMessage(textToSend, lang));
     
     const newMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: textToSend, timestamp: new Date() };
     setMessages(prev => [...prev, newMsg]);
     setIsChatLoading(true);
     try {
-      // IMPORTANT: Filter out previous error messages from history to prevent context pollution
       const history = messages
         .filter(m => !m.text.startsWith('⚠️ Error'))
         .map(m => ({ role: m.role, text: m.text }));
@@ -520,10 +546,13 @@ export default function App() {
       const responseText = await sendChatMessage(history, textToSend, lang, auth.user);
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText || '', timestamp: new Date() }]);
     } catch (error: any) {
-        // Show clearer error message
         const errorMsg = error.message || JSON.stringify(error) || t.error;
         console.error("Chat Error UI:", error);
-        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `⚠️ Error: ${errorMsg}\n(Please check your connection or try again later)`, timestamp: new Date() }]);
+        if (errorMsg.includes("API Key")) {
+             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `⚠️ ${errorMsg}\n\nSystem API Key Issue. Please contact support.`, timestamp: new Date() }]);
+        } else {
+             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `⚠️ Error: ${errorMsg}\n(Please check your connection or try again later)`, timestamp: new Date() }]);
+        }
     } finally { setIsChatLoading(false); }
   };
 
@@ -571,7 +600,7 @@ export default function App() {
 
   useEffect(() => { return () => { liveSessionRef.current?.disconnect(); }; }, []);
   
-  // Save Custom Model Settings
+  // Save Custom Model Settings including User API Key
   const saveCustomSettings = () => {
       updateUserProfile({ 
           customEndpoint, 
@@ -585,7 +614,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-white dark:bg-[#050505] text-slate-900 dark:text-white transition-colors duration-500 overflow-x-hidden">
         <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-sm bg-white/70 dark:bg-[#050505]/70 border-b border-gray-200 dark:border-white/5">
-          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => window.location.reload()}>
+          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => { setMode(AppMode.LANDING); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
             <div className="group-hover:rotate-180 transition-transform duration-700">
                 <CompassLogo className="w-8 h-8" />
             </div>
@@ -599,8 +628,18 @@ export default function App() {
              <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
                 {theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}
               </button>
-             <button onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} className="hidden md:block font-medium hover:text-indigo-500 transition-colors">{t.login}</button>
-             <button onClick={() => { setMode(AppMode.AUTH); setAuthType('register'); }} className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold hover:scale-105 transition-transform hover:shadow-lg hover:shadow-indigo-500/20">{t.getStarted}</button>
+             
+             {auth.isAuthenticated && !auth.user?.isGuest ? (
+                 <button onClick={() => setMode(AppMode.DASHBOARD)} className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold hover:scale-105 transition-transform hover:shadow-lg hover:shadow-indigo-500/20 flex items-center gap-2">
+                    <Icons.Briefcase className="w-4 h-4" />
+                    Dashboard
+                 </button>
+             ) : (
+                 <>
+                    <button onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} className="hidden md:block font-medium hover:text-indigo-500 transition-colors">{t.login}</button>
+                    <button onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold hover:scale-105 transition-transform hover:shadow-lg hover:shadow-indigo-500/20">{t.getStarted}</button>
+                 </>
+             )}
           </div>
         </nav>
 
@@ -625,12 +664,27 @@ export default function App() {
             <p className="text-xl text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed">
               {t.subTagline}
             </p>
+            
+            {auth.isAuthenticated && !auth.user?.isGuest && (
+                <p className="text-indigo-600 dark:text-indigo-400 font-medium mb-2 animate-fade-in-up">
+                    {t.continueJourney} {auth.user?.name.split(' ')[0]}?
+                </p>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={() => { setMode(AppMode.AUTH); setAuthType('register'); }} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1">{t.getStarted}</button>
-              <button onClick={handleGuestLogin} className="px-8 py-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2 backdrop-blur-sm">
-                <Icons.Zap className="w-5 h-5 text-yellow-500" />
-                {t.guestLogin}
-              </button>
+              {auth.isAuthenticated && !auth.user?.isGuest ? (
+                  <button onClick={() => setMode(AppMode.DASHBOARD)} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1 flex items-center justify-center gap-2">
+                      {t.goToDashboard} <Icons.ArrowRight className="w-5 h-5" />
+                  </button>
+              ) : (
+                  <>
+                    <button onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1">{t.getStarted}</button>
+                    <button onClick={handleGuestLogin} className="px-8 py-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2 backdrop-blur-sm">
+                        <Icons.Zap className="w-5 h-5 text-yellow-500" />
+                        {t.guestLogin}
+                    </button>
+                  </>
+              )}
             </div>
           </div>
         </section>
@@ -827,7 +881,6 @@ export default function App() {
                                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Confirm Password</label>
                                 <div className="relative">
                                     <input ref={confirmPasswordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="••••••••" />
-                                     {/* Reusing showPassword state for simplicity, or could add separate state */}
                                 </div>
                             </div>
                         </>
@@ -880,10 +933,10 @@ export default function App() {
   const renderDashboard = () => (
     <div className="flex h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden transition-colors duration-300 relative font-sans">
       <aside className="hidden md:flex w-72 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-lg flex-col transition-colors duration-300 h-full border-r border-gray-200 dark:border-white/5 z-10">
-        <div className="p-6 flex items-center gap-3">
+        <button onClick={() => setMode(AppMode.LANDING)} className="p-6 flex items-center gap-3 w-full text-left hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
             <CompassLogo className="w-8 h-8" />
             <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">Career Compass</span>
-        </div>
+        </button>
         <div className="px-4 mb-2"><button onClick={startNewChat} className="w-full flex items-center gap-3 px-4 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl hover:scale-[1.02] active:scale-95 transition-all font-bold shadow-lg"><span className="text-xl leading-none">+</span> {t.newChat}</button></div>
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             <button onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.MessageSquare className="w-5 h-5" /><span>{t.chatMode}</span></button>
@@ -898,7 +951,7 @@ export default function App() {
         </div>
       </aside>
       <main className="flex-1 flex flex-col h-full relative w-full bg-white dark:bg-[#050505] z-10">
-        <header className="md:hidden h-16 bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20"><div className="flex items-center gap-2"><CompassLogo className="w-8 h-8" /><span className="font-bold text-gray-800 dark:text-white">Career Compass</span></div><div className="flex gap-2"><button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400">{theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}</button><button onClick={() => setTab(DashboardTab.CHAT)} className={`p-2 rounded-lg ${tab === DashboardTab.CHAT ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500'}`}><Icons.MessageSquare className="w-5 h-5"/></button><button onClick={handleLogout} className="p-2 text-red-500"><Icons.LogOut className="w-5 h-5"/></button></div></header>
+        <header className="md:hidden h-16 bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20"><button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-2"><CompassLogo className="w-8 h-8" /><span className="font-bold text-gray-800 dark:text-white">Career Compass</span></button><div className="flex gap-2"><button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400">{theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}</button><button onClick={() => setTab(DashboardTab.CHAT)} className={`p-2 rounded-lg ${tab === DashboardTab.CHAT ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500'}`}><Icons.MessageSquare className="w-5 h-5"/></button><button onClick={handleLogout} className="p-2 text-red-500"><Icons.LogOut className="w-5 h-5"/></button></div></header>
         {tab === DashboardTab.CHAT && (
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
@@ -931,11 +984,9 @@ export default function App() {
                     {isChatLoading && (
                         <div className="flex w-full justify-start items-center">
                             <div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center mt-1">
-                                {/* Pass isThinking=true to animate the logo */}
                                 <CompassLogo className="w-5 h-5 text-white" isThinking={true} />
                             </div>
                             <div className="px-6 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5">
-                                {/* Use the dynamic thinkingText */}
                                 <ShimmerText text={thinkingText} />
                             </div>
                         </div>
@@ -1006,7 +1057,7 @@ export default function App() {
                                 <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className="w-full px-6 py-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"><option value={Language.EN}>English</option><option value={Language.VI}>Tiếng Việt</option></select>
                             </div>
                             
-                            {/* --- CUSTOM MODEL SETTINGS (Self-Hosted) --- */}
+                            {/* --- AI CONFIGURATION --- */}
                             <div className="p-6 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                     <Icons.Server className="w-5 h-5 text-indigo-500" />

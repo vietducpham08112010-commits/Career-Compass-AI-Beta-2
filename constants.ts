@@ -1,3 +1,4 @@
+
 import { Language } from './types';
 
 export const AVATARS = [
@@ -112,7 +113,7 @@ export const SUGGESTION_PROMPTS = [
 
 export const TRANSLATIONS = {
   [Language.EN]: {
-    appName: 'Career Compass AI', tagline: 'Career guidance for everyone.', subTagline: 'Pause or cancel your confusion anytime. Available 24/7.', getStarted: 'Get Started', login: 'Login', register: 'Register', guestLogin: 'Try as Guest', email: 'Email Address', password: 'Password', forgotPassword: 'Forgot Password?', loginWithGoogle: 'Login with Google', or: 'or', dontHaveAccount: "Don't have an account?", alreadyHaveAccount: 'Already have an account?', chatMode: 'Chat Consultant', voiceMode: 'Live Consultation', profile: 'My Profile', welcomeBack: 'Welcome Back,', greeting: "I'm your AI career counselor. Ask me anything.", greetingSub: "I can help you identify strengths, explore passions, and plan your career path.", typeMessage: 'Type your career question...', startVoice: 'Start Live Conversation', endVoice: 'End Conversation', listening: 'Listening...', speaking: 'Speaking...', connecting: 'Connecting to Career Compass...', disconnecting: 'Disconnecting...', micPermission: 'Please allow microphone access to use voice mode.', error: 'An error occurred. Please try again.', hotIndustries: 'Trending Industries', dailyQuote: 'Daily Inspiration', chatHistory: 'Chat History', switchToVoice: 'Switch to Live Voice', newChat: 'New Chat', footerDisclaimer: 'AI can make mistakes. All information is for reference only, the decision is yours.', thinking: 'Thinking...', profileName: 'Full Name', careerGoal: 'Career Goal', prefLang: 'Preferred Language', saveChanges: 'Save Changes', guestMode: 'Guest Mode', selectMic: 'Select Microphone', transcript: 'Live Transcript',
+    appName: 'Career Compass AI', home: 'Home', tagline: 'Career guidance for everyone.', subTagline: 'Pause or cancel your confusion anytime. Available 24/7.', getStarted: 'Get Started', login: 'Login', register: 'Register', guestLogin: 'Try as Guest', email: 'Email Address', password: 'Password', forgotPassword: 'Forgot Password?', loginWithGoogle: 'Login with Google', or: 'or', dontHaveAccount: "Don't have an account?", alreadyHaveAccount: 'Already have an account?', chatMode: 'Chat Consultant', voiceMode: 'Live Consultation', profile: 'My Profile', welcomeBack: 'Welcome Back,', greeting: "I'm your AI career counselor. Ask me anything.", greetingSub: "I can help you identify strengths, explore passions, and plan your career path.", typeMessage: 'Type your career question...', startVoice: 'Start Live Conversation', endVoice: 'End Conversation', listening: 'Listening...', speaking: 'Speaking...', connecting: 'Connecting to Career Compass...', disconnecting: 'Disconnecting...', micPermission: 'Please allow microphone access to use voice mode.', error: 'An error occurred. Please try again.', hotIndustries: 'Trending Industries', dailyQuote: 'Daily Inspiration', chatHistory: 'Chat History', switchToVoice: 'Switch to Live Voice', newChat: 'New Chat', footerDisclaimer: 'AI can make mistakes. All information is for reference only, the decision is yours.', thinking: 'Thinking...', profileName: 'Full Name', careerGoal: 'Career Goal', prefLang: 'Preferred Language', saveChanges: 'Save Changes', guestMode: 'Guest Mode', selectMic: 'Select Microphone', transcript: 'Live Transcript',
     
     // Auth - Forgot Password
     resetPasswordTitle: 'Reset Password',
@@ -122,7 +123,7 @@ export const TRANSLATIONS = {
     linkSent: 'Success! Please check your email for the reset link.',
 
     // AI Config
-    aiConfigTitle: 'AI Model Configuration (Advanced)',
+    aiConfigTitle: 'AI Model Configuration',
     aiProvider: 'AI Provider',
     providerGemini: 'Google Gemini',
     providerCustom: 'Custom (OpenAI)',
@@ -132,13 +133,15 @@ export const TRANSLATIONS = {
     endpointNote: 'Compatible with Ollama, vLLM, or LM Studio.',
     n8nNote: 'Requires a Webhook node (POST) returning a JSON property "output" or "text".',
     modelName: 'Model Name',
-
+    
     // New Translations
     heroBadge: 'AI-Powered Guidance',
     heroTitlePrefix: 'Career clarity for ',
     heroTitleSuffix: 'everyone',
     hotIndustriesTitle: 'Future-Proof Your Career',
     hotIndustriesSub: 'Discover high-growth industries where our AI can help you navigate and land your dream role.',
+    continueJourney: 'Ready to continue your journey,',
+    goToDashboard: 'Go to Dashboard',
     
     // Feature Translations - UPDATED
     featureVoiceTitle: 'Direct 1-on-1 Consultation',
@@ -158,7 +161,7 @@ export const TRANSLATIONS = {
     voiceSystemInstruction: 'You are an expert career counselor. Engage in a natural, spoken conversation. Keep your responses relatively short and conversational, as this is a real-time voice chat.'
   },
   [Language.VI]: {
-    appName: 'Career Compass AI', tagline: 'Hướng nghiệp cho mọi người.', subTagline: 'Xóa tan mọi sự bối rối về sự nghiệp. Sẵn sàng 24/7.', getStarted: 'Bắt đầu ngay', login: 'Đăng nhập', register: 'Đăng ký', guestLogin: 'Dùng thử ngay', email: 'Địa chỉ Email', password: 'Mật khẩu', forgotPassword: 'Quên mật khẩu?', loginWithGoogle: 'Đăng nhập bằng Google', or: 'hoặc', dontHaveAccount: "Chưa có tài khoản?", alreadyHaveAccount: 'Đã có tài khoản?', chatMode: 'Trợ lý Chat', voiceMode: 'Hội thoại trực tiếp', profile: 'Hồ sơ cá nhân', welcomeBack: 'Chào mừng trở lại,', greeting: "Tôi là trợ lý hướng nghiệp AI của bạn. Hãy hỏi tôi bất cứ điều gì.", greetingSub: "Tôi có thể giúp bạn xác định điểm mạnh, khám phá đam mê và lập kế hoạch sự nghiệp.", typeMessage: 'Nhập câu hỏi của bạn...', startVoice: 'Bắt đầu cuộc gọi', endVoice: 'Kết thúc cuộc gọi', listening: 'Đang nghe...', speaking: 'Đang nói...', connecting: 'Đang kết nối...', disconnecting: 'Đang ngắt kết nối...', micPermission: 'Vui lòng cho phép truy cập micro.', error: 'Đã xảy ra lỗi. Vui lòng thử lại.', hotIndustries: 'Xu hướng nghề nghiệp', dailyQuote: 'Cảm Hứng Mỗi Ngày', chatHistory: 'Lịch sử trò chuyện', switchToVoice: 'Chuyển sang hội thoại', newChat: 'Cuộc trò chuyện mới', footerDisclaimer: 'AI có thể gây ra sai sót, mọi thông tin chỉ mang tính chất tham khảo, quyền quyết định thuộc về bạn.', thinking: 'Đang suy nghĩ...', profileName: 'Họ và tên', careerGoal: 'Mục tiêu sự nghiệp', prefLang: 'Ngôn ngữ ưu tiên', saveChanges: 'Lưu thay đổi', guestMode: 'Chế độ khách', selectMic: 'Chọn Micro', transcript: 'Hội thoại trực tiếp',
+    appName: 'Career Compass AI', home: 'Trang chủ', tagline: 'Hướng nghiệp cho mọi người.', subTagline: 'Xóa tan mọi sự bối rối về sự nghiệp. Sẵn sàng 24/7.', getStarted: 'Bắt đầu ngay', login: 'Đăng nhập', register: 'Đăng ký', guestLogin: 'Dùng thử ngay', email: 'Địa chỉ Email', password: 'Mật khẩu', forgotPassword: 'Quên mật khẩu?', loginWithGoogle: 'Đăng nhập bằng Google', or: 'hoặc', dontHaveAccount: "Chưa có tài khoản?", alreadyHaveAccount: 'Đã có tài khoản?', chatMode: 'Trợ lý Chat', voiceMode: 'Hội thoại trực tiếp', profile: 'Hồ sơ cá nhân', welcomeBack: 'Chào mừng trở lại,', greeting: "Tôi là trợ lý hướng nghiệp AI của bạn. Hãy hỏi tôi bất cứ điều gì.", greetingSub: "Tôi có thể giúp bạn xác định điểm mạnh, khám phá đam mê và lập kế hoạch sự nghiệp.", typeMessage: 'Nhập câu hỏi của bạn...', startVoice: 'Bắt đầu cuộc gọi', endVoice: 'Kết thúc cuộc gọi', listening: 'Đang nghe...', speaking: 'Đang nói...', connecting: 'Đang kết nối...', disconnecting: 'Đang ngắt kết nối...', micPermission: 'Vui lòng cho phép truy cập micro.', error: 'Đã xảy ra lỗi. Vui lòng thử lại.', hotIndustries: 'Xu hướng nghề nghiệp', dailyQuote: 'Cảm Hứng Mỗi Ngày', chatHistory: 'Lịch sử trò chuyện', switchToVoice: 'Chuyển sang hội thoại', newChat: 'Cuộc trò chuyện mới', footerDisclaimer: 'AI có thể gây ra sai sót, mọi thông tin chỉ mang tính chất tham khảo, quyền quyết định thuộc về bạn.', thinking: 'Đang suy nghĩ...', profileName: 'Họ và tên', careerGoal: 'Mục tiêu sự nghiệp', prefLang: 'Ngôn ngữ ưu tiên', saveChanges: 'Lưu thay đổi', guestMode: 'Chế độ khách', selectMic: 'Chọn Micro', transcript: 'Hội thoại trực tiếp',
     
     // Auth - Forgot Password
     resetPasswordTitle: 'Đặt lại Mật khẩu',
@@ -168,7 +171,7 @@ export const TRANSLATIONS = {
     linkSent: 'Thành công! Vui lòng kiểm tra email của bạn để lấy liên kết.',
 
     // AI Config
-    aiConfigTitle: 'Cấu hình Mô hình AI (Nâng cao)',
+    aiConfigTitle: 'Cấu hình Mô hình AI',
     aiProvider: 'Nhà cung cấp AI',
     providerGemini: 'Google Gemini',
     providerCustom: 'Tùy chỉnh (OpenAI)',
@@ -178,13 +181,15 @@ export const TRANSLATIONS = {
     endpointNote: 'Tương thích với Ollama, vLLM, hoặc LM Studio.',
     n8nNote: 'Yêu cầu Webhook (POST) trả về JSON có thuộc tính "output" hoặc "text".',
     modelName: 'Tên Mô hình',
-
+    
     // New Translations
     heroBadge: 'Định hướng bằng AI',
     heroTitlePrefix: 'Định hướng cho ',
     heroTitleSuffix: 'mọi người',
     hotIndustriesTitle: 'Đón Đầu Tương Lai',
     hotIndustriesSub: 'Khám phá các ngành nghề tăng trưởng cao, nơi AI của chúng tôi có thể giúp bạn định hướng và tìm được công việc mơ ước.',
+    continueJourney: 'Sẵn sàng tiếp tục hành trình,',
+    goToDashboard: 'Vào Dashboard',
 
     // Feature Translations - UPDATED
     featureVoiceTitle: 'Tư vấn 1-1 Trực tiếp',

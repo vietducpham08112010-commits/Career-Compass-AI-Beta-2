@@ -1,12 +1,39 @@
+
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
 
-// Explicitly configured API Key
-// Updated per user request
-const API_KEY = 'AIzaSyD86p_5M0oPf1paYInfQKxbF1Il9HOBkHY';
+// --- DYNAMIC API KEY MANAGEMENT ---
+// This function prioritizes:
+// 1. Random key from environment variable (load balancing/rotation)
+const getDynamicApiKey = (): string => {
+  // Use Environment Variable Pool
+  // Expects keys separated by commas: "KEY_1,KEY_2,KEY_3"
+  const envKeys = process.env.API_KEY || "";
+  
+  if (!envKeys) {
+    // We do NOT throw here immediately to allow the UI to prompt the user
+    // returning empty string will cause GoogleGenAI to throw a specific error we can catch
+    return "";
+  }
 
-export const getAIClient = () => new GoogleGenAI({ apiKey: API_KEY });
+  // Split and Pick Random
+  const keys = envKeys.split(',').map(k => k.trim()).filter(k => k.length > 0);
+  if (keys.length === 0) return "";
+  
+  const randomIndex = Math.floor(Math.random() * keys.length);
+  return keys[randomIndex];
+};
+
+export const getAIClient = () => {
+  const apiKey = getDynamicApiKey();
+  
+  if (!apiKey) {
+    console.error("API Key is missing.");
+    throw new Error("Missing System API Key.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 // Function to call a Generic External API (For Custom/Self-Hosted providers only)
 // Note: This is ONLY used if the user manually selects "Custom" provider in settings.
@@ -137,12 +164,11 @@ export const sendChatMessage = async (
   }
 
   // --- DEFAULT: GOOGLE GEMINI ---
-  const ai = getAIClient();
-  const contents = formatHistoryForGemini(history, newMessage);
-
   try {
-    // Attempt 1: Use Gemini 2.0 Flash (often referred to as 2.5/Pro in terms of performance/cost)
-    // This model is highly efficient and cost-effective.
+    const ai = getAIClient();
+    const contents = formatHistoryForGemini(history, newMessage);
+
+    // Attempt 1: Use Gemini 2.0 Flash
     const response = await ai.models.generateContent({
         model: 'gemini-2.0-flash', 
         contents: contents,
@@ -150,19 +176,28 @@ export const sendChatMessage = async (
     });
     return response.text;
   } catch (error: any) {
-    console.warn("Primary model (gemini-2.0-flash) failed. Attempting fallback...", error);
+    console.warn("Primary model failed. Checking error...", error);
+    
+    // Check if it's an API Key error
+    if (error.message?.includes('API Key') || error.message?.includes('403') || error.message?.includes('400')) {
+         throw new Error("System API Key Issue. Please contact support.");
+    }
     
     try {
-        // Attempt 2: Fallback to the latest stable Flash model if the newer one is region-locked
+        const ai = getAIClient();
+        // Attempt 2: Fallback
         const response = await ai.models.generateContent({
             model: 'gemini-flash-latest',
-            contents: contents,
+            contents: formatHistoryForGemini(history, newMessage), // Re-format
             config: { systemInstruction: systemInstruction }
         });
         return response.text;
     } catch (fallbackError: any) {
         console.error("All Gemini models failed:", fallbackError);
-        throw new Error(`Gemini API Error: ${error.message || "Network Error - Please check your connection or API Key"}`);
+         if (fallbackError.message?.includes('API Key')) {
+            throw new Error("System API Key Issue. Please contact support.");
+        }
+        throw new Error(`Gemini API Error: ${error.message || "Network Error"}`);
     }
   }
 };
@@ -204,10 +239,11 @@ export class LiveSessionManager {
   }
 
   async connect(deviceId: string, decodeAudioDataFn: any, createBlobFn: any, decodeFn: any) {
-    const ai = getAIClient();
     const t = TRANSLATIONS[this.language];
 
     try {
+      const ai = getAIClient(); // This will throw if no key is found
+      
       this.inputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       this.outputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
