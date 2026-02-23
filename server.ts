@@ -11,6 +11,14 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: "/ws" });
 
+server.on('error', (err) => {
+  console.error('HTTP Server Error:', err);
+});
+
+wss.on('error', (err) => {
+  console.error('WebSocket Server Error:', err);
+});
+
 const PORT = 3000;
 const API_KEY = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
 
@@ -168,7 +176,10 @@ wss.on("connection", (ws: WebSocket) => {
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: false
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
@@ -178,9 +189,19 @@ async function startServer() {
     app.use(express.static("dist"));
   }
 
-  server.listen(PORT, "0.0.0.0", () => {
+  const serverInstance = server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+
+  const shutdown = () => {
+    console.log('Shutting down server...');
+    serverInstance.close(() => {
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 startServer();

@@ -38,11 +38,27 @@ export const sendChatMessage = async (
     });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Server Error: ${response.status}`);
+        let errorMsg = `Server Error: ${response.status}`;
+        try {
+            const errorData = await response.json();
+            errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+            // If response is not JSON, it might be an HTML error page
+            const text = await response.text();
+            console.error("Non-JSON error response:", text);
+            errorMsg = `Server Error: ${response.status} - The server is currently unavailable or restarting.`;
+        }
+        throw new Error(errorMsg);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+        data = await response.json();
+    } catch (e) {
+        const text = await response.text();
+        console.error("Invalid JSON response:", text);
+        throw new Error("Received invalid response from server. It might be restarting.");
+    }
     return data.text;
   } catch (error: any) {
     console.error("Chat API Error:", error);
