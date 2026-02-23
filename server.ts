@@ -12,16 +12,22 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server, path: "/ws" });
 
 const PORT = 3000;
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
 
 if (!API_KEY) {
-  console.error("WARNING: GEMINI_API_KEY is missing in environment variables. Chat features will fail.");
+  console.error("WARNING: GEMINI_API_KEY (or AI_API_KEY) is missing in environment variables. Chat features will fail.");
   // Do not exit, allow server to start so UI can load
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key" }); // Prevent crash on init, but calls will fail
 
 app.use(express.json());
+
+// Debug logging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
 // --- Helper Functions ---
 const formatHistoryForGemini = (history: { role: string; text: string }[], newMessage: string) => {
