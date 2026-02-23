@@ -37,36 +37,19 @@ export const sendChatMessage = async (
         })
     });
 
-    if (!response.ok) {
-        let errorMsg = `Server Error: ${response.status}`;
-        try {
-            const text = await response.text();
-            try {
-                const errorData = JSON.parse(text);
-                errorMsg = errorData.error || errorMsg;
-            } catch (e) {
-                console.error("Non-JSON error response:", text);
-                errorMsg = `Server Error: ${response.status} - The server is currently unavailable or restarting.`;
-            }
-        } catch (e) {
-            console.error("Failed to read error response text:", e);
-        }
-        throw new Error(errorMsg);
-    }
-
+    const text = await response.text();
     let data;
     try {
-        const text = await response.text();
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            console.error("Invalid JSON response:", text);
-            throw new Error("Received invalid response from server. It might be restarting.");
-        }
+        data = JSON.parse(text);
     } catch (e) {
-        console.error("Failed to read response text:", e);
-        throw new Error("Failed to read response from server.");
+        console.error("Invalid JSON response:", text);
+        throw new Error(`Server returned invalid response (Status: ${response.status}). It might be restarting.`);
     }
+
+    if (!response.ok) {
+        throw new Error(data.error || `Server Error: ${response.status}`);
+    }
+
     return data.text;
   } catch (error: any) {
     console.error("Chat API Error:", error);
@@ -100,8 +83,18 @@ const sendExternalApiMessage = async (
       })
     });
 
-    if (!response.ok) throw new Error(`External API Error: ${response.statusText}`);
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        throw new Error(`External API returned invalid JSON (Status: ${response.status})`);
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error?.message || data.error || `External API Error: ${response.statusText}`);
+    }
+    
     return data.choices?.[0]?.message?.content || data.message?.content || "No response from external model.";
   } catch (error) {
     console.error("External Model Error:", error);
@@ -132,8 +125,17 @@ const sendN8NMessage = async (
         body: JSON.stringify(payload)
     });
 
-    if (!response.ok) throw new Error(`n8n Webhook Error: ${response.statusText}`);
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        throw new Error(`n8n Webhook returned invalid JSON (Status: ${response.status})`);
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error || `n8n Webhook Error: ${response.statusText}`);
+    }
     
     if (data.output && typeof data.output === 'string') return data.output;
     if (data.text && typeof data.text === 'string') return data.text;
