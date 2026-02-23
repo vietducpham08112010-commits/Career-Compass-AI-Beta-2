@@ -40,24 +40,32 @@ export const sendChatMessage = async (
     if (!response.ok) {
         let errorMsg = `Server Error: ${response.status}`;
         try {
-            const errorData = await response.json();
-            errorMsg = errorData.error || errorMsg;
-        } catch (e) {
-            // If response is not JSON, it might be an HTML error page
             const text = await response.text();
-            console.error("Non-JSON error response:", text);
-            errorMsg = `Server Error: ${response.status} - The server is currently unavailable or restarting.`;
+            try {
+                const errorData = JSON.parse(text);
+                errorMsg = errorData.error || errorMsg;
+            } catch (e) {
+                console.error("Non-JSON error response:", text);
+                errorMsg = `Server Error: ${response.status} - The server is currently unavailable or restarting.`;
+            }
+        } catch (e) {
+            console.error("Failed to read error response text:", e);
         }
         throw new Error(errorMsg);
     }
 
     let data;
     try {
-        data = await response.json();
-    } catch (e) {
         const text = await response.text();
-        console.error("Invalid JSON response:", text);
-        throw new Error("Received invalid response from server. It might be restarting.");
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error("Invalid JSON response:", text);
+            throw new Error("Received invalid response from server. It might be restarting.");
+        }
+    } catch (e) {
+        console.error("Failed to read response text:", e);
+        throw new Error("Failed to read response from server.");
     }
     return data.text;
   } catch (error: any) {
