@@ -65,22 +65,15 @@ app.post("/api/chat", async (req, res) => {
     const contents = formatHistoryForGemini(history || [], message);
 
     try {
-        // Attempt 1: Gemini 2.0 Flash
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-3-flash-preview',
             contents: contents,
             config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
         });
         return res.json({ text: response.text });
     } catch (error: any) {
-        console.warn("Primary model failed, trying fallback...", error.message);
-        // Attempt 2: Fallback
-        const response = await ai.models.generateContent({
-            model: 'gemini-flash-latest',
-            contents: contents,
-            config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
-        });
-        return res.json({ text: response.text });
+        console.error("Model generation failed:", error);
+        throw error;
     }
 
   } catch (error: any) {

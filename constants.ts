@@ -21,7 +21,17 @@ export const AVATARS = [
   "https://api.dicebear.com/7.x/bottts/svg?seed=Robot01",
   "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Happy",
   "https://api.dicebear.com/7.x/thumbs/svg?seed=Buddy",
-  "https://api.dicebear.com/7.x/personas/svg?seed=Maria"
+  "https://api.dicebear.com/7.x/personas/svg?seed=Maria",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Jack",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+  "https://api.dicebear.com/7.x/micah/svg?seed=David",
+  "https://api.dicebear.com/7.x/notionists/svg?seed=Emma",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Bot2",
+  "https://api.dicebear.com/7.x/lorelei/svg?seed=Lily",
+  "https://api.dicebear.com/7.x/open-peeps/svg?seed=Tom",
+  "https://api.dicebear.com/7.x/miniavs/svg?seed=Mia",
+  "https://api.dicebear.com/7.x/big-ears/svg?seed=Noah",
+  "https://api.dicebear.com/7.x/personas/svg?seed=Olivia"
 ];
 
 // Updated to Object for localization
