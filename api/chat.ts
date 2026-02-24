@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.GEMINI_API_KEY || "AIzaSyCA0oLUU2bYKs4_MylRJ1ng_XUpmTOqoKU";
+const API_KEY = process.env.GEMINI_API_KEY || "AIzaSyAaAZZnEFrPt-aIlRVWF-6ThQiLee58Tbg";
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const formatHistoryForGemini = (history: { role: string; text: string }[], newMessage: string) => {

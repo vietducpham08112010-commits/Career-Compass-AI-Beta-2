@@ -249,9 +249,7 @@ export default function App() {
       const unsubscribe = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
           if (firebaseUser) {
               let avatarUrl = firebaseUser.photoURL || AVATARS[Math.floor(Math.random() * AVATARS.length)];
-              if (avatarUrl && avatarUrl.includes('7.x')) {
-                  avatarUrl = avatarUrl.replace('7.x', '9.x');
-              }
+
 
               const user: UserProfile = {
                   name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "User",
@@ -311,9 +309,6 @@ export default function App() {
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser && !firebaseAuth?.currentUser) { 
           const userObj = JSON.parse(storedUser);
-          if (userObj.avatar && userObj.avatar.includes('7.x')) {
-              userObj.avatar = userObj.avatar.replace('7.x', '9.x');
-          }
           if (userObj.isGuest) {
               setAuth({ isAuthenticated: true, user: userObj });
               setMode(AppMode.DASHBOARD);
@@ -397,9 +392,6 @@ export default function App() {
     const user = users.find(u => u.email === email && u.password === password);
 
     if (user) {
-        if (user.avatar && user.avatar.includes('7.x')) {
-            user.avatar = user.avatar.replace('7.x', '9.x');
-        }
         localStorage.setItem('currentUser', JSON.stringify(user));
         setAuth({ isAuthenticated: true, user });
         setMode(AppMode.DASHBOARD);
