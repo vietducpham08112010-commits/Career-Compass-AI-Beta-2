@@ -204,9 +204,37 @@ export default function App() {
       const file = e.target.files?.[0];
       if (file) {
           const reader = new FileReader();
-          reader.onloadend = () => {
-              if (typeof reader.result === 'string') {
-                  updateUserProfile({ avatar: reader.result });
+          reader.onload = (event) => {
+              const img = new Image();
+              img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const MAX_WIDTH = 150;
+                  const MAX_HEIGHT = 150;
+                  let width = img.width;
+                  let height = img.height;
+
+                  if (width > height) {
+                      if (width > MAX_WIDTH) {
+                          height *= MAX_WIDTH / width;
+                          width = MAX_WIDTH;
+                      }
+                  } else {
+                      if (height > MAX_HEIGHT) {
+                          width *= MAX_HEIGHT / height;
+                          height = MAX_HEIGHT;
+                      }
+                  }
+
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext('2d');
+                  ctx?.drawImage(img, 0, 0, width, height);
+                  
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                  updateUserProfile({ avatar: dataUrl });
+              };
+              if (typeof event.target?.result === 'string') {
+                  img.src = event.target.result;
               }
           };
           reader.readAsDataURL(file);
@@ -324,12 +352,17 @@ export default function App() {
       setAuth({ ...auth, user: newUser });
       
       if (!newUser.isGuest) {
-          localStorage.setItem('currentUser', JSON.stringify(newUser));
-          const users = getUsers();
-          const idx = users.findIndex(u => u.email === newUser.email);
-          if (idx !== -1) {
-              users[idx] = newUser;
-              localStorage.setItem('users', JSON.stringify(users));
+          try {
+              localStorage.setItem('currentUser', JSON.stringify(newUser));
+              const users = getUsers();
+              const idx = users.findIndex(u => u.email === newUser.email);
+              if (idx !== -1) {
+                  users[idx] = newUser;
+                  localStorage.setItem('users', JSON.stringify(users));
+              }
+          } catch (e) {
+              console.error("Failed to save user profile to localStorage", e);
+              alert("Failed to save profile. The image might be too large.");
           }
       }
   };
@@ -952,7 +985,7 @@ export default function App() {
             {chatHistory.length > 0 && (<div className="mt-8"><div className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div><div className="space-y-1">{chatHistory.map((session) => (<button key={session.id} onClick={() => loadSession(session)} className="w-full text-left px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg truncate transition-colors">{session.title}</button>))}</div></div>)}
         </nav>
         <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm">
-            <div onClick={changeAvatar} title="Click to change avatar" className="flex items-center gap-3 mb-4 px-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors group"><img src={auth.user?.avatar} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/><div className="overflow-hidden flex-1"><p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p><p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? 'Guest Session' : auth.user?.email}</p></div><Icons.Refresh className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
+            <div onClick={changeAvatar} title="Click to change avatar" className="flex items-center gap-3 mb-4 px-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors group"><img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/><div className="overflow-hidden flex-1"><p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p><p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? 'Guest Session' : auth.user?.email}</p></div><Icons.Refresh className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
              <div className="flex gap-2 mb-2"><button onClick={toggleLang} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 transition-all"><span className="uppercase">{lang}</span></button><button onClick={toggleTheme} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button></div>
             <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"><Icons.LogOut className="w-4 h-4" />Logout</button>
         </div>
@@ -1058,7 +1091,7 @@ export default function App() {
                         <div className="flex items-center gap-8 mb-10">
                             <div className="flex flex-col items-center gap-4">
                                 <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                    <img src={auth.user?.avatar} alt="Profile" referrerPolicy="no-referrer" className="w-28 h-28 rounded-full object-cover border-4 border-gray-100 dark:border-white/5 shadow-xl group-hover:scale-105 transition-transform"/>
+                                    <img src={auth.user?.avatar || AVATARS[0]} alt="Profile" referrerPolicy="no-referrer" className="w-28 h-28 rounded-full object-cover border-4 border-gray-100 dark:border-white/5 shadow-xl group-hover:scale-105 transition-transform"/>
                                     <div className="absolute bottom-0 right-0 w-10 h-10 bg-indigo-600 border-4 border-white dark:border-black rounded-full flex items-center justify-center text-white shadow-lg">
                                         <Icons.Camera className="w-5 h-5" />
                                     </div>
