@@ -1101,6 +1101,23 @@ export default function App() {
                             </div>
                             <div><h3 className="text-3xl font-bold text-gray-900 dark:text-white">{auth.user?.name}</h3><p className="text-gray-500 text-lg">{auth.user?.isGuest ? t.guestMode : auth.user?.email}</p>{auth.user?.isGuest && <span className="inline-block mt-3 px-4 py-1.5 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs rounded-full font-black uppercase tracking-wider">{t.guestMode}</span>}</div>
                         </div>
+                        
+                        <div className="mb-10">
+                            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Choose Default Avatar</label>
+                            <div className="flex flex-wrap gap-3">
+                                {AVATARS.slice(0, 10).map((avatar, idx) => (
+                                    <img 
+                                        key={idx} 
+                                        src={avatar} 
+                                        alt={`Avatar ${idx}`} 
+                                        referrerPolicy="no-referrer"
+                                        onClick={() => updateUserProfile({ avatar })}
+                                        className={`w-12 h-12 rounded-full object-cover cursor-pointer transition-transform hover:scale-110 border-2 ${auth.user?.avatar === avatar ? 'border-indigo-500 shadow-md' : 'border-transparent'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="space-y-8">
                             <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.careerGoal}</label><input disabled value={auth.user?.careerGoal} className="w-full px-6 py-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all" /></div>
                             <div>
@@ -1108,81 +1125,8 @@ export default function App() {
                                 <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className="w-full px-6 py-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"><option value={Language.EN}>English</option><option value={Language.VI}>Tiếng Việt</option></select>
                             </div>
                             
-                            {/* --- AI CONFIGURATION --- */}
-                            <div className="p-6 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                    <Icons.Server className="w-5 h-5 text-indigo-500" />
-                                    {t.aiConfigTitle}
-                                </h3>
-                                
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.aiProvider}</label>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <button 
-                                                onClick={() => updateUserProfile({ aiProvider: AIProvider.GEMINI })}
-                                                className={`py-3 px-2 rounded-xl border font-medium text-xs md:text-sm transition-all truncate ${(!auth.user?.aiProvider || auth.user.aiProvider === AIProvider.GEMINI) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-indigo-500'}`}
-                                            >
-                                                {t.providerGemini}
-                                            </button>
-                                            <button 
-                                                onClick={() => updateUserProfile({ aiProvider: AIProvider.CUSTOM })}
-                                                className={`py-3 px-2 rounded-xl border font-medium text-xs md:text-sm transition-all truncate ${auth.user?.aiProvider === AIProvider.CUSTOM ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-indigo-500'}`}
-                                            >
-                                                {t.providerCustom}
-                                            </button>
-                                            <button 
-                                                onClick={() => updateUserProfile({ aiProvider: AIProvider.N8N })}
-                                                className={`py-3 px-2 rounded-xl border font-medium text-xs md:text-sm transition-all truncate ${auth.user?.aiProvider === AIProvider.N8N ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-indigo-500'}`}
-                                            >
-                                                {t.providerN8N}
-                                            </button>
-                                        </div>
-                                    </div>
-                                    
-                                    {auth.user?.aiProvider === AIProvider.CUSTOM && (
-                                        <div className="space-y-4 animate-fade-in-up">
-                                            <div>
-                                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.endpointUrl}</label>
-                                                <input 
-                                                    value={customEndpoint} 
-                                                    onChange={(e) => setCustomEndpoint(e.target.value)} 
-                                                    placeholder="http://localhost:11434/v1/chat/completions"
-                                                    className="w-full px-6 py-4 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
-                                                />
-                                                <p className="mt-1 text-[10px] text-gray-400">{t.endpointNote}</p>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.modelName}</label>
-                                                <input 
-                                                    value={customModelName} 
-                                                    onChange={(e) => setCustomModelName(e.target.value)} 
-                                                    placeholder="llama3"
-                                                    className="w-full px-6 py-4 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {auth.user?.aiProvider === AIProvider.N8N && (
-                                        <div className="space-y-4 animate-fade-in-up">
-                                            <div>
-                                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.n8nWebhookUrl}</label>
-                                                <input 
-                                                    value={customEndpoint} 
-                                                    onChange={(e) => setCustomEndpoint(e.target.value)} 
-                                                    placeholder="https://your-n8n-instance.com/webhook/..."
-                                                    className="w-full px-6 py-4 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
-                                                />
-                                                <p className="mt-1 text-[10px] text-gray-400">{t.n8nNote}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
                         </div>
                         <div className="mt-12 pt-8 border-t border-gray-100 dark:border-white/5 flex justify-end gap-4">
-                            <button onClick={saveCustomSettings} className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:from-indigo-500 hover:to-purple-500 hover:-translate-y-1 shadow-lg shadow-indigo-500/20 transition-all active:scale-95">{t.saveChanges}</button>
                         </div>
                     </div>
                 </div>

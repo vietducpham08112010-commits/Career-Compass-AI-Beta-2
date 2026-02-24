@@ -21,12 +21,10 @@ wss.on('error', (err) => {
 });
 
 const PORT = 3000;
-const k1 = "AIzaSyAWdZ7q2CJ7Th9IanoK";
-const k2 = "_8EGF6W6S6TdUKo";
-const API_KEY = process.env.GEMINI_API_KEY || (k1 + k2);
+const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
-  console.error("WARNING: GEMINI_API_KEY (or AI_API_KEY) is missing in environment variables. Chat features will fail.");
+  console.error("WARNING: GEMINI_API_KEY is missing in environment variables. Chat features will fail.");
   // Do not exit, allow server to start so UI can load
 }
 
@@ -98,7 +96,7 @@ wss.on("connection", (ws: WebSocket) => {
       if (msg.type === "config") {
         // Initialize Gemini Live Session
         try {
-          session = await ai.live.connect({
+          const sessionPromise = ai.live.connect({
             model: 'gemini-2.5-flash-native-audio-preview-09-2025',
             callbacks: {
               onopen: () => {
@@ -141,6 +139,7 @@ wss.on("connection", (ws: WebSocket) => {
               }
             }
           });
+          session = sessionPromise;
         } catch (err: any) {
             console.error("Failed to connect to Gemini Live:", err);
             ws.send(JSON.stringify({ error: "Failed to connect to Gemini Live" }));
@@ -148,11 +147,11 @@ wss.on("connection", (ws: WebSocket) => {
       } else if (msg.realtimeInput) {
           // Forward audio/input to Gemini
           if (session) {
-              session.sendRealtimeInput(msg.realtimeInput);
+              session.then((s: any) => s.sendRealtimeInput(msg.realtimeInput));
           }
       } else if (msg.toolResponse) {
           if (session) {
-              session.sendToolResponse(msg.toolResponse);
+              session.then((s: any) => s.sendToolResponse(msg.toolResponse));
           }
       }
     } catch (err) {
@@ -163,7 +162,7 @@ wss.on("connection", (ws: WebSocket) => {
   ws.on("close", () => {
     console.log("Client disconnected");
     if (session) {
-        session.close();
+        session.then((s: any) => s.close());
     }
   });
 });
