@@ -147,7 +147,8 @@ wss.on("connection", (ws: WebSocket) => {
       } else if (msg.realtimeInput) {
           // Forward audio/input to Gemini
           if (session) {
-              session.then((s: any) => s.sendRealtimeInput(msg.realtimeInput));
+              const input = Array.isArray(msg.realtimeInput) ? msg.realtimeInput : [msg.realtimeInput];
+              session.then((s: any) => s.sendRealtimeInput(input));
           }
       } else if (msg.toolResponse) {
           if (session) {

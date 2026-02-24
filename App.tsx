@@ -239,6 +239,7 @@ export default function App() {
           };
           reader.readAsDataURL(file);
       }
+      if (e.target) e.target.value = '';
   };
 
   // Custom Model State
@@ -265,9 +266,8 @@ export default function App() {
       const unsubscribe = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
           if (firebaseUser) {
               let avatarUrl = firebaseUser.photoURL || AVATARS[Math.floor(Math.random() * AVATARS.length)];
-
-
-              const user: UserProfile = {
+              
+              let user: UserProfile = {
                   name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "User",
                   email: firebaseUser.email || "",
                   avatar: avatarUrl,
@@ -275,6 +275,17 @@ export default function App() {
                   isGuest: false,
                   aiProvider: AIProvider.GEMINI
               };
+
+              // Merge with stored user to preserve updates (avatar, careerGoal, etc.)
+              const storedUserStr = localStorage.getItem('currentUser');
+              if (storedUserStr) {
+                  try {
+                      const storedUser = JSON.parse(storedUserStr);
+                      if (storedUser.email === user.email) {
+                          user = { ...user, ...storedUser, name: storedUser.name || user.name, email: user.email };
+                      }
+                  } catch (e) {}
+              }
               
               setAuth({ isAuthenticated: true, user });
               localStorage.setItem('currentUser', JSON.stringify(user));
@@ -283,7 +294,21 @@ export default function App() {
                   setMode(AppMode.DASHBOARD);
               }
           } else {
-              setAuth({ isAuthenticated: false, user: null });
+              // If not logged in via Firebase, check local storage for custom login or guest
+              const storedUser = localStorage.getItem('currentUser');
+              if (storedUser) {
+                  try {
+                      const userObj = JSON.parse(storedUser);
+                      setAuth({ isAuthenticated: true, user: userObj });
+                      if (mode === AppMode.AUTH) {
+                          setMode(AppMode.DASHBOARD);
+                      }
+                  } catch (e) {
+                      setAuth({ isAuthenticated: false, user: null });
+                  }
+              } else {
+                  setAuth({ isAuthenticated: false, user: null });
+              }
           }
       });
       return () => unsubscribe();
@@ -321,16 +346,7 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser && !firebaseAuth?.currentUser) { 
-          const userObj = JSON.parse(storedUser);
-          if (userObj.isGuest) {
-              setAuth({ isAuthenticated: true, user: userObj });
-              setMode(AppMode.DASHBOARD);
-          }
-      }
-  }, []);
+  // Removed redundant localStorage check since it's handled in onAuthStateChanged
 
   const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
   useEffect(() => { scrollToBottom(); }, [messages, isChatLoading]);

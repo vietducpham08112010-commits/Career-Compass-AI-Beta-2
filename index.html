@@ -15,14 +15,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Buffer Polyfill (Required for Google GenAI SDK) -->
-    <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js"></script>
 
     <!-- Tailwind Configuration -->
     <script>
       // Polyfill global and process for browser environment
       window.global = window;
+      window.process = { env: {} };
       
-      if (typeof window.Buffer === 'undefined') { window.Buffer = buffer.Buffer; }
+      if (typeof window.Buffer === 'undefined' && typeof buffer !== 'undefined') { 
+        window.Buffer = buffer.Buffer; 
+      }
 
       tailwind.config = {
         darkMode: 'class',
