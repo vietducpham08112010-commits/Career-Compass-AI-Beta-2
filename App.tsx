@@ -645,7 +645,13 @@ export default function App() {
           });
       };
       liveSessionRef.current = session;
-      await session.connect(selectedDeviceId, decodeAudioData, createPcmBlob, decode);
+      try {
+          await session.connect(selectedDeviceId, decodeAudioData, createPcmBlob, decode);
+      } catch (err) {
+          console.error("Mic connection error:", err);
+          setVoiceStatus(t.micPermission);
+          setIsVoiceActive(false);
+      }
     }
   }, [isVoiceActive, lang, t, selectedDeviceId]);
 
@@ -1064,7 +1070,7 @@ export default function App() {
         {tab === DashboardTab.VOICE && (
              <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505]">
                  <div className="w-full p-6 flex justify-between items-center z-20">
-                    <div className="flex flex-col"><h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.voiceMode}</h2><span className="text-sm text-gray-500 font-medium">{voiceStatus || t.micPermission}</span></div>
+                    <div className="flex flex-col"><h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.voiceMode}</h2><span className="text-sm text-gray-500 font-medium">{voiceStatus || t.readyToConnect}</span></div>
                      <div className="px-4 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black rounded-full flex items-center gap-2 animate-pulse"><div className="w-2 h-2 bg-red-500 rounded-full"></div>LIVE</div>
                  </div>
                  <div className="flex-1 flex flex-col md:flex-row p-6 gap-6 overflow-hidden">

@@ -180,6 +180,10 @@ export class LiveSessionManager {
 
   async getAudioInputDevices() {
     try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.warn("MediaDevices API not supported or not in a secure context.");
+            return [];
+        }
         await navigator.mediaDevices.getUserMedia({ audio: true });
         const devices = await navigator.mediaDevices.enumerateDevices();
         return devices.filter(d => d.kind === 'audioinput');
@@ -190,6 +194,9 @@ export class LiveSessionManager {
     const t = TRANSLATIONS[this.language];
 
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("MediaDevices API not supported. Please use HTTPS.");
+      }
       this.inputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       this.outputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       
@@ -251,7 +258,10 @@ export class LiveSessionManager {
       this.ws.onclose = () => { this.cleanup(); if (this.onDisconnect) this.onDisconnect(); };
       this.ws.onerror = (err) => { if (this.onError) this.onError(err); this.cleanup(); };
 
-    } catch (e) { if (this.onError) this.onError(e); }
+    } catch (e) { 
+        if (this.onError) this.onError(e); 
+        throw e;
+    }
   }
 
   startAudioStreaming(createBlobFn: any) {
