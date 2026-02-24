@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import path from "path";
 
 dotenv.config();
 
@@ -20,7 +21,7 @@ wss.on('error', (err) => {
 });
 
 const PORT = 3000;
-const API_KEY = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
+const API_KEY = "AIzaSyCA0oLUU2bYKs4_MylRJ1ng_XUpmTOqoKU";
 
 if (!API_KEY) {
   console.error("WARNING: GEMINI_API_KEY (or AI_API_KEY) is missing in environment variables. Chat features will fail.");
@@ -178,8 +179,12 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     // In production, serve static files (if built)
-    // For this environment, we mostly rely on Vite dev server
     app.use(express.static("dist"));
+    
+    // SPA fallback
+    app.get("*", (req, res) => {
+      res.sendFile(path.resolve("dist/index.html"));
+    });
   }
 
   const serverInstance = server.listen(PORT, "0.0.0.0", () => {

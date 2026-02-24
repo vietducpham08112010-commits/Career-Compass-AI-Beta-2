@@ -1,5 +1,5 @@
 
-import { LiveServerMessage } from "@google/genai";
+import type { LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
 

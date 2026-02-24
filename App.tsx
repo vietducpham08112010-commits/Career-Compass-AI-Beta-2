@@ -248,10 +248,15 @@ export default function App() {
       if (!firebaseAuth) return;
       const unsubscribe = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
           if (firebaseUser) {
+              let avatarUrl = firebaseUser.photoURL || AVATARS[Math.floor(Math.random() * AVATARS.length)];
+              if (avatarUrl && avatarUrl.includes('7.x')) {
+                  avatarUrl = avatarUrl.replace('7.x', '9.x');
+              }
+
               const user: UserProfile = {
                   name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "User",
                   email: firebaseUser.email || "",
-                  avatar: firebaseUser.photoURL || AVATARS[Math.floor(Math.random() * AVATARS.length)],
+                  avatar: avatarUrl,
                   careerGoal: 'Undecided',
                   isGuest: false,
                   aiProvider: AIProvider.GEMINI
@@ -306,6 +311,9 @@ export default function App() {
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser && !firebaseAuth?.currentUser) { 
           const userObj = JSON.parse(storedUser);
+          if (userObj.avatar && userObj.avatar.includes('7.x')) {
+              userObj.avatar = userObj.avatar.replace('7.x', '9.x');
+          }
           if (userObj.isGuest) {
               setAuth({ isAuthenticated: true, user: userObj });
               setMode(AppMode.DASHBOARD);
@@ -389,6 +397,9 @@ export default function App() {
     const user = users.find(u => u.email === email && u.password === password);
 
     if (user) {
+        if (user.avatar && user.avatar.includes('7.x')) {
+            user.avatar = user.avatar.replace('7.x', '9.x');
+        }
         localStorage.setItem('currentUser', JSON.stringify(user));
         setAuth({ isAuthenticated: true, user });
         setMode(AppMode.DASHBOARD);
@@ -961,7 +972,7 @@ export default function App() {
             {chatHistory.length > 0 && (<div className="mt-8"><div className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div><div className="space-y-1">{chatHistory.map((session) => (<button key={session.id} onClick={() => loadSession(session)} className="w-full text-left px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg truncate transition-colors">{session.title}</button>))}</div></div>)}
         </nav>
         <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm">
-            <div onClick={changeAvatar} title="Click to change avatar" className="flex items-center gap-3 mb-4 px-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors group"><img src={auth.user?.avatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/><div className="overflow-hidden flex-1"><p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p><p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? 'Guest Session' : auth.user?.email}</p></div><Icons.Refresh className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
+            <div onClick={changeAvatar} title="Click to change avatar" className="flex items-center gap-3 mb-4 px-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors group"><img src={auth.user?.avatar} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/><div className="overflow-hidden flex-1"><p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p><p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? 'Guest Session' : auth.user?.email}</p></div><Icons.Refresh className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
              <div className="flex gap-2 mb-2"><button onClick={toggleLang} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 transition-all"><span className="uppercase">{lang}</span></button><button onClick={toggleTheme} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button></div>
             <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"><Icons.LogOut className="w-4 h-4" />Logout</button>
         </div>
