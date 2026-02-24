@@ -192,6 +192,10 @@ export class LiveSessionManager {
     try {
       this.inputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       this.outputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+      
+      if (this.inputContext.state === 'suspended') { await this.inputContext.resume(); }
+      if (this.outputContext.state === 'suspended') { await this.outputContext.resume(); }
+
       const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
@@ -253,7 +257,7 @@ export class LiveSessionManager {
   startAudioStreaming(createBlobFn: any) {
     if (!this.inputContext || !this.stream) return;
     this.inputSource = this.inputContext.createMediaStreamSource(this.stream);
-    this.processor = this.inputContext.createScriptProcessor(4096, 1, 1);
+    this.processor = this.inputContext.createScriptProcessor(2048, 1, 1);
     this.processor.onaudioprocess = (e) => {
       const inputData = e.inputBuffer.getChannelData(0);
       let sum = 0; for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];

@@ -1,5 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Language, Theme, AppMode, DashboardTab, ChatMessage, ChatSession, AuthState, Transcript, UserProfile, AIProvider } from './types';
 import { AVATARS, CAREER_TAGS, CAREER_QUOTES, SUGGESTION_PROMPTS, TRANSLATIONS, HOT_INDUSTRIES } from './constants';
 import { sendChatMessage, LiveSessionManager } from './services/geminiService';
@@ -126,20 +128,6 @@ const ShimmerText = ({ text }: { text: string }) => (
 );
 
 const cleanText = (text: string) => text.trim();
-
-const FormattedText = ({ text }: { text: string }) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return (
-        <span>
-            {parts.map((part, index) => {
-                if (part.startsWith('**') && part.endsWith('**')) {
-                    return <strong key={index} className="font-bold text-indigo-700 dark:text-indigo-300">{part.slice(2, -2)}</strong>;
-                }
-                return <span key={index}>{part}</span>;
-            })}
-        </span>
-    );
-};
 
 // --- HELPER FOR THINKING TEXT ---
 const getThinkingMessage = (input: string, lang: Language) => {
@@ -994,7 +982,9 @@ export default function App() {
                             {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CompassLogo className="w-5 h-5 text-white" /></div>)}
                             <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
                                 <div className={`px-6 py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
-                                    <p className="leading-relaxed whitespace-pre-wrap text-[15px]"><FormattedText text={cleanText(m.text)} /></p>
+                                    <div className="leading-relaxed whitespace-pre-wrap text-[15px] markdown-body">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanText(m.text)}</ReactMarkdown>
+                                    </div>
                                 </div>
                                 <span className={`text-[10px] mt-1.5 opacity-40 font-bold px-1 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>{m.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                             </div>
