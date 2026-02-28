@@ -76,7 +76,12 @@ const Icons = {
   Eye: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
   EyeOff: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
   Server: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
-  Key: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+  Key: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>,
+  Check: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>,
+  Search: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Menu: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+  PanelLeftClose: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="m16 15-3-3 3-3"/></svg>,
+  PanelLeftOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="m14 9 3 3-3 3"/></svg>
 };
 
 // --- IMPRESSIVE FUTURISTIC COMPASS LOGO ---
@@ -153,6 +158,102 @@ const getThinkingMessage = (input: string, lang: Language) => {
     return isVi ? 'Đang suy nghĩ...' : 'Thinking...';
 };
 
+const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplete: (result: string) => void }) => {
+  const [step, setStep] = useState(0);
+  const [scores, setScores] = useState({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 });
+  const [result, setResult] = useState<string | null>(null);
+
+  const questions = [
+    { text: lang === Language.EN ? "I like to work with animals, tools, or machines." : "Mình thích làm việc với động vật, công cụ hoặc máy móc.", type: 'R' },
+    { text: lang === Language.EN ? "I like to solve math and science problems." : "Mình thích giải các bài toán và vấn đề khoa học.", type: 'I' },
+    { text: lang === Language.EN ? "I like to do creative activities like art, drama, or music." : "Mình thích các hoạt động sáng tạo như nghệ thuật, kịch hoặc âm nhạc.", type: 'A' },
+    { text: lang === Language.EN ? "I like to help, teach, or provide service to others." : "Mình thích giúp đỡ, dạy bảo hoặc cung cấp dịch vụ cho người khác.", type: 'S' },
+    { text: lang === Language.EN ? "I like to lead and persuade people." : "Mình thích lãnh đạo và thuyết phục mọi người.", type: 'E' },
+    { text: lang === Language.EN ? "I like to work with numbers, records, or machines in an orderly way." : "Mình thích làm việc với con số, hồ sơ hoặc máy móc một cách ngăn nắp.", type: 'C' },
+    { text: lang === Language.EN ? "I enjoy repairing things." : "Mình thích sửa chữa đồ đạc.", type: 'R' },
+    { text: lang === Language.EN ? "I enjoy conducting experiments." : "Mình thích thực hiện các thí nghiệm.", type: 'I' },
+    { text: lang === Language.EN ? "I enjoy writing stories or poems." : "Mình thích viết truyện hoặc làm thơ.", type: 'A' },
+    { text: lang === Language.EN ? "I enjoy volunteering for social causes." : "Mình thích tình nguyện cho các hoạt động xã hội.", type: 'S' },
+    { text: lang === Language.EN ? "I enjoy starting my own business." : "Mình thích bắt đầu công việc kinh doanh riêng.", type: 'E' },
+    { text: lang === Language.EN ? "I enjoy organizing data and files." : "Mình thích sắp xếp dữ liệu và hồ sơ.", type: 'C' },
+  ];
+
+  const handleAnswer = (value: number) => {
+    const q = questions[step];
+    // @ts-ignore
+    setScores(prev => ({ ...prev, [q.type]: prev[q.type] + value }));
+    if (step < questions.length - 1) {
+      setStep(step + 1);
+    } else {
+      calculateResult();
+    }
+  };
+
+  const calculateResult = () => {
+    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    const topType = sorted[0][0];
+    const descriptions: any = {
+      R: lang === Language.EN ? "Realistic: You are practical and hands-on." : "Thực tế (Realistic): Bạn là người thực tế, thích làm việc với đôi tay và công cụ.",
+      I: lang === Language.EN ? "Investigative: You are analytical and curious." : "Nghiên cứu (Investigative): Bạn có tư duy phân tích, tò mò và thích giải quyết vấn đề.",
+      A: lang === Language.EN ? "Artistic: You are creative and expressive." : "Nghệ thuật (Artistic): Bạn sáng tạo, giàu trí tưởng tượng và thích thể hiện bản thân.",
+      S: lang === Language.EN ? "Social: You are helpful and empathetic." : "Xã hội (Social): Bạn thích giúp đỡ, giảng dạy và làm việc với con người.",
+      E: lang === Language.EN ? "Enterprising: You are ambitious and persuasive." : "Quản lý (Enterprising): Bạn đầy tham vọng, có khả năng lãnh đạo và thuyết phục.",
+      C: lang === Language.EN ? "Conventional: You are organized and detail-oriented." : "Nghiệp vụ (Conventional): Bạn ngăn nắp, tỉ mỉ và thích làm việc với dữ liệu.",
+    };
+    setResult(descriptions[topType]);
+  };
+
+  if (result) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center animate-fade-in-up">
+        <div className="w-20 h-20 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/20">
+          <Icons.Check className="w-10 h-10" />
+        </div>
+        <h3 className="text-2xl font-bold mb-4">{lang === Language.EN ? "Your Career Profile" : "Kết Quả Trắc Nghiệm Của Bạn"}</h3>
+        <p className="text-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xl max-w-md">
+          {result}
+        </p>
+        <div className="flex gap-4 mt-8">
+            <button onClick={() => { setStep(0); setScores({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }); setResult(null); }} className="px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-all active:scale-95">
+            {lang === Language.EN ? "Retake Quiz" : "Làm lại trắc nghiệm"}
+            </button>
+            <button onClick={() => onComplete(result)} className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:from-indigo-500 hover:to-purple-500 transition-all shadow-lg active:scale-95 flex items-center gap-2">
+            <Icons.MessageSquare className="w-5 h-5" /> {t.discussWithAI}
+            </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto p-6 animate-fade-in-up">
+      <div className="mb-8">
+        <div className="flex justify-between text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
+          <span>{lang === Language.EN ? `Question ${step + 1} of ${questions.length}` : `Câu hỏi ${step + 1} / ${questions.length}`}</span>
+          <span>{Math.round(((step + 1) / questions.length) * 100)}%</span>
+        </div>
+        <div className="w-full h-2 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style={{ width: `${((step + 1) / questions.length) * 100}%` }}></div>
+        </div>
+      </div>
+      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-10 text-center leading-relaxed">
+        {questions[step].text}
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: lang === Language.EN ? "No" : "Không thích", value: 0, color: 'bg-red-50 dark:bg-red-500/10 text-red-600 border-red-200 dark:border-red-500/20' },
+          { label: lang === Language.EN ? "Maybe" : "Tạm được", value: 1, color: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 border-yellow-200 dark:border-yellow-500/20' },
+          { label: lang === Language.EN ? "Yes" : "Rất thích", value: 2, color: 'bg-green-50 dark:bg-green-500/10 text-green-600 border-green-200 dark:border-green-500/20' },
+        ].map((opt) => (
+          <button key={opt.value} onClick={() => handleAnswer(opt.value)} className={`p-6 rounded-2xl border-2 font-bold text-lg transition-all hover:scale-105 active:scale-95 ${opt.color} flex flex-col items-center gap-2 shadow-sm hover:shadow-md`}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // --- Main Component ---
 export default function App() {
   const [lang, setLang] = useState<Language>(Language.EN);
@@ -161,6 +262,9 @@ export default function App() {
   const [mode, setMode] = useState<AppMode>(AppMode.LANDING);
   const [tab, setTab] = useState<DashboardTab>(DashboardTab.CHAT);
   
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [auth, setAuth] = useState<AuthState>({ isAuthenticated: false, user: null });
   const [authType, setAuthType] = useState<'login' | 'register' | 'forgot-password' | 'new-password'>('login');
   const [authError, setAuthError] = useState('');
@@ -540,7 +644,7 @@ export default function App() {
   };
 
   const handleGuestLogin = () => {
-    const guestUser = { name: 'Guest User', email: '', careerGoal: 'Exploring', isGuest: true, avatar: getRandomAvatar(), aiProvider: AIProvider.GEMINI };
+    const guestUser = { name: 'Guest', email: '', careerGoal: 'Exploring', isGuest: true, avatar: getRandomAvatar(), aiProvider: AIProvider.GEMINI };
     setAuth({ isAuthenticated: true, user: guestUser });
     setMode(AppMode.DASHBOARD);
   };
@@ -614,13 +718,13 @@ export default function App() {
 
   useEffect(() => {
     const loadDevices = async () => {
-        const tempSession = new LiveSessionManager(lang); 
+        const tempSession = new LiveSessionManager(lang, auth.user); 
         const devices = await tempSession.getAudioInputDevices();
         setInputDevices(devices);
         if (devices.length > 0) setSelectedDeviceId(devices[0].deviceId);
     };
     if (tab === DashboardTab.VOICE) loadDevices();
-  }, [tab, lang]);
+  }, [tab, lang, auth.user]);
 
   const handleVoiceToggle = useCallback(async () => {
     if (isVoiceActive) {
@@ -632,7 +736,7 @@ export default function App() {
     } else {
       setVoiceStatus(t.connecting);
       setTranscripts([]);
-      const session = new LiveSessionManager(lang);
+      const session = new LiveSessionManager(lang, auth.user);
       session.onConnect = () => { setIsVoiceActive(true); setVoiceStatus(t.listening); };
       session.onDisconnect = () => { setIsVoiceActive(false); setVoiceStatus(''); };
       session.onError = (err: any) => { console.error(err); setVoiceStatus(t.error); setIsVoiceActive(false); };
@@ -748,7 +852,48 @@ export default function App() {
                   </>
               )}
             </div>
+
+            <div className="grid grid-cols-3 gap-8 mt-16 w-full max-w-3xl">
+                <div className="text-center">
+                    <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{t.userValue}</div>
+                    <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.userCount}</div>
+                </div>
+                <div className="text-center border-x border-gray-200 dark:border-white/10">
+                    <div className="text-3xl font-bold text-fuchsia-600 dark:text-fuchsia-400">{t.accuracyValue}</div>
+                    <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.accuracyRate}</div>
+                </div>
+                <div className="text-center">
+                    <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{t.sessionValue}</div>
+                    <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.activeSessions}</div>
+                </div>
+            </div>
           </div>
+        </section>
+
+        <section className="py-20 px-6 max-w-7xl mx-auto">
+             <div className="glass-card rounded-[3rem] p-12 bg-gradient-to-br from-indigo-600/5 to-fuchsia-600/5 border border-indigo-500/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
+                    <div className="flex-1">
+                        <h2 className="text-4xl font-bold mb-6">{t.vnLaborMarketTitle}</h2>
+                        <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-8">
+                            {t.vnLaborMarketDesc}
+                        </p>
+                        <div className="flex flex-wrap gap-4">
+                            {['AI Engineer', 'Logistics Manager', 'Semiconductor Tech', 'Green Energy'].map(tag => (
+                                <span key={tag} className="px-4 py-2 bg-white dark:bg-white/10 rounded-full text-sm font-bold border border-indigo-500/20">{tag}</span>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="w-full md:w-1/3 aspect-square bg-white dark:bg-white/5 rounded-3xl border border-white/10 shadow-2xl flex items-center justify-center p-8">
+                        <div className="text-center">
+                            <Icons.TrendingUp className="w-20 h-20 text-indigo-500 mx-auto mb-4 animate-bounce" />
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">+25%</div>
+                            <div className="text-sm text-gray-500 uppercase font-bold tracking-widest">Growth Rate</div>
+                        </div>
+                    </div>
+                </div>
+             </div>
         </section>
 
         <div className="py-10 bg-gray-50 dark:bg-[#0a0a0a] border-y border-gray-200 dark:border-white/5 overflow-hidden relative">
@@ -849,7 +994,7 @@ export default function App() {
                  <div className="inline-block mb-6 p-3 bg-white dark:bg-white/5 rounded-full shadow-md">
                     <Icons.MessageSquare className="w-6 h-6 text-indigo-500" />
                  </div>
-                 <p className="text-2xl md:text-4xl font-serif italic leading-relaxed text-gray-800 dark:text-gray-200">
+                 <p className="text-2xl md:text-4xl font-sans font-medium italic leading-relaxed text-gray-800 dark:text-gray-200">
                      "{lang === Language.EN ? CAREER_QUOTES[1].text : CAREER_QUOTES[1].text_vi}"
                  </p>
                  <div className="mt-8 flex items-center justify-center gap-4">
@@ -992,43 +1137,122 @@ export default function App() {
     </div>
   );
 
-  const renderDashboard = () => (
+  const renderDashboard = () => {
+    const filteredHistory = chatHistory.filter(session => session.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    return (
     <div className="flex h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden transition-colors duration-300 relative font-sans">
-      <aside className="hidden md:flex w-72 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-lg flex-col transition-colors duration-300 h-full border-r border-gray-200 dark:border-white/5 z-10">
-        <button onClick={() => setMode(AppMode.LANDING)} className="p-6 flex items-center gap-3 w-full text-left hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
-            <CompassLogo className="w-8 h-8" />
-            <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">Career Compass</span>
-        </button>
-        <div className="px-4 mb-2"><button onClick={startNewChat} className="w-full flex items-center gap-3 px-4 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl hover:scale-[1.02] active:scale-95 transition-all font-bold shadow-lg"><span className="text-xl leading-none">+</span> {t.newChat}</button></div>
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-            <button onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.MessageSquare className="w-5 h-5" /><span>{t.chatMode}</span></button>
-            <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Microphone className="w-5 h-5" /><span>{t.voiceMode}</span></button>
-             <button onClick={() => setTab(DashboardTab.PROFILE)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROFILE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.User className="w-5 h-5" /><span>{t.profile}</span></button>
-            {chatHistory.length > 0 && (<div className="mt-8"><div className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div><div className="space-y-1">{chatHistory.map((session) => (<button key={session.id} onClick={() => loadSession(session)} className="w-full text-left px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg truncate transition-colors">{session.title}</button>))}</div></div>)}
+      <aside className={`hidden md:flex flex-col transition-all duration-300 h-full border-r border-gray-200 dark:border-white/5 z-10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-lg ${isSidebarOpen ? 'w-72' : 'w-20'}`}>
+        <div className="p-4 flex items-center justify-between">
+            {isSidebarOpen && (
+                <button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-3 text-left hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors rounded-xl p-2">
+                    <CompassLogo className="w-8 h-8" />
+                    <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">Career Compass</span>
+                </button>
+            )}
+            {!isSidebarOpen && (
+                <button onClick={() => setMode(AppMode.LANDING)} className="mx-auto p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
+                    <CompassLogo className="w-8 h-8" />
+                </button>
+            )}
+        </div>
+        
+        <div className="px-4 mb-2">
+            <button onClick={startNewChat} className={`w-full flex items-center justify-center gap-3 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl hover:scale-[1.02] active:scale-95 transition-all font-bold shadow-lg ${isSidebarOpen ? 'px-4' : 'px-0'}`}>
+                <span className="text-xl leading-none">+</span> {isSidebarOpen && t.newChat}
+            </button>
+        </div>
+        
+        <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto overflow-x-hidden">
+            <button onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.chatMode}><Icons.MessageSquare className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.chatMode}</span>}</button>
+            <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</button>
+            <button onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</button>
+             <button onClick={() => setTab(DashboardTab.PROFILE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROFILE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.profile}><Icons.User className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.profile}</span>}</button>
+            
+            {chatHistory.length > 0 && isSidebarOpen && (
+                <div className="mt-8 animate-fade-in">
+                    <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div>
+                    </div>
+                    <div className="mb-3 relative">
+                        <Icons.Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchChats} className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors" />
+                    </div>
+                    <div className="space-y-1">
+                        {filteredHistory.map((session) => (
+                            <button key={session.id} onClick={() => loadSession(session)} className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors">{session.title}</button>
+                        ))}
+                        {filteredHistory.length === 0 && <div className="text-xs text-center py-2 text-gray-400">No results found</div>}
+                    </div>
+                </div>
+            )}
         </nav>
-        <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm">
-            <div onClick={changeAvatar} title="Click to change avatar" className="flex items-center gap-3 mb-4 px-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors group"><img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/><div className="overflow-hidden flex-1"><p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p><p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? 'Guest Session' : auth.user?.email}</p></div><Icons.Refresh className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
-             <div className="flex gap-2 mb-2"><button onClick={toggleLang} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 transition-all"><span className="uppercase">{lang}</span></button><button onClick={toggleTheme} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button></div>
-            <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"><Icons.LogOut className="w-4 h-4" />Logout</button>
+        
+        <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm flex flex-col gap-2">
+            {isSidebarOpen ? (
+                <>
+                    <div onClick={changeAvatar} title={t.chooseAvatar} className="flex items-center gap-3 mb-2 px-2 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors group">
+                        <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
+                        <div className="overflow-hidden flex-1">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p>
+                            <p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? t.guestSession : auth.user?.email}</p>
+                        </div>
+                        <Icons.Refresh className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <div className="flex gap-2 mb-2">
+                        <button onClick={toggleLang} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"><span className="uppercase">{lang}</span></button>
+                        <button onClick={toggleTheme} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button>
+                    </div>
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"><Icons.LogOut className="w-4 h-4" />{t.logout}</button>
+                </>
+            ) : (
+                <>
+                    <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm mx-auto mb-2 cursor-pointer" onClick={changeAvatar} title={t.randomAvatar} />
+                    <button onClick={toggleLang} className="w-full flex items-center justify-center py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all mb-2"><span className="uppercase">{lang}</span></button>
+                    <button onClick={toggleTheme} className="w-full flex items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all mb-2">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button>
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title={t.logout}><Icons.LogOut className="w-4 h-4" /></button>
+                </>
+            )}
         </div>
       </aside>
       <main className="flex-1 flex flex-col h-full relative w-full bg-white dark:bg-[#050505] z-10">
-        <header className="md:hidden h-16 bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20"><button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-2"><CompassLogo className="w-8 h-8" /><span className="font-bold text-gray-800 dark:text-white">Career Compass</span></button><div className="flex gap-2"><button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400">{theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}</button><button onClick={() => setTab(DashboardTab.CHAT)} className={`p-2 rounded-lg ${tab === DashboardTab.CHAT ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500'}`}><Icons.MessageSquare className="w-5 h-5"/></button><button onClick={handleLogout} className="p-2 text-red-500"><Icons.LogOut className="w-5 h-5"/></button></div></header>
+        <div className="absolute top-4 left-4 z-30 hidden md:block">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white shadow-sm hover:shadow-md transition-all" title={isSidebarOpen ? t.collapseSidebar : t.expandSidebar}>
+                {isSidebarOpen ? <Icons.PanelLeftClose className="w-5 h-5" /> : <Icons.PanelLeftOpen className="w-5 h-5" />}
+            </button>
+        </div>
+        <header className="md:hidden h-16 bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20"><button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-2"><CompassLogo className="w-8 h-8" /><span className="font-bold text-gray-800 dark:text-white">Career Compass</span></button><div className="flex gap-2"><button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400">{theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}</button><button onClick={() => setTab(DashboardTab.QUIZ)} className={`p-2 rounded-lg ${tab === DashboardTab.QUIZ ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500'}`}><Icons.Zap className="w-5 h-5"/></button><button onClick={() => setTab(DashboardTab.CHAT)} className={`p-2 rounded-lg ${tab === DashboardTab.CHAT ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500'}`}><Icons.MessageSquare className="w-5 h-5"/></button><button onClick={handleLogout} className="p-2 text-red-500"><Icons.LogOut className="w-5 h-5"/></button></div></header>
         {tab === DashboardTab.CHAT && (
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 border border-indigo-500/20 flex flex-col items-center text-center">
+                            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{t.accuracyValue}</div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{t.accuracyRate}</div>
+                        </div>
+                        <div className="p-6 rounded-3xl bg-gradient-to-br from-fuchsia-500/10 to-fuchsia-600/10 border border-fuchsia-500/20 flex flex-col items-center text-center">
+                            <div className="text-2xl font-bold text-fuchsia-600 dark:text-fuchsia-400">{t.userValue}</div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{t.userCount}</div>
+                        </div>
+                        <div className="p-6 rounded-3xl bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 border border-cyan-500/20 flex flex-col items-center text-center">
+                            <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{t.sessionValue}</div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{t.activeSessions}</div>
+                        </div>
+                    </div>
                     {messages.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 animate-fade-in-up">
                             <div className="bg-gradient-to-tr from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 p-6 rounded-full mb-6 shadow-xl"><CompassLogo className="w-16 h-16 opacity-100" /></div>
                             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t.welcomeBack} {auth.user?.name}</h2>
                             <p className="text-base max-w-md mx-auto leading-relaxed mb-8 opacity-70">{t.greetingSub}</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl px-4">
-                                {SUGGESTION_PROMPTS.map((prompt) => (
-                                    <button key={prompt.id} onClick={() => handleSendMessage(undefined, lang === Language.VI ? prompt.text_vi : prompt.text_en)} className="flex items-center gap-4 p-4 text-left rounded-2xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all group shadow-sm hover:shadow-md">
-                                        <div className={`p-2 rounded-lg ${prompt.color} group-hover:scale-110 transition-transform`}><Icons.Target className="w-5 h-5" /></div>
-                                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{lang === Language.VI ? prompt.text_vi : prompt.text_en}</span>
-                                    </button>
-                                ))}
+                                {SUGGESTION_PROMPTS.map((prompt) => {
+                                    const IconComponent = Icons[prompt.icon as keyof typeof Icons] || Icons.Target;
+                                    return (
+                                        <button key={prompt.id} onClick={() => handleSendMessage(undefined, lang === Language.VI ? prompt.text_vi : prompt.text_en)} className="flex items-center gap-4 p-4 text-left rounded-2xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all group shadow-sm hover:shadow-md">
+                                            <div className={`p-2 rounded-lg ${prompt.color} group-hover:scale-110 transition-transform`}><IconComponent className="w-5 h-5" /></div>
+                                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{lang === Language.VI ? prompt.text_vi : prompt.text_en}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -1105,6 +1329,29 @@ export default function App() {
                  </div>
              </div>
         )}
+        {tab === DashboardTab.QUIZ && (
+            <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505] overflow-y-auto">
+                <div className="w-full p-6 border-b border-gray-200 dark:border-white/5">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.careerQuizTitle}</h2>
+                    <p className="text-sm text-gray-500 font-medium">{t.careerQuizDesc}</p>
+                </div>
+                <div className="flex-1 flex items-center justify-center p-6">
+                    <CareerQuiz lang={lang} t={t} onComplete={(result) => {
+                        const prompt = lang === Language.EN 
+                            ? `I just took the career quiz and my result is: ${result}. Can you give me some career advice based on this?`
+                            : `Mình vừa làm bài trắc nghiệm nghề nghiệp và kết quả của mình là: ${result}. Bạn có thể tư vấn nghề nghiệp cho mình dựa trên kết quả này không?`;
+                        
+                        // Update user profile with career profile
+                        if (auth.user) {
+                            setAuth(prev => ({ ...prev, user: { ...prev.user!, careerProfile: result } }));
+                        }
+                        
+                        setTab(DashboardTab.CHAT);
+                        handleSendMessage(undefined, prompt);
+                    }} />
+                </div>
+            </div>
+        )}
         {tab === DashboardTab.PROFILE && (
             <div className="flex-1 p-8 overflow-y-auto bg-white dark:bg-[#050505] flex justify-center">
                 <div className="max-w-2xl w-full">
@@ -1156,7 +1403,8 @@ export default function App() {
         )}
       </main>
     </div>
-  );
+    );
+  };
 
   switch (mode) {
     case AppMode.AUTH: return renderAuth();

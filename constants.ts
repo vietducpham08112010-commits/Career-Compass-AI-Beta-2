@@ -2,36 +2,36 @@
 import { Language } from './types';
 
 export const AVATARS = [
-  "https://picsum.photos/seed/Felix/150/150",
-  "https://picsum.photos/seed/Aneka/150/150",
-  "https://picsum.photos/seed/Pepper/150/150",
-  "https://picsum.photos/seed/George/150/150",
-  "https://picsum.photos/seed/Molly/150/150",
-  "https://picsum.photos/seed/Tech/150/150",
-  "https://picsum.photos/seed/Sasha/150/150",
-  "https://picsum.photos/seed/Alex/150/150",
-  "https://picsum.photos/seed/Jace/150/150",
-  "https://picsum.photos/seed/Oliver/150/150",
-  "https://picsum.photos/seed/Willow/150/150",
-  "https://picsum.photos/seed/Zoe/150/150",
-  "https://picsum.photos/seed/Leo/150/150",
-  "https://picsum.photos/seed/Chloe/150/150",
-  "https://picsum.photos/seed/Max/150/150",
-  "https://picsum.photos/seed/Sam/150/150",
-  "https://picsum.photos/seed/Robot01/150/150",
-  "https://picsum.photos/seed/Happy/150/150",
-  "https://picsum.photos/seed/Buddy/150/150",
-  "https://picsum.photos/seed/Maria/150/150",
-  "https://picsum.photos/seed/Jack/150/150",
-  "https://picsum.photos/seed/Sarah/150/150",
-  "https://picsum.photos/seed/David/150/150",
-  "https://picsum.photos/seed/Emma/150/150",
-  "https://picsum.photos/seed/Bot2/150/150",
-  "https://picsum.photos/seed/Lily/150/150",
-  "https://picsum.photos/seed/Tom/150/150",
-  "https://picsum.photos/seed/Mia/150/150",
-  "https://picsum.photos/seed/Noah/150/150",
-  "https://picsum.photos/seed/Olivia/150/150"
+  "https://api.dicebear.com/7.x/micah/svg?seed=Felix",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Aneka",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Pepper",
+  "https://api.dicebear.com/7.x/micah/svg?seed=George",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Molly",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Tech",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Sasha",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Alex",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Jace",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Oliver",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Willow",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Zoe",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Leo",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Chloe",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Max",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Sam",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Robot01",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Happy",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Buddy",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Maria",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Jack",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Sarah",
+  "https://api.dicebear.com/7.x/micah/svg?seed=David",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Emma",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Bot2",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Lily",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Tom",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Mia",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Noah",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Olivia"
 ];
 
 // Updated to Object for localization
@@ -104,6 +104,15 @@ export const HOT_INDUSTRIES = [
     desc_vi: "Học tập từ xa đang phát triển mạnh. Cơ hội trong thiết kế bài giảng và lập trình.", 
     color: "from-amber-400 to-orange-600",
     icon: "BookOpen"
+  },
+  { 
+    id: 7, 
+    name_en: "Semiconductor Industry", 
+    name_vi: "Công nghiệp Bán dẫn", 
+    desc_en: "The brain of every electronic device. Vietnam is becoming a global hub.", 
+    desc_vi: "Bộ não của mọi thiết bị điện tử. Việt Nam đang trở thành trung tâm toàn cầu.", 
+    color: "from-indigo-500 to-blue-700",
+    icon: "Cpu"
   }
 ];
 
@@ -115,10 +124,10 @@ export const CAREER_QUOTES = [
 ];
 
 export const SUGGESTION_PROMPTS = [
-  { id: 'strengths', text_en: 'Identify my strengths', text_vi: 'Tìm điểm mạnh của tôi', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' },
-  { id: 'passion', text_en: 'Discover my passion', text_vi: 'Khám phá đam mê', color: 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400' },
-  { id: 'path', text_en: 'Plan a career path', text_vi: 'Lập lộ trình sự nghiệp', color: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' },
-  { id: 'explore', text_en: 'Explore new industries', text_vi: 'Khám phá ngành mới', color: 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' }
+  { id: 'strengths', text_en: 'Identify my strengths', text_vi: 'Tìm điểm mạnh của tôi', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400', icon: 'Activity' },
+  { id: 'passion', text_en: 'Discover my passion', text_vi: 'Khám phá đam mê', color: 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400', icon: 'Heart' },
+  { id: 'path', text_en: 'Plan a career path', text_vi: 'Lập lộ trình sự nghiệp', color: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400', icon: 'Target' },
+  { id: 'explore', text_en: 'Explore new industries', text_vi: 'Khám phá ngành mới', color: 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400', icon: 'Compass' }
 ];
 
 export const TRANSLATIONS = {
@@ -150,8 +159,26 @@ export const TRANSLATIONS = {
     heroTitleSuffix: 'everyone',
     hotIndustriesTitle: 'Future-Proof Your Career',
     hotIndustriesSub: 'Discover high-growth industries where our AI can help you navigate and land your dream role.',
+    vnLaborMarketTitle: 'VN Labor Market 2024-2025',
+    vnLaborMarketDesc: 'High demand for skilled talent in Tech (AI, Semiconductor), Logistics, and Renewable Energy is skyrocketing.',
+    careerQuizTitle: 'Career Quiz',
+    careerQuizDesc: 'Discover your career personality group (RIASEC) in just 2 minutes.',
+    accuracyRate: 'AI Accuracy Rate',
+    userCount: 'Trusted Users',
+    activeSessions: '24h Sessions',
+    accuracyValue: '98.5%',
+    userValue: '12,500+',
+    sessionValue: '1,240',
     continueJourney: 'Ready to continue your journey,',
     goToDashboard: 'Go to Dashboard',
+    guestSession: 'Guest Session',
+    logout: 'Logout',
+    chooseAvatar: 'Choose Default Avatar',
+    randomAvatar: 'Random Avatar',
+    searchChats: 'Search chats...',
+    collapseSidebar: 'Collapse sidebar',
+    expandSidebar: 'Expand sidebar',
+    discussWithAI: 'Discuss result with AI',
     
     // Feature Translations - UPDATED
     featureVoiceTitle: 'Direct 1-on-1 Consultation',
@@ -167,7 +194,7 @@ export const TRANSLATIONS = {
     featureHeaderSuffix: 'have always been.',
     featureSub: 'One platform replacing expensive counselors and scattered Google searches.',
     
-    systemInstruction: 'You are an expert career counselor named Career Compass. You help users with job search strategies, resume reviews, interview preparation, and career path planning. Be encouraging, professional, and practical. Keep responses concise unless asked for detail. IMPORTANT: You can use markdown bold syntax (**) to emphasize key points.',
+    systemInstruction: 'You are an expert career counselor named Career Compass. You help users with job search strategies, resume reviews, interview preparation, and career path planning. Be encouraging, professional, and practical. Keep responses concise unless asked for detail. If the user shares their RIASEC career profile, use it to suggest suitable majors and universities. IMPORTANT: You can use markdown bold syntax (**) to emphasize key points.',
     voiceSystemInstruction: 'You are an expert career counselor. Engage in a natural, spoken conversation. Keep your responses relatively short and conversational, as this is a real-time voice chat.'
   },
   [Language.VI]: {
@@ -197,9 +224,27 @@ export const TRANSLATIONS = {
     heroTitlePrefix: 'Định hướng cho ',
     heroTitleSuffix: 'mọi người',
     hotIndustriesTitle: 'Đón Đầu Tương Lai',
-    hotIndustriesSub: 'Khám phá các ngành nghề tăng trưởng cao, nơi AI của chúng tôi có thể giúp bạn định hướng và tìm được công việc mơ ước.',
+    hotIndustriesSub: 'Khám phá các ngành nghề tăng trưởng cao tại Việt Nam, nơi AI của chúng mình có thể giúp bạn định hướng và tìm được công việc mơ ước.',
+    vnLaborMarketTitle: 'Thị Trường Lao Động VN 2024-2025',
+    vnLaborMarketDesc: 'Nhu cầu nhân lực chất lượng cao trong mảng Công nghệ (AI, Bán dẫn), Logistics và Năng lượng tái tạo đang tăng vọt.',
+    careerQuizTitle: 'Trắc Nghiệm Nghề Nghiệp',
+    careerQuizDesc: 'Khám phá nhóm tính cách nghề nghiệp của bạn (RIASEC) chỉ trong 2 phút.',
+    accuracyRate: 'Tỉ lệ chính xác AI',
+    userCount: 'Người dùng tin tưởng',
+    activeSessions: 'Phiên tư vấn 24h',
+    accuracyValue: '98.5%',
+    userValue: '12,500+',
+    sessionValue: '1,240',
     continueJourney: 'Sẵn sàng tiếp tục hành trình,',
     goToDashboard: 'Vào Dashboard',
+    guestSession: 'Phiên Khách',
+    logout: 'Đăng xuất',
+    chooseAvatar: 'Chọn Ảnh Đại Diện',
+    randomAvatar: 'Ảnh Ngẫu Nhiên',
+    searchChats: 'Tìm kiếm cuộc trò chuyện...',
+    collapseSidebar: 'Thu gọn thanh bên',
+    expandSidebar: 'Mở rộng thanh bên',
+    discussWithAI: 'Thảo luận kết quả với AI',
 
     // Feature Translations - UPDATED
     featureVoiceTitle: 'Tư vấn 1-1 Trực tiếp',
@@ -215,7 +260,7 @@ export const TRANSLATIONS = {
     featureHeaderSuffix: 'được thực hiện từ lâu.',
     featureSub: 'Một nền tảng thay thế các chuyên gia đắt đỏ và việc tìm kiếm thông tin rời rạc.',
 
-    systemInstruction: 'Bạn là chuyên gia tư vấn nghề nghiệp tên là Career Compass, chuyên hỗ trợ học sinh THPT. Nhiệm vụ của bạn là giúp các em xác định điểm mạnh, sở thích, chọn khối thi (A, A1, B, C, D...), chọn ngành học và trường đại học phù hợp. Bạn cũng giúp lập lộ trình phát triển bản thân trong 3 tháng tới (học tập, kỹ năng mềm, ngoại khóa). TUYỆT ĐỐI KHÔNG yêu cầu CV, kinh nghiệm làm việc hay luyện phỏng vấn xin việc vì đối tượng là học sinh. Hãy dùng định dạng Markdown (in đậm **, gạch đầu dòng -, tiêu đề ###) để trình bày rõ ràng, dễ đọc.',
-    voiceSystemInstruction: 'Bạn là chuyên gia tư vấn nghề nghiệp cho học sinh THPT. Hãy trò chuyện tự nhiên, thân thiện, như một người anh/chị đi trước. Tập trung vào việc chọn trường, chọn ngành, và định hướng học tập. Không hỏi về CV hay kinh nghiệm đi làm. Giữ câu trả lời ngắn gọn, súc tích.'
+    systemInstruction: 'Bạn là chuyên gia tư vấn nghề nghiệp tên là Career Compass, chuyên hỗ trợ học sinh THPT. Hãy xưng hô là "mình" và gọi người dùng là "bạn". Nhiệm vụ của mình là giúp bạn xác định điểm mạnh, sở thích, chọn khối thi (A, A1, B, C, D...), chọn ngành học và trường đại học phù hợp tại Việt Nam. Mình cũng giúp lập lộ trình phát triển bản thân trong 3 tháng tới (học tập, kỹ năng mềm, ngoại khóa). Hãy giúp bạn khám phá bản thân thông qua các hoạt động học tập, đam mê và cuộc sống hàng ngày. Nếu người dùng chia sẻ kết quả trắc nghiệm nghề nghiệp (RIASEC), hãy dựa vào đó để đưa ra lời khuyên phù hợp nhất. Hãy dùng định dạng Markdown (in đậm **, gạch đầu dòng -, tiêu đề ###) để trình bày rõ ràng, dễ đọc.',
+    voiceSystemInstruction: 'Bạn là chuyên gia tư vấn nghề nghiệp cho học sinh THPT. Hãy xưng hô là "mình" và gọi người dùng là "bạn". Hãy trò chuyện tự nhiên, thân thiện, như một người bạn đi trước. Tập trung vào việc chọn trường, chọn ngành, và định hướng học tập thông qua các hoạt động học tập và cuộc sống hàng ngày. Giữ câu trả lời ngắn gọn, súc tích.'
   }
 };

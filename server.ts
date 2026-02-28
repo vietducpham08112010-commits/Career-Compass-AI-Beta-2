@@ -96,6 +96,7 @@ wss.on("connection", (ws: WebSocket) => {
       if (msg.type === "config") {
         // Initialize Gemini Live Session
         try {
+          console.log("Connecting to Gemini Live API...");
           const sessionPromise = ai.live.connect({
             model: 'gemini-2.5-flash-native-audio-preview-09-2025',
             callbacks: {

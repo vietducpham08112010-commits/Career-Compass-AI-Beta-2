@@ -12,7 +12,11 @@ export const sendChatMessage = async (
   userProfile?: UserProfile | null
 ) => {
   const t = TRANSLATIONS[language];
-  const systemInstruction = t.systemInstruction;
+  let systemInstruction = t.systemInstruction;
+  
+  if (userProfile?.careerProfile) {
+      systemInstruction += `\n\nUser's Career Profile (RIASEC): ${userProfile.careerProfile}`;
+  }
 
   // Check Provider - ONLY use external APIs if user explicitly configured them
   if (userProfile?.aiProvider === AIProvider.N8N && userProfile.customEndpoint) {
@@ -152,6 +156,7 @@ const sendN8NMessage = async (
 
 export class LiveSessionManager {
   language: Language;
+  userProfile?: UserProfile | null;
   ws: WebSocket | null;
   inputContext: AudioContext | null;
   outputContext: AudioContext | null;
@@ -166,8 +171,9 @@ export class LiveSessionManager {
   onAudioLevel?: (level: number) => void;
   onTranscript?: (text: string, isUser: boolean) => void;
 
-  constructor(language: Language) { 
+  constructor(language: Language, userProfile?: UserProfile | null) { 
     this.language = language;
+    this.userProfile = userProfile;
     this.ws = null;
     this.inputContext = null;
     this.outputContext = null;
@@ -192,6 +198,11 @@ export class LiveSessionManager {
 
   async connect(deviceId: string, decodeAudioDataFn: any, createBlobFn: any, decodeFn: any) {
     const t = TRANSLATIONS[this.language];
+    let systemInstruction = t.voiceSystemInstruction;
+    
+    if (this.userProfile?.careerProfile) {
+        systemInstruction += `\n\nUser's Career Profile (RIASEC): ${this.userProfile.careerProfile}`;
+    }
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -209,13 +220,15 @@ export class LiveSessionManager {
       // Connect to Backend WebSocket
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws`;
+      console.log("Connecting to WebSocket:", wsUrl);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
+        console.log("WebSocket connected successfully");
         // Send Config
         this.ws?.send(JSON.stringify({
             type: 'config',
-            systemInstruction: t.voiceSystemInstruction,
+            systemInstruction: systemInstruction,
             voiceName: 'Kore'
         }));
       };
@@ -255,8 +268,16 @@ export class LiveSessionManager {
         }
       };
 
-      this.ws.onclose = () => { this.cleanup(); if (this.onDisconnect) this.onDisconnect(); };
-      this.ws.onerror = (err) => { if (this.onError) this.onError(err); this.cleanup(); };
+      this.ws.onclose = (event) => { 
+          console.log("WebSocket closed:", event.code, event.reason);
+          this.cleanup(); 
+          if (this.onDisconnect) this.onDisconnect(); 
+      };
+      this.ws.onerror = (err) => { 
+          console.error("WebSocket error:", err);
+          if (this.onError) this.onError(err); 
+          this.cleanup(); 
+      };
 
     } catch (e) { 
         if (this.onError) this.onError(e); 

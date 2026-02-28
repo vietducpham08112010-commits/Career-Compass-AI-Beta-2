@@ -17,7 +17,8 @@ export enum AppMode {
 export enum DashboardTab {
   CHAT = 'CHAT',
   VOICE = 'VOICE',
-  PROFILE = 'PROFILE'
+  PROFILE = 'PROFILE',
+  QUIZ = 'QUIZ'
 }
 
 export enum AIProvider {
@@ -44,6 +45,7 @@ export interface UserProfile {
   name: string;
   email: string;
   careerGoal?: string;
+  careerProfile?: string;
   isGuest?: boolean;
   avatar?: string;
   aiProvider?: AIProvider;
