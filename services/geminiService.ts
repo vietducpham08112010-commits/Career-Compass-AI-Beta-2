@@ -299,7 +299,7 @@ export class LiveSessionManager {
       let sum = 0; for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
       if (this.onAudioLevel) this.onAudioLevel(Math.sqrt(sum / inputData.length));
       
-      const pcmBlob = createBlobFn(inputData);
+      const pcmBlob = createBlobFn(inputData, this.inputContext?.sampleRate || 16000);
       // Send to WebSocket
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.ws.send(JSON.stringify({ realtimeInput: { media: pcmBlob } }));
