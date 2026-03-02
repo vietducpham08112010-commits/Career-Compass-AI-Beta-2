@@ -180,8 +180,8 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
 
   const handleAnswer = (value: number) => {
     const q = questions[step];
-    // @ts-ignore
-    setScores(prev => ({ ...prev, [q.type]: prev[q.type] + value }));
+    const typeKey = q.type as keyof typeof scores;
+    setScores(prev => ({ ...prev, [typeKey]: prev[typeKey] + value }));
     if (step < questions.length - 1) {
       setStep(step + 1);
     } else {
@@ -915,8 +915,8 @@ export default function App() {
              
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  {HOT_INDUSTRIES.map((industry) => {
-                     // @ts-ignore
-                     const IconComponent = Icons[industry.icon] || Icons.TrendingUp;
+                     const iconKey = industry.icon as keyof typeof Icons;
+                     const IconComponent = Icons[iconKey] || Icons.TrendingUp;
                      
                      return (
                         <div key={industry.id} className="glass-card rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-2 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30">

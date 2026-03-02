@@ -35,8 +35,8 @@ export const Visualizer = ({ isActive, level }: { isActive: boolean; level: numb
             else { gradient.addColorStop(0, '#6366f1'); gradient.addColorStop(1, '#4f46e5'); }
         } else { gradient.addColorStop(0, isDark ? '#334155' : '#cbd5e1'); gradient.addColorStop(1, isDark ? '#1e293b' : '#94a3b8'); }
         ctx.fillStyle = gradient;
-        // @ts-ignore
-        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, barWidth, bars[i], radius); ctx.fill(); } else { ctx.fillRect(x, y, barWidth, bars[i]); }
+        const ctxAny = ctx as any;
+        if (ctxAny.roundRect) { ctx.beginPath(); ctxAny.roundRect(x, y, barWidth, bars[i], radius); ctx.fill(); } else { ctx.fillRect(x, y, barWidth, bars[i]); }
       }
       animationId = requestAnimationFrame(draw);
     };
