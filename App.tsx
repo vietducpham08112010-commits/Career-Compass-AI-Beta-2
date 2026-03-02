@@ -471,19 +471,19 @@ export default function App() {
       const newUser = { ...auth.user, ...updates };
       setAuth({ ...auth, user: newUser });
       
-      if (!newUser.isGuest) {
-          try {
-              localStorage.setItem('currentUser', JSON.stringify(newUser));
+      try {
+          localStorage.setItem('currentUser', JSON.stringify(newUser));
+          if (!newUser.isGuest) {
               const users = getUsers();
               const idx = users.findIndex(u => u.email === newUser.email);
               if (idx !== -1) {
                   users[idx] = newUser;
                   localStorage.setItem('users', JSON.stringify(users));
               }
-          } catch (e) {
-              console.error("Failed to save user profile to localStorage", e);
-              alert("Failed to save profile. The image might be too large.");
           }
+      } catch (e) {
+          console.error("Failed to save user profile to localStorage", e);
+          alert("Failed to save profile. The image might be too large.");
       }
   };
 
@@ -645,6 +645,7 @@ export default function App() {
 
   const handleGuestLogin = () => {
     const guestUser = { name: 'Guest', email: '', careerGoal: 'Exploring', isGuest: true, avatar: getRandomAvatar(), aiProvider: AIProvider.GEMINI };
+    localStorage.setItem('currentUser', JSON.stringify(guestUser));
     setAuth({ isAuthenticated: true, user: guestUser });
     setMode(AppMode.DASHBOARD);
   };
