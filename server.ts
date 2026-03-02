@@ -21,10 +21,10 @@ wss.on('error', (err) => {
 });
 
 const PORT = 3000;
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
 
 if (!API_KEY) {
-  console.error("WARNING: GEMINI_API_KEY is missing in environment variables. Chat features will fail.");
+  console.error("WARNING: GEMINI_API_KEY/API_KEY is missing in environment variables. Chat features will fail.");
   // Do not exit, allow server to start so UI can load
 }
 

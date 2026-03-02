@@ -217,6 +217,11 @@ export class LiveSessionManager {
       const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
+      // Check if sample rate is actually 16000, if not, we might need to handle it or warn
+      if (this.inputContext.sampleRate !== 16000) {
+          console.warn(`AudioContext sample rate is ${this.inputContext.sampleRate}, expected 16000. Audio might be distorted.`);
+      }
+
       // Connect to Backend WebSocket
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws`;
