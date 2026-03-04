@@ -740,7 +740,11 @@ export default function App() {
       const session = new LiveSessionManager(lang, auth.user);
       session.onConnect = () => { setIsVoiceActive(true); setVoiceStatus(t.listening); };
       session.onDisconnect = () => { setIsVoiceActive(false); setVoiceStatus(''); };
-      session.onError = (err: any) => { console.error(err); setVoiceStatus(t.error); setIsVoiceActive(false); };
+      session.onError = (err: any) => { 
+          console.error("Session Error:", err); 
+          setVoiceStatus(typeof err === 'string' ? err : (err.message || t.error)); 
+          setIsVoiceActive(false); 
+      };
       session.onAudioLevel = (level: number) => { setAudioLevel(level); };
       session.onTranscript = (text: string, isUser: boolean) => {
           setTranscripts(prev => {

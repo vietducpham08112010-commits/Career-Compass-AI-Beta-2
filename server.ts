@@ -92,68 +92,82 @@ wss.on("connection", (ws: WebSocket) => {
   ws.on("message", async (data: Buffer) => {
     try {
       const msg = JSON.parse(data.toString());
+      console.log("Received WebSocket message type:", msg.type);
 
       if (msg.type === "config") {
+        if (!API_KEY) {
+            console.error("API_KEY is missing. Cannot connect to Gemini Live.");
+            ws.send(JSON.stringify({ error: "Server Configuration Error: API Key is missing." }));
+            return;
+        }
+
         // Initialize Gemini Live Session
+        const connectToGemini = async (model: string) => {
+            console.log(`Attempting to connect to Gemini Live with model: ${model}`);
+            return ai.live.connect({
+                model,
+                callbacks: {
+                  onopen: () => {
+                    console.log(`Gemini Live Session Opened (${model})`);
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: "connected" }));
+                    }
+                  },
+                  onmessage: (message: LiveServerMessage) => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify(message));
+                    }
+                  },
+                  onclose: () => {
+                    console.log("Gemini Live Session Closed");
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.close();
+                    }
+                  },
+                  onerror: (err: any) => {
+                    console.error("Gemini Live Session Error:", err);
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ error: err.message }));
+                    }
+                  }
+                },
+                config: {
+                  responseModalities: [Modality.AUDIO],
+                  outputAudioTranscription: {},
+                  inputAudioTranscription: {},
+                  systemInstruction: msg.systemInstruction || "You are a helpful assistant.",
+                  speechConfig: { 
+                    voiceConfig: { 
+                      prebuiltVoiceConfig: { 
+                        voiceName: msg.voiceName || 'Kore' 
+                      } 
+                    } 
+                  }
+                }
+            });
+        };
+
         try {
-          console.log("Connecting to Gemini Live API...");
-          const sessionPromise = ai.live.connect({
-            model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-            callbacks: {
-              onopen: () => {
-                console.log("Gemini Live Session Opened");
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: "connected" }));
-                }
-              },
-              onmessage: (message: LiveServerMessage) => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    // Forward the raw message object to the client
-                    // The client expects the structure of LiveServerMessage
-                    ws.send(JSON.stringify(message));
-                }
-              },
-              onclose: () => {
-                console.log("Gemini Live Session Closed");
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.close();
-                }
-              },
-              onerror: (err: any) => {
-                console.error("Gemini Live Session Error:", err);
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ error: err.message }));
-                }
-              }
-            },
-            config: {
-              responseModalities: [Modality.AUDIO],
-              outputAudioTranscription: {},
-              inputAudioTranscription: {},
-              systemInstruction: msg.systemInstruction || "You are a helpful assistant.",
-              speechConfig: { 
-                voiceConfig: { 
-                  prebuiltVoiceConfig: { 
-                    voiceName: msg.voiceName || 'Kore' 
-                  } 
-                } 
-              }
+            try {
+                session = await connectToGemini('gemini-2.5-flash-native-audio-preview-09-2025');
+            } catch (err) {
+                console.warn("Failed with primary model, trying fallback: gemini-2.0-flash-exp");
+                session = await connectToGemini('gemini-2.0-flash-exp');
             }
-          });
-          session = sessionPromise;
         } catch (err: any) {
-            console.error("Failed to connect to Gemini Live:", err);
-            ws.send(JSON.stringify({ error: "Failed to connect to Gemini Live" }));
+            console.error("Failed to connect to Gemini Live (All models):", err);
+            ws.send(JSON.stringify({ error: "Failed to connect to Gemini Live. Please check API Key or Model availability." }));
         }
       } else if (msg.realtimeInput) {
           // Forward audio/input to Gemini
           if (session) {
               const input = Array.isArray(msg.realtimeInput) ? msg.realtimeInput : [msg.realtimeInput];
-              session.then((s: any) => s.sendRealtimeInput(input));
+              // session is now the object, not a promise
+              session.sendRealtimeInput(input);
           }
       } else if (msg.toolResponse) {
           if (session) {
-              session.then((s: any) => s.sendToolResponse(msg.toolResponse));
+              session.sendToolResponse(msg.toolResponse);
           }
       }
     } catch (err) {
@@ -164,7 +178,7 @@ wss.on("connection", (ws: WebSocket) => {
   ws.on("close", () => {
     console.log("Client disconnected");
     if (session) {
-        session.then((s: any) => s.close());
+        session.close();
     }
   });
 });
