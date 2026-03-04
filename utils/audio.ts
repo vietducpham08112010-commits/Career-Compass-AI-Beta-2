@@ -36,6 +36,32 @@ export async function decodeAudioData(
   return buffer;
 }
 
+export function downsampleBuffer(buffer: Float32Array, sampleRate: number, outSampleRate: number): Float32Array {
+  if (outSampleRate === sampleRate) {
+    return buffer;
+  }
+  if (outSampleRate > sampleRate) {
+    throw new Error("downsampling rate show be smaller than original sample rate");
+  }
+  const sampleRateRatio = sampleRate / outSampleRate;
+  const newLength = Math.round(buffer.length / sampleRateRatio);
+  const result = new Float32Array(newLength);
+  let offsetResult = 0;
+  let offsetBuffer = 0;
+  while (offsetResult < result.length) {
+    const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+    let accum = 0, count = 0;
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+      accum += buffer[i];
+      count++;
+    }
+    result[offsetResult] = accum / count;
+    offsetResult++;
+    offsetBuffer = nextOffsetBuffer;
+  }
+  return result;
+}
+
 export function createPcmBlob(data: Float32Array, sampleRate: number = 16000): { data: string, mimeType: string } {
   const l = data.length;
   const int16 = new Int16Array(l);

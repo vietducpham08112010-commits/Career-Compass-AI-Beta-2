@@ -2,6 +2,7 @@
 import type { LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
+import { downsampleBuffer } from "../utils/audio";
 
 // --- API CLIENT (Backend Proxy) ---
 
@@ -299,7 +300,8 @@ export class LiveSessionManager {
       let sum = 0; for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
       if (this.onAudioLevel) this.onAudioLevel(Math.sqrt(sum / inputData.length));
       
-      const pcmBlob = createBlobFn(inputData, this.inputContext?.sampleRate || 16000);
+      const downsampled = downsampleBuffer(inputData, this.inputContext?.sampleRate || 16000, 16000);
+      const pcmBlob = createBlobFn(downsampled, 16000);
       // Send to WebSocket
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.ws.send(JSON.stringify({ realtimeInput: { media: pcmBlob } }));
