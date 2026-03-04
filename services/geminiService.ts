@@ -1,4 +1,5 @@
 
+import { GoogleGenAI, Modality } from "@google/genai";
 import type { LiveServerMessage } from "@google/genai";
 import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
@@ -158,7 +159,7 @@ const sendN8NMessage = async (
 export class LiveSessionManager {
   language: Language;
   userProfile?: UserProfile | null;
-  ws: WebSocket | null;
+  session: any | null;
   inputContext: AudioContext | null;
   outputContext: AudioContext | null;
   inputSource: MediaStreamAudioSourceNode | null;
@@ -172,10 +173,12 @@ export class LiveSessionManager {
   onAudioLevel?: (level: number) => void;
   onTranscript?: (text: string, isUser: boolean) => void;
 
+  isConnected: boolean;
+
   constructor(language: Language, userProfile?: UserProfile | null) { 
     this.language = language;
     this.userProfile = userProfile;
-    this.ws = null;
+    this.session = null;
     this.inputContext = null;
     this.outputContext = null;
     this.inputSource = null;
@@ -183,6 +186,7 @@ export class LiveSessionManager {
     this.stream = null;
     this.nextStartTime = 0;
     this.sources = new Set();
+    this.isConnected = false;
   }
 
   async getAudioInputDevices() {
@@ -223,67 +227,80 @@ export class LiveSessionManager {
           console.warn(`AudioContext sample rate is ${this.inputContext.sampleRate}, expected 16000. Audio might be distorted.`);
       }
 
-      // Connect to Backend WebSocket
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-      console.log("Connecting to WebSocket:", wsUrl);
-      this.ws = new WebSocket(wsUrl);
+      // Fetch API Key
+      const keyResponse = await fetch('/api/get-gemini-key');
+      if (!keyResponse.ok) throw new Error("Failed to fetch API key");
+      const { key } = await keyResponse.json();
+      
+      const ai = new GoogleGenAI({ apiKey: key });
 
-      this.ws.onopen = () => {
-        console.log("WebSocket connected successfully");
-        // Send Config
-        this.ws?.send(JSON.stringify({
-            type: 'config',
-            systemInstruction: systemInstruction,
-            voiceName: 'Kore'
-        }));
+      const connectToGemini = async (model: string) => {
+          console.log(`Attempting to connect to Gemini Live with model: ${model}`);
+          return ai.live.connect({
+              model,
+              callbacks: {
+                onopen: () => {
+                  console.log(`Gemini Live Session Opened (${model})`);
+                  this.isConnected = true;
+                  this.startAudioStreaming(createBlobFn);
+                  if (this.onConnect) this.onConnect();
+                },
+                onmessage: async (message: LiveServerMessage) => {
+                  const serverContent = message.serverContent;
+                  if (serverContent) {
+                      if (serverContent.outputTranscription) {
+                          const text = serverContent.outputTranscription.text;
+                          if (text && this.onTranscript) this.onTranscript(text, false);
+                      } else if (serverContent.inputTranscription) {
+                          const text = serverContent.inputTranscription.text;
+                          if (text && this.onTranscript) this.onTranscript(text, true);
+                      }
+                      
+                      const base64Audio = serverContent.modelTurn?.parts?.[0]?.inlineData?.data;
+                      if (base64Audio && this.outputContext) {
+                        const audioBuffer = await decodeAudioDataFn(decodeFn(base64Audio), this.outputContext, 24000, 1);
+                        this.playAudio(audioBuffer);
+                      }
+                      
+                      if (serverContent.interrupted) this.stopCurrentAudio();
+                  }
+                },
+                onclose: () => {
+                  console.log("Gemini Live Session Closed");
+                  if (!this.isConnected && this.onError) {
+                      this.onError("Connection failed. Please check your network or try again.");
+                  }
+                  this.cleanup(); 
+                  if (this.onDisconnect) this.onDisconnect(); 
+                },
+                onerror: (err: any) => {
+                  console.error("Gemini Live Session Error:", err);
+                  if (this.onError) this.onError(err.message || err);
+                  this.cleanup();
+                }
+              },
+              config: {
+                responseModalities: [Modality.AUDIO],
+                outputAudioTranscription: {},
+                inputAudioTranscription: {},
+                systemInstruction: systemInstruction,
+                speechConfig: { 
+                  voiceConfig: { 
+                    prebuiltVoiceConfig: { 
+                      voiceName: 'Kore' 
+                    } 
+                  } 
+                }
+              }
+          });
       };
 
-      this.ws.onmessage = async (event) => {
-        const message = JSON.parse(event.data);
-
-        if (message.type === 'connected') {
-            this.startAudioStreaming(createBlobFn);
-            if (this.onConnect) this.onConnect();
-            return;
-        }
-
-        if (message.error) {
-            if (this.onError) this.onError(message.error);
-            return;
-        }
-
-        // Handle LiveServerMessage structure
-        const serverContent = message.serverContent;
-        if (serverContent) {
-            if (serverContent.outputTranscription) {
-                const text = serverContent.outputTranscription.text;
-                if (text && this.onTranscript) this.onTranscript(text, false);
-            } else if (serverContent.inputTranscription) {
-                const text = serverContent.inputTranscription.text;
-                if (text && this.onTranscript) this.onTranscript(text, true);
-            }
-            
-            const base64Audio = serverContent.modelTurn?.parts?.[0]?.inlineData?.data;
-            if (base64Audio && this.outputContext) {
-              const audioBuffer = await decodeAudioDataFn(decodeFn(base64Audio), this.outputContext, 24000, 1);
-              this.playAudio(audioBuffer);
-            }
-            
-            if (serverContent.interrupted) this.stopCurrentAudio();
-        }
-      };
-
-      this.ws.onclose = (event) => { 
-          console.log("WebSocket closed:", event.code, event.reason);
-          this.cleanup(); 
-          if (this.onDisconnect) this.onDisconnect(); 
-      };
-      this.ws.onerror = (err) => { 
-          console.error("WebSocket error:", err);
-          if (this.onError) this.onError(err); 
-          this.cleanup(); 
-      };
+      try {
+          this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-09-2025');
+      } catch (err) {
+          console.warn("Failed with primary model, trying fallback: gemini-2.0-flash-exp");
+          this.session = await connectToGemini('gemini-2.0-flash-exp');
+      }
 
     } catch (e) { 
         if (this.onError) this.onError(e); 
@@ -302,9 +319,9 @@ export class LiveSessionManager {
       
       const downsampled = downsampleBuffer(inputData, this.inputContext?.sampleRate || 16000, 16000);
       const pcmBlob = createBlobFn(downsampled, 16000);
-      // Send to WebSocket
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({ realtimeInput: { media: pcmBlob } }));
+      
+      if (this.session && this.isConnected) {
+          this.session.sendRealtimeInput([{ media: pcmBlob }]);
       }
     };
     this.inputSource.connect(this.processor);
@@ -330,8 +347,8 @@ export class LiveSessionManager {
   }
 
   disconnect() { 
-      if (this.ws) {
-          this.ws.close();
+      if (this.session) {
+          this.session.close();
       }
       this.cleanup(); 
   }
@@ -342,6 +359,7 @@ export class LiveSessionManager {
       this.inputContext?.close(); this.outputContext?.close();
       this.inputContext = null; this.outputContext = null; this.stream = null; this.processor = null;
       this.sources.clear(); this.nextStartTime = 0;
-      this.ws = null;
+      this.session = null;
+      this.isConnected = false;
   }
 }

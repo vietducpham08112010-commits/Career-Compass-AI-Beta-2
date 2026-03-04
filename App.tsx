@@ -739,7 +739,16 @@ export default function App() {
       setTranscripts([]);
       const session = new LiveSessionManager(lang, auth.user);
       session.onConnect = () => { setIsVoiceActive(true); setVoiceStatus(t.listening); };
-      session.onDisconnect = () => { setIsVoiceActive(false); setVoiceStatus(''); };
+      session.onDisconnect = () => { 
+          setIsVoiceActive(false); 
+          setVoiceStatus(prev => {
+              // If the current status is an error message (not one of the standard states), keep it
+              if (prev && prev !== t.listening && prev !== t.connecting && prev !== t.disconnecting && prev !== t.speaking) {
+                  return prev;
+              }
+              return '';
+          });
+      };
       session.onError = (err: any) => { 
           console.error("Session Error:", err); 
           setVoiceStatus(typeof err === 'string' ? err : (err.message || t.error)); 
