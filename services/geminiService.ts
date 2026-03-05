@@ -321,7 +321,7 @@ export class LiveSessionManager {
       const pcmBlob = createBlobFn(downsampled, 16000);
       
       if (this.session && this.isConnected) {
-          this.session.sendRealtimeInput([{ media: pcmBlob }]);
+          this.session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
       }
     };
     this.inputSource.connect(this.processor);
