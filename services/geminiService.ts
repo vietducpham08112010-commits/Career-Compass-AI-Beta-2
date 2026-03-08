@@ -236,13 +236,13 @@ export class LiveSessionManager {
 
       const connectToGemini = async (model: string) => {
           console.log(`Attempting to connect to Gemini Live with model: ${model}`);
-          return ai.live.connect({
+          const sessionPromise = ai.live.connect({
               model,
               callbacks: {
                 onopen: () => {
                   console.log(`Gemini Live Session Opened (${model})`);
                   this.isConnected = true;
-                  this.startAudioStreaming(createBlobFn);
+                  this.startAudioStreaming(createBlobFn, sessionPromise);
                   if (this.onConnect) this.onConnect();
                 },
                 onmessage: async (message: LiveServerMessage) => {
@@ -293,6 +293,7 @@ export class LiveSessionManager {
                 }
               }
           });
+          return sessionPromise;
       };
 
       try {
@@ -308,7 +309,7 @@ export class LiveSessionManager {
     }
   }
 
-  startAudioStreaming(createBlobFn: any) {
+  startAudioStreaming(createBlobFn: any, sessionPromise?: Promise<any>) {
     if (!this.inputContext || !this.stream) return;
     this.inputSource = this.inputContext.createMediaStreamSource(this.stream);
     this.processor = this.inputContext.createScriptProcessor(2048, 1, 1);
@@ -320,8 +321,14 @@ export class LiveSessionManager {
       const downsampled = downsampleBuffer(inputData, this.inputContext?.sampleRate || 16000, 16000);
       const pcmBlob = createBlobFn(downsampled, 16000);
       
-      if (this.session && this.isConnected) {
-          this.session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+      if (sessionPromise) {
+          sessionPromise.then(session => {
+              if (this.isConnected) {
+                  session.sendRealtimeInput([{ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } }]);
+              }
+          });
+      } else if (this.session && this.isConnected) {
+          this.session.sendRealtimeInput([{ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } }]);
       }
     };
     this.inputSource.connect(this.processor);
