@@ -243,6 +243,14 @@ export class LiveSessionManager {
                   this.isConnected = true;
                   this.startAudioStreaming(createBlobFn, sessionPromise);
                   if (this.onConnect) this.onConnect();
+                  
+                  // Prompt AI to start the conversation
+                  sessionPromise.then(session => {
+                      const prompt = this.language === 'vi' 
+                          ? "Xin chào, hãy chủ động chào hỏi và bắt đầu cuộc trò chuyện với tôi."
+                          : "Hello, please greet me and start the conversation.";
+                      session.sendRealtimeInput([{ text: prompt }]);
+                  });
                 },
                 onmessage: async (message: LiveServerMessage) => {
                   const serverContent = message.serverContent;

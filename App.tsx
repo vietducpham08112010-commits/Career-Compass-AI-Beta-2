@@ -312,8 +312,8 @@ export default function App() {
               const img = new Image();
               img.onload = () => {
                   const canvas = document.createElement('canvas');
-                  const MAX_WIDTH = 500;
-                  const MAX_HEIGHT = 500;
+                  const MAX_WIDTH = 1024;
+                  const MAX_HEIGHT = 1024;
                   let width = img.width;
                   let height = img.height;
 
@@ -332,9 +332,14 @@ export default function App() {
                   canvas.width = width;
                   canvas.height = height;
                   const ctx = canvas.getContext('2d');
-                  ctx?.drawImage(img, 0, 0, width, height);
+                  if (ctx) {
+                      ctx.imageSmoothingEnabled = true;
+                      ctx.imageSmoothingQuality = 'high';
+                      ctx.drawImage(img, 0, 0, width, height);
+                  }
                   
-                  const dataUrl = canvas.toDataURL('image/png');
+                  // Use WebP or JPEG with high quality to balance size and quality
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
                   updateUserProfile({ avatar: dataUrl });
               };
               if (typeof event.target?.result === 'string') {
