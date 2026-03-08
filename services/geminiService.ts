@@ -249,7 +249,7 @@ export class LiveSessionManager {
                       const prompt = this.language === 'vi' 
                           ? "Xin chào, hãy chủ động chào hỏi và bắt đầu cuộc trò chuyện với tôi."
                           : "Hello, please greet me and start the conversation.";
-                      session.sendRealtimeInput([{ text: prompt }]);
+                      session.sendClientContent({ turns: [{ role: 'user', parts: [{ text: prompt }] }], turnComplete: true });
                   });
                 },
                 onmessage: async (message: LiveServerMessage) => {
