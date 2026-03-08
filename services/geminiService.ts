@@ -222,7 +222,6 @@ export class LiveSessionManager {
       const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Check if sample rate is actually 16000, if not, we might need to handle it or warn
       if (this.inputContext.sampleRate !== 16000) {
           console.warn(`AudioContext sample rate is ${this.inputContext.sampleRate}, expected 16000. Audio might be distorted.`);
       }
@@ -312,6 +311,8 @@ export class LiveSessionManager {
   startAudioStreaming(createBlobFn: any, sessionPromise?: Promise<any>) {
     if (!this.inputContext || !this.stream) return;
     this.inputSource = this.inputContext.createMediaStreamSource(this.stream);
+    
+    // Using ScriptProcessorNode for now as AudioWorklet requires a separate file
     this.processor = this.inputContext.createScriptProcessor(2048, 1, 1);
     this.processor.onaudioprocess = (e) => {
       const inputData = e.inputBuffer.getChannelData(0);
@@ -324,11 +325,11 @@ export class LiveSessionManager {
       if (sessionPromise) {
           sessionPromise.then(session => {
               if (this.isConnected) {
-                  session.sendRealtimeInput([{ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } }]);
+                  session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
               }
           });
       } else if (this.session && this.isConnected) {
-          this.session.sendRealtimeInput([{ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } }]);
+          this.session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
       }
     };
     this.inputSource.connect(this.processor);

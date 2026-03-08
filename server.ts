@@ -161,7 +161,7 @@ wss.on("connection", (ws: WebSocket) => {
       } else if (msg.realtimeInput) {
           // Forward audio/input to Gemini
           if (session) {
-              const input = Array.isArray(msg.realtimeInput) ? msg.realtimeInput : [msg.realtimeInput];
+              const input = Array.isArray(msg.realtimeInput) ? msg.realtimeInput[0] : msg.realtimeInput;
               // session is now the object, not a promise
               session.sendRealtimeInput(input);
           }
