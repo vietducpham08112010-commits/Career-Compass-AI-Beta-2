@@ -104,14 +104,46 @@ app.post("/api/chat", async (req, res) => {
             });
             return res.json({ text: fallbackResponse.text });
         } catch (fallbackError: any) {
-            console.error("Model generation failed with fallback model:", fallbackError);
-            throw fallbackError;
+            console.error("Model generation failed with first fallback model:", fallbackError);
+            try {
+                console.log("Attempting second fallback to gemini-3-flash-preview...");
+                const secondFallbackResponse = await ai.models.generateContent({
+                    model: 'gemini-3-flash-preview',
+                    contents: contents,
+                    config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
+                });
+                return res.json({ text: secondFallbackResponse.text });
+            } catch (secondFallbackError: any) {
+                console.error("Model generation failed with second fallback model:", secondFallbackError);
+                try {
+                    console.log("Attempting third fallback to gemini-2.5-flash...");
+                    const thirdFallbackResponse = await ai.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: contents,
+                        config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
+                    });
+                    return res.json({ text: thirdFallbackResponse.text });
+                } catch (thirdFallbackError: any) {
+                    console.error("Model generation failed with third fallback model:", thirdFallbackError);
+                    throw thirdFallbackError;
+                }
+            }
         }
     }
 
   } catch (error: any) {
     console.error("Chat API Error:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    let errorMessage = error.message || "Internal Server Error";
+    try {
+        // If the error message is a JSON string, try to parse it to extract the actual message
+        const parsedError = JSON.parse(errorMessage);
+        if (parsedError.error && parsedError.error.message) {
+            errorMessage = parsedError.error.message;
+        }
+    } catch (e) {
+        // Not a JSON string, ignore
+    }
+    res.status(500).json({ error: errorMessage });
   }
 });
 
