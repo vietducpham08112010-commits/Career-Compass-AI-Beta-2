@@ -317,10 +317,10 @@ export class LiveSessionManager {
       };
 
       try {
-          this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-12-2025');
-      } catch (err) {
-          console.warn("Failed with primary model, trying fallback: gemini-2.5-flash-native-audio-preview-09-2025");
           this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-09-2025');
+      } catch (err) {
+          console.warn("Failed with primary model, trying fallback: gemini-2.5-flash-native-audio-preview-12-2025");
+          this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-12-2025');
       }
 
     } catch (e) { 
@@ -329,32 +329,58 @@ export class LiveSessionManager {
     }
   }
 
-  startAudioStreaming(createBlobFn: any, sessionPromise?: Promise<any>) {
+  async startAudioStreaming(createBlobFn: any, sessionPromise?: Promise<any>) {
     if (!this.inputContext || !this.stream) return;
     this.inputSource = this.inputContext.createMediaStreamSource(this.stream);
     
-    // Using ScriptProcessorNode for now as AudioWorklet requires a separate file
-    this.processor = this.inputContext.createScriptProcessor(2048, 1, 1);
-    this.processor.onaudioprocess = (e) => {
-      const inputData = e.inputBuffer.getChannelData(0);
-      let sum = 0; for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
-      if (this.onAudioLevel) this.onAudioLevel(Math.sqrt(sum / inputData.length));
-      
-      const downsampled = downsampleBuffer(inputData, this.inputContext?.sampleRate || 16000, 16000);
-      const pcmBlob = createBlobFn(downsampled, 16000);
-      
-      if (sessionPromise) {
-          sessionPromise.then(session => {
-              if (this.isConnected) {
-                  session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
-              }
-          });
-      } else if (this.session && this.isConnected) {
-          this.session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
-      }
-    };
-    this.inputSource.connect(this.processor);
-    this.processor.connect(this.inputContext.destination);
+    try {
+        await this.inputContext.audioWorklet.addModule('/audio-processor.js');
+        this.processor = new AudioWorkletNode(this.inputContext, 'audio-processor');
+        this.processor.port.onmessage = (e) => {
+            const inputData = e.data;
+            let sum = 0; for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
+            if (this.onAudioLevel) this.onAudioLevel(Math.sqrt(sum / inputData.length));
+            
+            const downsampled = downsampleBuffer(inputData, this.inputContext?.sampleRate || 16000, 16000);
+            const pcmBlob = createBlobFn(downsampled, 16000);
+            
+            if (sessionPromise) {
+                sessionPromise.then(session => {
+                    if (this.isConnected) {
+                        session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+                    }
+                });
+            } else if (this.session && this.isConnected) {
+                this.session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+            }
+        };
+        this.inputSource.connect(this.processor);
+        this.processor.connect(this.inputContext.destination);
+    } catch (err) {
+        console.warn("AudioWorklet failed, falling back to ScriptProcessorNode", err);
+        // Fallback to ScriptProcessorNode
+        this.processor = this.inputContext.createScriptProcessor(2048, 1, 1);
+        this.processor.onaudioprocess = (e) => {
+          const inputData = e.inputBuffer.getChannelData(0);
+          let sum = 0; for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
+          if (this.onAudioLevel) this.onAudioLevel(Math.sqrt(sum / inputData.length));
+          
+          const downsampled = downsampleBuffer(inputData, this.inputContext?.sampleRate || 16000, 16000);
+          const pcmBlob = createBlobFn(downsampled, 16000);
+          
+          if (sessionPromise) {
+              sessionPromise.then(session => {
+                  if (this.isConnected) {
+                      session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+                  }
+              });
+          } else if (this.session && this.isConnected) {
+              this.session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+          }
+        };
+        this.inputSource.connect(this.processor);
+        this.processor.connect(this.inputContext.destination);
+    }
   }
 
   playAudio(buffer: AudioBuffer) {
