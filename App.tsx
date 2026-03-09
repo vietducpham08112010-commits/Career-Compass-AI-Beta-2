@@ -286,6 +286,7 @@ export default function App() {
   const [inputMsg, setInputMsg] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [thinkingText, setThinkingText] = useState(''); 
+  const [selectedImage, setSelectedImage] = useState<{ data: string; mimeType: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [isVoiceActive, setIsVoiceActive] = useState(false);
@@ -296,6 +297,63 @@ export default function App() {
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const liveSessionRef = useRef<LiveSessionManager | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('hasAcceptedTerms') === 'true';
+    }
+    return true;
+  });
+  const [showCamera, setShowCamera] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+
+  const acceptTerms = () => {
+    localStorage.setItem('hasAcceptedTerms', 'true');
+    setHasAcceptedTerms(true);
+  };
+
+  const startCamera = async () => {
+    try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        setCameraStream(mediaStream);
+        setShowCamera(true);
+        // Need a small timeout to ensure video element is rendered
+        setTimeout(() => {
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+        }, 100);
+    } catch (err) {
+        alert("Camera access denied or not available.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.drawImage(videoRef.current, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const base64Data = dataUrl.split(',')[1];
+            setSelectedImage({ data: base64Data, mimeType: 'image/jpeg' });
+            stopCamera();
+        }
+    }
+  };
+
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -696,20 +754,29 @@ export default function App() {
     if (isChatLoading) return; 
     
     const textToSend = overrideText || inputMsg;
-    if (!textToSend.trim()) return;
+    if (!textToSend.trim() && !selectedImage) return;
     if (!overrideText) setInputMsg('');
     
     setThinkingText(getThinkingMessage(textToSend, lang));
     
-    const newMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: textToSend, timestamp: new Date() };
+    const newMsg: ChatMessage = { 
+        id: Date.now().toString(), 
+        role: 'user', 
+        text: textToSend, 
+        timestamp: new Date(),
+        image: selectedImage ? selectedImage.data : undefined
+    };
     setMessages(prev => [...prev, newMsg]);
     setIsChatLoading(true);
+    const currentImage = selectedImage;
+    setSelectedImage(null); // Clear image after sending
+
     try {
       const history = messages
         .filter(m => !m.text.startsWith('⚠️ Error'))
         .map(m => ({ role: m.role, text: m.text }));
         
-      const responseText = await sendChatMessage(history, textToSend, lang, auth.user);
+      const responseText = await sendChatMessage(history, textToSend, lang, auth.user, currentImage);
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText || '', timestamp: new Date() }]);
     } catch (error: any) {
         const errorMsg = error.message || JSON.stringify(error) || t.error;
@@ -833,6 +900,11 @@ export default function App() {
           <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob dark:opacity-10"></div>
           <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000 dark:opacity-10"></div>
           <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000 dark:opacity-10"></div>
+          
+          {/* Floating Orbs */}
+          <div className="absolute top-32 left-10 w-24 h-24 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full blur-xl opacity-40 dark:opacity-30 animate-float" style={{ animationDelay: '0s' }}></div>
+          <div className="absolute bottom-40 right-10 w-32 h-32 bg-gradient-to-br from-fuchsia-400 to-pink-500 rounded-full blur-2xl opacity-30 dark:opacity-20 animate-float" style={{ animationDelay: '1.5s' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full blur-lg opacity-50 dark:opacity-40 animate-float" style={{ animationDelay: '3s' }}></div>
 
           <div className="max-w-4xl space-y-8 animate-fade-in-up flex flex-col items-center relative z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/10 text-sm font-medium text-indigo-600 dark:text-indigo-300">
@@ -942,10 +1014,10 @@ export default function App() {
                              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${industry.color} flex items-center justify-center text-white mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
                                  <IconComponent className="w-7 h-7" />
                              </div>
-                             <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-500 group-hover:to-fuchsia-500 transition-colors">
+                             <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">
                                  {lang === Language.EN ? industry.name_en : industry.name_vi}
                              </h3>
-                             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                                  {lang === Language.EN ? industry.desc_en : industry.desc_vi}
                              </p>
                         </div>
@@ -1156,6 +1228,20 @@ export default function App() {
     </div>
   );
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = event.target?.result as string;
+            const base64Data = data.split(',')[1];
+            setSelectedImage({ data: base64Data, mimeType: file.type });
+        };
+        reader.readAsDataURL(file);
+    }
+    if (e.target) e.target.value = '';
+  };
+
   const renderDashboard = () => {
     const filteredHistory = chatHistory.filter(session => session.title.toLowerCase().includes(searchQuery.toLowerCase()));
     return (
@@ -1279,7 +1365,12 @@ export default function App() {
                         <div key={m.id} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
                             {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CompassLogo className="w-5 h-5 text-white" /></div>)}
                             <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
-                                <div className={`px-6 py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
+                                 <div className={`px-6 py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
+                                    {m.image && (
+                                        <div className="mb-2 max-w-full overflow-hidden rounded-lg">
+                                            <img src={`data:image/jpeg;base64,${m.image}`} alt="Uploaded" className="max-h-60 object-contain" referrerPolicy="no-referrer" />
+                                        </div>
+                                    )}
                                     <div className="leading-relaxed whitespace-pre-wrap text-[15px] markdown-body">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanText(m.text)}</ReactMarkdown>
                                     </div>
@@ -1300,11 +1391,70 @@ export default function App() {
                     )}
                     <div ref={messagesEndRef} className="h-4" />
                 </div>
-                <div className="p-6 bg-white dark:bg-[#050505] w-full flex justify-center border-t border-gray-200 dark:border-white/5 relative">
+                <div className="p-6 bg-white dark:bg-[#050505] w-full flex flex-col items-center border-t border-gray-200 dark:border-white/5 relative">
+                    {showCamera && (
+                        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4">
+                            <div className="relative w-full max-w-md bg-black rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
+                                <video ref={videoRef} autoPlay playsInline className="w-full h-auto max-h-[70vh] object-cover" />
+                                <div className="absolute bottom-6 left-0 w-full flex justify-center gap-8 px-6">
+                                    <button onClick={stopCamera} className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                    <button onClick={capturePhoto} className="w-16 h-16 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center hover:scale-105 transition-transform shadow-lg">
+                                        <div className="w-12 h-12 rounded-full border border-gray-200"></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {selectedImage && (
+                        <div className="w-full max-w-4xl mb-4 relative animate-fade-in">
+                            <div className="relative inline-block">
+                                <img src={`data:${selectedImage.mimeType};base64,${selectedImage.data}`} alt="Preview" className="h-20 w-20 object-cover rounded-xl border-2 border-indigo-500 shadow-lg" referrerPolicy="no-referrer" />
+                                <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex items-center bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all shadow-sm">
-                        <input type="text" value={inputMsg} onChange={(e) => setInputMsg(e.target.value)} placeholder={t.typeMessage} className="w-full pl-6 pr-24 py-4 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-400 text-base font-medium"/>
+                        <input type="file" id="chat-image-upload" className="hidden" accept="image/*" onChange={(e) => { handleImageUpload(e); setShowAttachmentMenu(false); }} />
+                        
+                        <div className="relative flex pl-2">
+                            <button 
+                                type="button" 
+                                onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
+                                className={`p-2 rounded-full transition-colors ${showAttachmentMenu ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-400 hover:text-indigo-600 dark:hover:text-white'}`}
+                                title="Attach"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${showAttachmentMenu ? 'rotate-45' : ''}`}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+
+                            {showAttachmentMenu && (
+                                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col py-2 min-w-[160px] animate-fade-in-up z-50">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { document.getElementById('chat-image-upload')?.click(); }} 
+                                        className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                        Upload Image
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { startCamera(); setShowAttachmentMenu(false); }} 
+                                        className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
+                                    >
+                                        <Icons.Camera className="w-[18px] h-[18px] text-fuchsia-500" />
+                                        Take Photo
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        <input type="text" value={inputMsg} onClick={() => setShowAttachmentMenu(false)} onChange={(e) => setInputMsg(e.target.value)} placeholder={t.typeMessage} className="w-full pl-2 pr-24 py-4 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-400 text-base font-medium"/>
                          <button type="button" onClick={switchToVoice} className="absolute right-14 p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-white transition-colors" title={t.switchToVoice}><Icons.Microphone className="w-5 h-5" /></button>
-                        <button type="submit" disabled={!inputMsg.trim() || isChatLoading} className="absolute right-3 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-md active:scale-95">{isChatLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5" />}</button>
+                        <button type="submit" disabled={(!inputMsg.trim() && !selectedImage) || isChatLoading} className="absolute right-3 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-md active:scale-95">{isChatLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5" />}</button>
                     </form>
                 </div>
                  <div className="text-center pb-2 text-[10px] text-gray-400 uppercase tracking-widest font-bold opacity-60">{t.footerDisclaimer}</div>
@@ -1425,9 +1575,45 @@ export default function App() {
     );
   };
 
-  switch (mode) {
-    case AppMode.AUTH: return renderAuth();
-    case AppMode.DASHBOARD: return renderDashboard();
-    case AppMode.LANDING: default: return renderLanding();
-  }
+  const renderContent = () => {
+    switch (mode) {
+      case AppMode.AUTH: return renderAuth();
+      case AppMode.DASHBOARD: return renderDashboard();
+      case AppMode.LANDING: default: return renderLanding();
+    }
+  };
+
+  return (
+    <>
+      {!hasAcceptedTerms && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-fuchsia-500"></div>
+            
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t.termsTitle}</h2>
+                <button 
+                    onClick={() => setLang(lang === Language.EN ? Language.VI : Language.EN)}
+                    className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/10 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+                >
+                    {lang === Language.EN ? 'VI' : 'EN'}
+                </button>
+            </div>
+
+            <div className="space-y-4 text-gray-600 dark:text-gray-300 text-sm max-h-60 overflow-y-auto pr-2">
+              <p><strong>{t.terms1}</strong> {t.terms1Desc}</p>
+              <p><strong>{t.terms2}</strong> {t.terms2Desc}</p>
+              <p><strong>{t.terms3}</strong> {t.terms3Desc}</p>
+              <p><strong>{t.terms4}</strong> {t.terms4Desc}</p>
+              <p><strong>{t.terms5}</strong> {t.terms5Desc}</p>
+            </div>
+            <button onClick={acceptTerms} className="mt-8 w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg active:scale-95">
+              {t.termsAccept}
+            </button>
+          </div>
+        </div>
+      )}
+      {renderContent()}
+    </>
+  );
 }

@@ -11,7 +11,8 @@ export const sendChatMessage = async (
   history: { role: string; text: string }[], 
   newMessage: string, 
   language: Language,
-  userProfile?: UserProfile | null
+  userProfile?: UserProfile | null,
+  image?: { data: string; mimeType: string } | null
 ) => {
   const t = TRANSLATIONS[language];
   let systemInstruction = t.systemInstruction;
@@ -39,7 +40,8 @@ export const sendChatMessage = async (
         body: JSON.stringify({
             history,
             message: newMessage,
-            systemInstruction
+            systemInstruction,
+            image
         })
     });
 
@@ -229,7 +231,18 @@ export class LiveSessionManager {
       // Fetch API Key
       const keyResponse = await fetch('/api/get-gemini-key');
       if (!keyResponse.ok) throw new Error("Failed to fetch API key");
-      const { key } = await keyResponse.json();
+      
+      const responseText = await keyResponse.text();
+      let key = "";
+      try {
+        const json = JSON.parse(responseText);
+        key = json.key;
+      } catch (e) {
+        console.error("Failed to parse API key response:", responseText);
+        throw new Error("Invalid API key response from server");
+      }
+      
+      if (!key) throw new Error("API key is empty");
       
       const ai = new GoogleGenAI({ apiKey: key });
 
@@ -304,10 +317,10 @@ export class LiveSessionManager {
       };
 
       try {
-          this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-09-2025');
+          this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-12-2025');
       } catch (err) {
-          console.warn("Failed with primary model, trying fallback: gemini-2.0-flash-exp");
-          this.session = await connectToGemini('gemini-2.0-flash-exp');
+          console.warn("Failed with primary model, trying fallback: gemini-2.5-flash-native-audio-preview-09-2025");
+          this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-09-2025');
       }
 
     } catch (e) { 

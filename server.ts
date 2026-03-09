@@ -55,19 +55,40 @@ const formatHistoryForGemini = (history: { role: string; text: string }[], newMe
 };
 
 // --- API Routes ---
+app.get("/api/get-gemini-key", (req, res) => {
+  if (API_KEY) {
+    res.json({ key: API_KEY });
+  } else {
+    res.status(500).json({ error: "API key not configured on server" });
+  }
+});
+
 app.post("/api/chat", async (req, res) => {
   try {
-    const { history, message, systemInstruction } = req.body;
+    const { history, message, systemInstruction, image } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: "Message is required" });
+    if (!message && !image) {
+      return res.status(400).json({ error: "Message or image is required" });
     }
 
-    const contents = formatHistoryForGemini(history || [], message);
+    const contents = formatHistoryForGemini(history || [], message || "");
+
+    // Add image if present
+    if (image && image.data && image.mimeType) {
+      const lastTurn = contents[contents.length - 1];
+      if (lastTurn.role === 'user') {
+        lastTurn.parts.push({
+          inlineData: {
+            data: image.data,
+            mimeType: image.mimeType
+          }
+        } as any);
+      }
+    }
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-3.1-pro-preview',
             contents: contents,
             config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
         });
@@ -149,10 +170,10 @@ wss.on("connection", (ws: WebSocket) => {
 
         try {
             try {
-                session = await connectToGemini('gemini-2.5-flash-native-audio-preview-09-2025');
+                session = await connectToGemini('gemini-2.5-flash-native-audio-preview-12-2025');
             } catch (err) {
-                console.warn("Failed with primary model, trying fallback: gemini-2.0-flash-exp");
-                session = await connectToGemini('gemini-2.0-flash-exp');
+                console.warn("Failed with primary model, trying fallback: gemini-2.5-flash-native-audio-preview-09-2025");
+                session = await connectToGemini('gemini-2.5-flash-native-audio-preview-09-2025');
             }
         } catch (err: any) {
             console.error("Failed to connect to Gemini Live (All models):", err);
