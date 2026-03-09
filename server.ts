@@ -88,7 +88,7 @@ app.post("/api/chat", async (req, res) => {
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: 'gemini-3.1-pro-preview',
             contents: contents,
             config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
         });
@@ -96,9 +96,9 @@ app.post("/api/chat", async (req, res) => {
     } catch (error: any) {
         console.error("Model generation failed with primary model:", error);
         try {
-            console.log("Attempting fallback to gemini-3-flash-preview...");
+            console.log("Attempting fallback to gemini-3.1-flash-preview...");
             const fallbackResponse = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-3.1-flash-preview',
                 contents: contents,
                 config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
             });
