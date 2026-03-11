@@ -88,7 +88,7 @@ app.post("/api/chat", async (req, res) => {
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model: 'gemini-3-flash-preview',
             contents: contents,
             config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
         });
@@ -96,38 +96,16 @@ app.post("/api/chat", async (req, res) => {
     } catch (error: any) {
         console.error("Model generation failed with primary model:", error);
         try {
-            console.log("Attempting fallback to gemini-3.1-flash-preview...");
+            console.log("Attempting fallback to gemini-2.5-flash...");
             const fallbackResponse = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-preview',
+                model: 'gemini-2.5-flash',
                 contents: contents,
                 config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
             });
             return res.json({ text: fallbackResponse.text });
         } catch (fallbackError: any) {
-            console.error("Model generation failed with first fallback model:", fallbackError);
-            try {
-                console.log("Attempting second fallback to gemini-3-flash-preview...");
-                const secondFallbackResponse = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview',
-                    contents: contents,
-                    config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
-                });
-                return res.json({ text: secondFallbackResponse.text });
-            } catch (secondFallbackError: any) {
-                console.error("Model generation failed with second fallback model:", secondFallbackError);
-                try {
-                    console.log("Attempting third fallback to gemini-2.5-flash...");
-                    const thirdFallbackResponse = await ai.models.generateContent({
-                        model: 'gemini-2.5-flash',
-                        contents: contents,
-                        config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
-                    });
-                    return res.json({ text: thirdFallbackResponse.text });
-                } catch (thirdFallbackError: any) {
-                    console.error("Model generation failed with third fallback model:", thirdFallbackError);
-                    throw thirdFallbackError;
-                }
-            }
+            console.error("Model generation failed with fallback model:", fallbackError);
+            throw fallbackError;
         }
     }
 

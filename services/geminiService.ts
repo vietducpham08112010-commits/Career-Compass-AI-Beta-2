@@ -165,7 +165,7 @@ export class LiveSessionManager {
   inputContext: AudioContext | null;
   outputContext: AudioContext | null;
   inputSource: MediaStreamAudioSourceNode | null;
-  processor: ScriptProcessorNode | null;
+  processor: any | null;
   stream: MediaStream | null;
   nextStartTime: number;
   sources: Set<AudioBufferSourceNode>;
@@ -255,15 +255,8 @@ export class LiveSessionManager {
                   console.log(`Gemini Live Session Opened (${model})`);
                   this.isConnected = true;
                   this.startAudioStreaming(createBlobFn, sessionPromise);
+                  // AI will wait for user input
                   if (this.onConnect) this.onConnect();
-                  
-                  // Prompt AI to start the conversation
-                  sessionPromise.then(session => {
-                      const prompt = this.language === 'vi' 
-                          ? "Xin chào, hãy chủ động chào hỏi và bắt đầu cuộc trò chuyện với tôi."
-                          : "Hello, please greet me and start the conversation.";
-                      session.sendClientContent({ turns: [{ role: 'user', parts: [{ text: prompt }] }], turnComplete: true });
-                  });
                 },
                 onmessage: async (message: LiveServerMessage) => {
                   const serverContent = message.serverContent;
