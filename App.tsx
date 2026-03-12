@@ -860,8 +860,13 @@ export default function App() {
       const responseText = await sendChatMessage(history, fullTextToSend, lang, auth.user, currentFile);
       setMessages(prev => [...prev, { id: `${Date.now()}-ai-${Math.random().toString(36).substr(2, 9)}`, role: 'model', text: responseText || '', timestamp: new Date() }]);
     } catch (error: any) {
-        const errorMsg = error.message || JSON.stringify(error) || t.error;
+        let errorMsg = error.message || JSON.stringify(error) || t.error;
         console.error("Chat Error UI:", error);
+        
+        if (errorMsg.includes("503") || errorMsg.includes("high demand") || errorMsg.includes("busy")) {
+            errorMsg = t.aiBusy;
+        }
+
         if (errorMsg.includes("API Key")) {
              setMessages(prev => [...prev, { id: `${Date.now()}-ai-${Math.random().toString(36).substr(2, 9)}`, role: 'model', text: `⚠️ ${errorMsg}\n\nSystem API Key Issue. Please contact support.`, timestamp: new Date() }]);
         } else {

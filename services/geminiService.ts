@@ -5,6 +5,34 @@ import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
 import { downsampleBuffer } from "../utils/audio";
 
+// Helper for exponential backoff retry
+const retryWithBackoff = async <T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<T> => {
+  let lastError: any;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const isRetryable = 
+        error.message?.includes('503') || 
+        error.message?.includes('high demand') ||
+        error.message?.includes('UNAVAILABLE') ||
+        error.message?.includes('overloaded');
+        
+      if (!isRetryable || i === maxRetries - 1) throw error;
+      
+      const delay = initialDelay * Math.pow(2, i);
+      console.warn(`Gemini API busy (503). Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError;
+};
+
 export const generateRoadmap = async (
   chatHistory: { role: string; text: string }[],
   language: Language,
@@ -15,7 +43,7 @@ export const generateRoadmap = async (
     ? `Based on our conversation history and my profile, generate a personalized 3-month action plan (roadmap) for my career orientation as a high school student. Break it down into clear, actionable steps. Return ONLY a JSON array of objects, where each object has 'id' (string), 'title' (string), 'description' (string), and 'status' (must be exactly 'todo'). Do not include any markdown formatting like \`\`\`json.`
     : `Dựa trên lịch sử trò chuyện và hồ sơ của tôi, hãy tạo một kế hoạch hành động (lộ trình) cá nhân hóa trong 3 tháng tới cho việc định hướng nghề nghiệp của tôi (tôi là học sinh THPT). Hãy chia nhỏ thành các bước cụ thể và có thể thực hiện được. CHỈ trả về một mảng JSON chứa các đối tượng, mỗi đối tượng có 'id' (chuỗi), 'title' (chuỗi), 'description' (chuỗi), và 'status' (phải chính xác là 'todo'). Không bao gồm bất kỳ định dạng markdown nào như \`\`\`json.`;
 
-  try {
+  const callApi = async () => {
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,7 +57,13 @@ export const generateRoadmap = async (
     const text = await response.text();
     try {
         const data = JSON.parse(text);
-        if (data.error) throw new Error(data.error);
+        if (data.error) {
+            // Check for 503 in the error object
+            if (typeof data.error === 'object' && data.error.code === 503) {
+                throw new Error("503: Model busy");
+            }
+            throw new Error(data.error);
+        }
         
         let jsonStr = (data.text || '').trim();
         if (jsonStr.startsWith('```json')) {
@@ -37,12 +71,22 @@ export const generateRoadmap = async (
         }
         if (!jsonStr) throw new Error("No response from AI");
         return JSON.parse(jsonStr);
-    } catch (e) {
+    } catch (e: any) {
+        if (e.message.includes('503')) throw e;
         console.error("Failed to parse roadmap JSON:", text);
         throw new Error("Failed to generate roadmap format.");
     }
-  } catch (error) {
+  };
+
+  try {
+    return await retryWithBackoff(callApi);
+  } catch (error: any) {
       console.error("Roadmap generation error:", error);
+      if (error.message?.includes('503') || error.message?.includes('high demand')) {
+          throw new Error(language === Language.EN 
+            ? "The AI is currently busy due to high demand. Please wait a moment and try again." 
+            : "Hệ thống AI đang bận do lượng yêu cầu cao. Vui lòng đợi giây lát và thử lại.");
+      }
       throw error;
   }
 };
@@ -75,7 +119,7 @@ export const sendChatMessage = async (
   }
 
   // --- DEFAULT: GOOGLE GEMINI (VIA FRONTEND) ---
-  try {
+  const callGemini = async () => {
     let apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     
     if (!apiKey) {
@@ -109,8 +153,17 @@ export const sendChatMessage = async (
     });
 
     return response.text;
+  };
+
+  try {
+    return await retryWithBackoff(callGemini);
   } catch (error: any) {
     console.error("Chat API Error:", error);
+    if (error.message?.includes('503') || error.message?.includes('high demand')) {
+        throw new Error(language === Language.EN 
+          ? "The AI is currently busy due to high demand. Please wait a moment and try again." 
+          : "Hệ thống AI đang bận do lượng yêu cầu cao. Vui lòng đợi giây lát và thử lại.");
+    }
     throw new Error(error.message || "Failed to communicate with the server.");
   }
 };
