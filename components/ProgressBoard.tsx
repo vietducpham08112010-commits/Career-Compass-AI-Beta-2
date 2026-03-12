@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import * as Icons from 'lucide-react';
-import { ChatSession, UserProfile, Language } from '../types';
+import { ChatSession, UserProfile, Language, ChatMessage } from '../types';
 import { generateRoadmap } from '../services/geminiService';
 
 interface Milestone {
@@ -16,12 +16,13 @@ interface Milestone {
 
 interface ProgressBoardProps {
   chatHistory: ChatSession[];
+  messages: ChatMessage[];
   user: UserProfile | null;
   language: Language;
   onNavigateToChat: () => void;
 }
 
-export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, user, language, onNavigateToChat }) => {
+export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messages, user, language, onNavigateToChat }) => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -51,7 +52,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, user,
   }, [milestones, user?.email]);
 
   const handleGenerateRoadmap = async () => {
-    if (chatHistory.length === 0) {
+    if (chatHistory.length === 0 && messages.length === 0) {
       onNavigateToChat();
       return;
     }
@@ -59,9 +60,11 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, user,
     setIsGenerating(true);
     try {
       // Flatten chat history for the prompt
-      const historyContext = chatHistory.flatMap(session => 
+      const savedHistoryContext = chatHistory.flatMap(session => 
         session.messages.map(m => ({ role: m.role, text: m.text }))
       );
+      const currentHistoryContext = messages.map(m => ({ role: m.role, text: m.text }));
+      const historyContext = [...savedHistoryContext, ...currentHistoryContext];
       
       const generatedMilestones = await generateRoadmap(historyContext, language, user);
       

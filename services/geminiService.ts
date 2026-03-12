@@ -31,10 +31,11 @@ export const generateRoadmap = async (
         const data = JSON.parse(text);
         if (data.error) throw new Error(data.error);
         
-        let jsonStr = data.text.trim();
+        let jsonStr = (data.text || '').trim();
         if (jsonStr.startsWith('```json')) {
             jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         }
+        if (!jsonStr) throw new Error("No response from AI");
         return JSON.parse(jsonStr);
     } catch (e) {
         console.error("Failed to parse roadmap JSON:", text);
@@ -73,33 +74,27 @@ export const sendChatMessage = async (
     return await sendExternalApiMessage(endpoint, modelName, history, newMessage, systemInstruction);
   }
 
-  // --- DEFAULT: GOOGLE GEMINI (VIA BACKEND) ---
+  // --- DEFAULT: GOOGLE GEMINI (VIA FRONTEND) ---
   try {
-    const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            history,
-            message: newMessage,
-            systemInstruction,
-            file
-        })
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
+    if (!apiKey || apiKey === "undefined") {
+        throw new Error("API key is missing or invalid.");
+    }
+    const ai = new GoogleGenAI({ apiKey: apiKey });
+    
+    const contents = history.map(h => ({
+        role: h.role === 'model' ? 'model' : 'user',
+        parts: [{ text: h.text }]
+    }));
+    contents.push({ role: 'user', parts: [{ text: newMessage }] });
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: contents,
+        config: { systemInstruction: systemInstruction }
     });
 
-    const text = await response.text();
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch (e) {
-        console.error("Invalid JSON response:", text);
-        throw new Error(`Server returned invalid response (Status: ${response.status}). It might be restarting.`);
-    }
-
-    if (!response.ok) {
-        throw new Error(data.error || `Server Error: ${response.status}`);
-    }
-
-    return data.text;
+    return response.text;
   } catch (error: any) {
     console.error("Chat API Error:", error);
     throw new Error(error.message || "Failed to communicate with the server.");

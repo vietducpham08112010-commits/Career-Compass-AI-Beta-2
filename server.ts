@@ -21,14 +21,7 @@ wss.on('error', (err) => {
 });
 
 const PORT = 3000;
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
-
-if (!API_KEY) {
-  console.error("WARNING: GEMINI_API_KEY/API_KEY is missing in environment variables. Chat features will fail.");
-  // Do not exit, allow server to start so UI can load
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key" }); // Prevent crash on init, but calls will fail
+const ai = new GoogleGenAI({ apiKey: "dummy_key" }); // Backend doesn't need API key anymore
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));

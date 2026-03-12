@@ -1760,6 +1760,7 @@ export default function App() {
         {tab === DashboardTab.PROGRESS && (
             <ProgressBoard 
                 chatHistory={chatHistory} 
+                messages={messages}
                 user={auth.user} 
                 language={lang} 
                 onNavigateToChat={() => setTab(DashboardTab.CHAT)} 
