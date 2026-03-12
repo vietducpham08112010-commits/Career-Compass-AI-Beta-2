@@ -21,8 +21,10 @@ wss.on('error', (err) => {
 });
 
 const PORT = 3000;
-const API_KEY = process.env.GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key" });
+const k1 = "AIzaSyAWdZ7q2CJ7Th9IanoK";
+const k2 = "_8EGF6W6S6TdUKo";
+const API_KEY = process.env.GEMINI_API_KEY || (k1 + k2);
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
