@@ -291,6 +291,7 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
   const [welcomePhrase, setWelcomePhrase] = useState(WELCOME_PHRASES[0]);
+  const isSendingRef = useRef(false);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -793,13 +794,14 @@ export default function App() {
 
   const handleSendMessage = async (e?: React.FormEvent, overrideText?: string) => {
     if (e) e.preventDefault();
-    if (isChatLoading) return; 
+    if (isChatLoading || isSendingRef.current) return; 
     
     const textToSend = overrideText || inputMsg;
     const currentPastedTexts = [...pastedTexts];
     
     if (!textToSend.trim() && !selectedFile && currentPastedTexts.length === 0) return;
     
+    isSendingRef.current = true;
     if (!overrideText) {
         setInputMsg('');
         setPastedTexts([]);
@@ -808,7 +810,7 @@ export default function App() {
     setThinkingText(getThinkingMessage(textToSend, lang));
     
     const newMsg: ChatMessage = { 
-        id: Date.now().toString(), 
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, 
         role: 'user', 
         text: textToSend, 
         timestamp: new Date(),
@@ -837,16 +839,19 @@ export default function App() {
       }
         
       const responseText = await sendChatMessage(history, fullTextToSend, lang, auth.user, currentFile);
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText || '', timestamp: new Date() }]);
+      setMessages(prev => [...prev, { id: `${Date.now()}-ai-${Math.random().toString(36).substr(2, 9)}`, role: 'model', text: responseText || '', timestamp: new Date() }]);
     } catch (error: any) {
         const errorMsg = error.message || JSON.stringify(error) || t.error;
         console.error("Chat Error UI:", error);
         if (errorMsg.includes("API Key")) {
-             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `⚠️ ${errorMsg}\n\nSystem API Key Issue. Please contact support.`, timestamp: new Date() }]);
+             setMessages(prev => [...prev, { id: `${Date.now()}-ai-${Math.random().toString(36).substr(2, 9)}`, role: 'model', text: `⚠️ ${errorMsg}\n\nSystem API Key Issue. Please contact support.`, timestamp: new Date() }]);
         } else {
-             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `⚠️ Error: ${errorMsg}\n(Please check your connection or try again later)`, timestamp: new Date() }]);
+             setMessages(prev => [...prev, { id: `${Date.now()}-ai-${Math.random().toString(36).substr(2, 9)}`, role: 'model', text: `⚠️ Error: ${errorMsg}\n(Please check your connection or try again later)`, timestamp: new Date() }]);
         }
-    } finally { setIsChatLoading(false); }
+    } finally { 
+        setIsChatLoading(false); 
+        isSendingRef.current = false;
+    }
   };
 
   useEffect(() => {
@@ -1622,9 +1627,10 @@ export default function App() {
                             }} 
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
+                                    if (e.nativeEvent.isComposing) return; // Prevent Enter during IME composition
                                     e.preventDefault();
                                     if ((inputMsg.trim() || selectedFile || pastedTexts.length > 0) && !isChatLoading) {
-                                        handleSendMessage(e as any);
+                                        handleSendMessage();
                                     }
                                 }
                             }}
