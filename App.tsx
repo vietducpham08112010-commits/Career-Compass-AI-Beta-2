@@ -309,6 +309,59 @@ export default function App() {
     }
   }, [messages.length]);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+
+  // Load chat history from local storage on mount
+  useEffect(() => {
+    if (auth.user?.email) {
+      const stored = localStorage.getItem(`chatHistory_${auth.user.email}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          // Convert date strings back to Date objects
+          const historyWithDates = parsed.map((session: any) => ({
+            ...session,
+            date: new Date(session.date),
+            messages: session.messages.map((m: any) => ({
+              ...m,
+              timestamp: new Date(m.timestamp)
+            }))
+          }));
+          setChatHistory(historyWithDates);
+        } catch (e) {
+          console.error("Failed to parse stored chat history");
+        }
+      } else {
+          setChatHistory([]);
+      }
+    } else if (auth.user?.isGuest) {
+        // Load guest chat history
+        const stored = localStorage.getItem('chatHistory_guest');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                const historyWithDates = parsed.map((session: any) => ({
+                    ...session,
+                    date: new Date(session.date),
+                    messages: session.messages.map((m: any) => ({
+                        ...m,
+                        timestamp: new Date(m.timestamp)
+                    }))
+                }));
+                setChatHistory(historyWithDates);
+            } catch (e) {}
+        }
+    }
+  }, [auth.user?.email, auth.user?.isGuest]);
+
+  // Save chat history to local storage whenever it changes
+  useEffect(() => {
+    if (auth.user?.email) {
+      localStorage.setItem(`chatHistory_${auth.user.email}`, JSON.stringify(chatHistory));
+    } else if (auth.user?.isGuest) {
+        localStorage.setItem('chatHistory_guest', JSON.stringify(chatHistory));
+    }
+  }, [chatHistory, auth.user?.email, auth.user?.isGuest]);
+
   const [inputMsg, setInputMsg] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [thinkingText, setThinkingText] = useState(''); 
@@ -544,18 +597,22 @@ export default function App() {
                   avatar: avatarUrl,
                   careerGoal: 'Undecided',
                   isGuest: false,
-                  aiProvider: AIProvider.GEMINI
+                  aiProvider: AIProvider.GEMINI,
+                  provider: 'google'
               };
 
               // Merge with stored user to preserve updates (avatar, careerGoal, etc.)
-              const storedUserStr = localStorage.getItem('currentUser');
-              if (storedUserStr) {
-                  try {
-                      const storedUser = JSON.parse(storedUserStr);
-                      if (storedUser.email === user.email) {
-                          user = { ...user, ...storedUser, name: storedUser.name || user.name, email: user.email };
-                      }
-                  } catch (e) {}
+              const users = getUsers();
+              const existingUser = users.find(u => u.email === user.email);
+              
+              if (existingUser) {
+                  user = { ...user, ...existingUser, name: existingUser.name || user.name, email: user.email };
+                  // Ensure provider is set if it was missing
+                  if (!user.provider) user.provider = 'google';
+              } else {
+                  // Add new Google user to the users list
+                  users.push(user);
+                  localStorage.setItem('users', JSON.stringify(users));
               }
               
               user = applyCheckIn(user);
@@ -682,7 +739,8 @@ export default function App() {
         avatar: getRandomAvatar(),
         aiProvider: AIProvider.GEMINI,
         customEndpoint: 'http://localhost:11434/v1/chat/completions',
-        customModelName: 'llama3'
+        customModelName: 'llama3',
+        provider: 'local'
     };
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
@@ -704,6 +762,7 @@ export default function App() {
     const user = users.find(u => u.email === email && u.password === password);
 
     if (user) {
+        if (!user.provider) user.provider = 'local';
         localStorage.setItem('currentUser', JSON.stringify(user));
         setAuth({ isAuthenticated: true, user });
         setMode(AppMode.DASHBOARD);
@@ -739,6 +798,10 @@ export default function App() {
 
       const users = getUsers();
       let user = users.find(u => u.email === email);
+      
+      if (user && user.provider === 'google') {
+          return setAuthError('This account uses Google Login. Please login with Google instead.');
+      }
       
       if (!user && (email === 'demo@example.com' || email.includes('test'))) {
            user = { name: 'Demo User', email: email, password: 'password123', careerGoal: 'Undecided', avatar: getRandomAvatar() };
@@ -835,6 +898,7 @@ export default function App() {
     setAuth({ isAuthenticated: false, user: null });
     setMode(AppMode.LANDING);
     setMessages([]);
+    setChatHistory([]);
     if (isVoiceActive) handleVoiceToggle();
   };
 

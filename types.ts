@@ -56,6 +56,7 @@ export interface UserProfile {
   customModelName?: string; // e.g., llama3 (Not used for n8n)
   streak?: number;
   lastCheckIn?: string;
+  provider?: 'google' | 'local';
 }
 
 export interface AuthState {
