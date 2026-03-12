@@ -67,3 +67,11 @@ export interface Transcript {
   isUser: boolean;
   text: string;
 }
+
+export interface Milestone {
+  id: string;
+  title: string;
+  description: string;
+  status: 'todo' | 'in-progress' | 'done';
+  comments?: string[];
+}

@@ -3,53 +3,25 @@ import { motion, AnimatePresence } from 'motion/react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import * as Icons from 'lucide-react';
-import { ChatSession, UserProfile, Language, ChatMessage } from '../types';
+import { ChatSession, UserProfile, Language, ChatMessage, Milestone } from '../types';
 import { generateRoadmap } from '../services/geminiService';
-
-interface Milestone {
-  id: string;
-  title: string;
-  description: string;
-  status: 'todo' | 'in-progress' | 'done';
-  comments?: string[];
-}
 
 interface ProgressBoardProps {
   chatHistory: ChatSession[];
   messages: ChatMessage[];
   user: UserProfile | null;
   language: Language;
+  milestones: Milestone[];
+  setMilestones: React.Dispatch<React.SetStateAction<Milestone[]>>;
   onNavigateToChat: () => void;
 }
 
-export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messages, user, language, onNavigateToChat }) => {
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
+export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messages, user, language, milestones, setMilestones, onNavigateToChat }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const boardRef = useRef<HTMLDivElement>(null);
-
-  // Load milestones from local storage on mount
-  useEffect(() => {
-    if (user?.email) {
-      const stored = localStorage.getItem(`roadmap_${user.email}`);
-      if (stored) {
-        try {
-          setMilestones(JSON.parse(stored));
-        } catch (e) {
-          console.error("Failed to parse stored roadmap");
-        }
-      }
-    }
-  }, [user?.email]);
-
-  // Save milestones to local storage whenever they change
-  useEffect(() => {
-    if (user?.email && milestones.length > 0) {
-      localStorage.setItem(`roadmap_${user.email}`, JSON.stringify(milestones));
-    }
-  }, [milestones, user?.email]);
 
   const handleGenerateRoadmap = async () => {
     if (chatHistory.length === 0 && messages.length === 0) {
