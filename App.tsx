@@ -8,6 +8,7 @@ import { AVATARS, CAREER_TAGS, CAREER_QUOTES, SUGGESTION_PROMPTS, TRANSLATIONS, 
 import { sendChatMessage, LiveSessionManager } from './services/geminiService';
 import { decode, encode, decodeAudioData, createPcmBlob } from './utils/audio';
 import { Visualizer } from './components/Visualizer';
+import { ProgressBoard } from './components/ProgressBoard';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -57,6 +58,7 @@ const Icons = {
   Google: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" {...props}><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>,
   ArrowRight: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
   History: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>,
+  Flame: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-5 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
   Refresh: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>,
   FileText: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><line x1="10" y1="9" x2="8" y2="9" /></svg>,
   TrendingUp: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
@@ -300,6 +302,7 @@ export default function App() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [thinkingText, setThinkingText] = useState(''); 
   const [selectedFile, setSelectedFile] = useState<{ data: string; mimeType: string; name: string } | null>(null);
+  const [pastedTexts, setPastedTexts] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [isVoiceActive, setIsVoiceActive] = useState(false);
@@ -443,6 +446,27 @@ export default function App() {
   // Listen for Firebase Auth State Changes
   useEffect(() => {
       if (!firebaseAuth) return;
+      
+      const applyCheckIn = (user: UserProfile) => {
+          const now = new Date();
+          const todayStr = now.toISOString().split('T')[0];
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+          let currentStreak = user.streak || 0;
+          if (user.lastCheckIn !== todayStr) {
+              if (user.lastCheckIn === yesterdayStr) {
+                  currentStreak += 1;
+              } else {
+                  currentStreak = 1;
+              }
+              user.streak = currentStreak;
+              user.lastCheckIn = todayStr;
+          }
+          return user;
+      };
+
       const unsubscribe = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
           if (firebaseUser) {
               let avatarUrl = firebaseUser.photoURL || AVATARS[Math.floor(Math.random() * AVATARS.length)];
@@ -467,6 +491,8 @@ export default function App() {
                   } catch (e) {}
               }
               
+              user = applyCheckIn(user);
+
               setAuth({ isAuthenticated: true, user });
               localStorage.setItem('currentUser', JSON.stringify(user));
               
@@ -478,8 +504,10 @@ export default function App() {
               const storedUser = localStorage.getItem('currentUser');
               if (storedUser) {
                   try {
-                      const userObj = JSON.parse(storedUser);
+                      let userObj = JSON.parse(storedUser);
+                      userObj = applyCheckIn(userObj);
                       setAuth({ isAuthenticated: true, user: userObj });
+                      localStorage.setItem('currentUser', JSON.stringify(userObj));
                       if (mode === AppMode.AUTH) {
                           setMode(AppMode.DASHBOARD);
                       }
@@ -768,8 +796,14 @@ export default function App() {
     if (isChatLoading) return; 
     
     const textToSend = overrideText || inputMsg;
-    if (!textToSend.trim() && !selectedFile) return;
-    if (!overrideText) setInputMsg('');
+    const currentPastedTexts = [...pastedTexts];
+    
+    if (!textToSend.trim() && !selectedFile && currentPastedTexts.length === 0) return;
+    
+    if (!overrideText) {
+        setInputMsg('');
+        setPastedTexts([]);
+    }
     
     setThinkingText(getThinkingMessage(textToSend, lang));
     
@@ -778,7 +812,8 @@ export default function App() {
         role: 'user', 
         text: textToSend, 
         timestamp: new Date(),
-        file: selectedFile ? { data: selectedFile.data, mimeType: selectedFile.mimeType, name: selectedFile.name } : undefined
+        file: selectedFile ? { data: selectedFile.data, mimeType: selectedFile.mimeType, name: selectedFile.name } : undefined,
+        pastedTexts: currentPastedTexts.length > 0 ? currentPastedTexts : undefined
     };
     setMessages(prev => [...prev, newMsg]);
     setIsChatLoading(true);
@@ -788,9 +823,20 @@ export default function App() {
     try {
       const history = messages
         .filter(m => !m.text.startsWith('⚠️ Error'))
-        .map(m => ({ role: m.role, text: m.text }));
+        .map(m => {
+            let fullText = m.text;
+            if (m.pastedTexts && m.pastedTexts.length > 0) {
+                fullText = `${m.pastedTexts.join('\n\n---\n\n')}\n\n${fullText}`;
+            }
+            return { role: m.role, text: fullText };
+        });
         
-      const responseText = await sendChatMessage(history, textToSend, lang, auth.user, currentFile);
+      let fullTextToSend = textToSend;
+      if (currentPastedTexts.length > 0) {
+          fullTextToSend = `${currentPastedTexts.join('\n\n---\n\n')}\n\n${fullTextToSend}`;
+      }
+        
+      const responseText = await sendChatMessage(history, fullTextToSend, lang, auth.user, currentFile);
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText || '', timestamp: new Date() }]);
     } catch (error: any) {
         const errorMsg = error.message || JSON.stringify(error) || t.error;
@@ -1257,6 +1303,13 @@ export default function App() {
     if (e.target) e.target.value = '';
   };
 
+  const getStreakColor = (streak: number) => {
+      if (streak >= 100) return 'text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]';
+      if (streak >= 50) return 'text-purple-500 drop-shadow-[0_0_5px_rgba(168,85,247,0.6)]';
+      if (streak >= 10) return 'text-blue-500 drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]';
+      return 'text-orange-500';
+  };
+
   const renderDashboard = () => {
     const filteredHistory = chatHistory.filter(session => session.title.toLowerCase().includes(searchQuery.toLowerCase()));
     return (
@@ -1286,6 +1339,7 @@ export default function App() {
             <button onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.chatMode}><Icons.MessageSquare className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.chatMode}</span>}</button>
             <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</button>
             <button onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</button>
+            <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title="Tiến độ"><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">Tiến độ</span>}</button>
              <button onClick={() => setTab(DashboardTab.PROFILE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROFILE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.profile}><Icons.User className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.profile}</span>}</button>
             
             {chatHistory.length > 0 && isSidebarOpen && (
@@ -1310,13 +1364,20 @@ export default function App() {
         <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm flex flex-col gap-2">
             {isSidebarOpen ? (
                 <>
-                    <div onClick={changeAvatar} title={t.chooseAvatar} className="flex items-center gap-3 mb-2 px-2 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors group">
-                        <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
-                        <div className="overflow-hidden flex-1">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p>
-                            <p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? t.guestSession : auth.user?.email}</p>
+                    <div className="flex items-center justify-between mb-2 px-2 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group">
+                        <div onClick={changeAvatar} title={t.chooseAvatar} className="flex items-center gap-3 cursor-pointer overflow-hidden flex-1">
+                            <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
+                            <div className="overflow-hidden flex-1">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p>
+                                <p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? t.guestSession : auth.user?.email}</p>
+                            </div>
                         </div>
-                        <Icons.Refresh className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {auth.user?.streak !== undefined && auth.user.streak > 0 && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg shadow-inner" title={`${auth.user.streak} day streak!`}>
+                                <Icons.Flame className={`w-4 h-4 ${getStreakColor(auth.user.streak)}`} />
+                                <span className={`text-xs font-bold ${getStreakColor(auth.user.streak)}`}>{auth.user.streak}</span>
+                            </div>
+                        )}
                     </div>
                     <div className="flex gap-2 mb-2">
                         <button onClick={toggleLang} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"><span className="uppercase">{lang}</span></button>
@@ -1340,7 +1401,20 @@ export default function App() {
                 {isSidebarOpen ? <Icons.PanelLeftClose className="w-5 h-5" /> : <Icons.PanelLeftOpen className="w-5 h-5" />}
             </button>
         </div>
-        <header className="md:hidden h-16 bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20"><button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-2"><CompassLogo className="w-8 h-8" /><span className="font-bold text-gray-800 dark:text-white">Career Compass</span></button><div className="flex gap-2"><button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400">{theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}</button><button onClick={() => setTab(DashboardTab.QUIZ)} className={`p-2 rounded-lg ${tab === DashboardTab.QUIZ ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500'}`}><Icons.Zap className="w-5 h-5"/></button><button onClick={() => setTab(DashboardTab.CHAT)} className={`p-2 rounded-lg ${tab === DashboardTab.CHAT ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white' : 'text-gray-500'}`}><Icons.MessageSquare className="w-5 h-5"/></button><button onClick={handleLogout} className="p-2 text-red-500"><Icons.LogOut className="w-5 h-5"/></button></div></header>
+        <header className="md:hidden h-16 bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20 shrink-0">
+            <button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-2">
+                <CompassLogo className="w-8 h-8" />
+                <span className="font-bold text-gray-800 dark:text-white">Career Compass</span>
+            </button>
+            <div className="flex gap-2">
+                <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400">
+                    {theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}
+                </button>
+                <button onClick={handleLogout} className="p-2 text-red-500">
+                    <Icons.LogOut className="w-5 h-5"/>
+                </button>
+            </div>
+        </header>
         {tab === DashboardTab.CHAT && (
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
@@ -1406,6 +1480,18 @@ export default function App() {
                             {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CompassLogo className="w-5 h-5 text-white" /></div>)}
                             <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
                                  <div className={`px-6 py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
+                                    {m.pastedTexts && m.pastedTexts.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-3">
+                                            {m.pastedTexts.map((text, idx) => (
+                                                <div key={idx} className="h-24 w-32 flex flex-col bg-white/10 rounded-2xl border border-white/20 shadow-sm p-3 overflow-hidden">
+                                                    <p className="text-[10px] text-white/80 line-clamp-3 mb-auto leading-relaxed">{text}</p>
+                                                    <div className="mt-2 text-[9px] font-bold uppercase tracking-wider text-white/60 border border-white/20 rounded-md px-1.5 py-0.5 self-start bg-white/5">
+                                                        PASTED
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                     {m.file && (
                                         <div className="mb-2 max-w-full overflow-hidden rounded-lg">
                                             {m.file.mimeType.startsWith('image/') ? (
@@ -1480,27 +1566,49 @@ export default function App() {
                         
                         {/* File Preview Area */}
                         <AnimatePresence>
-                            {selectedFile && (
-                                <motion.div 
-                                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                                    transition={{ duration: 0.2, ease: "easeOut" }}
-                                    className="mb-3 relative inline-block self-start"
-                                >
-                                    {selectedFile.mimeType.startsWith('image/') ? (
-                                        <img src={`data:${selectedFile.mimeType};base64,${selectedFile.data}`} alt="Preview" className="h-16 w-16 object-cover rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm" referrerPolicy="no-referrer" />
-                                    ) : (
-                                        <div className="h-16 w-16 flex flex-col items-center justify-center bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-2 text-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500 mb-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                            <span className="text-[8px] font-medium text-gray-600 dark:text-gray-300 truncate w-full">{selectedFile.name}</span>
+                            <div className="flex flex-wrap gap-3 mb-3">
+                                {selectedFile && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                                        transition={{ duration: 0.2, ease: "easeOut" }}
+                                        className="relative inline-block self-start"
+                                    >
+                                        {selectedFile.mimeType.startsWith('image/') ? (
+                                            <img src={`data:${selectedFile.mimeType};base64,${selectedFile.data}`} alt="Preview" className="h-16 w-16 object-cover rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm" referrerPolicy="no-referrer" />
+                                        ) : (
+                                            <div className="h-16 w-16 flex flex-col items-center justify-center bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-2 text-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500 mb-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                                <span className="text-[8px] font-medium text-gray-600 dark:text-gray-300 truncate w-full">{selectedFile.name}</span>
+                                            </div>
+                                        )}
+                                        <button type="button" onClick={() => setSelectedFile(null)} className="absolute -top-2 -right-2 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        </button>
+                                    </motion.div>
+                                )}
+                                {pastedTexts.map((text, index) => (
+                                    <motion.div 
+                                        key={index}
+                                        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                                        transition={{ duration: 0.2, ease: "easeOut" }}
+                                        className="relative inline-block self-start"
+                                    >
+                                        <div className="h-24 w-32 flex flex-col bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-3 overflow-hidden">
+                                            <p className="text-[10px] text-gray-600 dark:text-gray-300 line-clamp-3 mb-auto leading-relaxed">{text}</p>
+                                            <div className="mt-2 text-[9px] font-bold uppercase tracking-wider text-gray-400 border border-gray-200 dark:border-white/10 rounded-md px-1.5 py-0.5 self-start bg-gray-50 dark:bg-white/5">
+                                                PASTED
+                                            </div>
                                         </div>
-                                    )}
-                                    <button type="button" onClick={() => setSelectedFile(null)} className="absolute -top-2 -right-2 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                    </button>
-                                </motion.div>
-                            )}
+                                        <button type="button" onClick={() => setPastedTexts(prev => prev.filter((_, i) => i !== index))} className="absolute -top-2 -right-2 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        </button>
+                                    </motion.div>
+                                ))}
+                            </div>
                         </AnimatePresence>
 
                         {/* Text Input Area */}
@@ -1515,9 +1623,16 @@ export default function App() {
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
-                                    if ((inputMsg.trim() || selectedFile) && !isChatLoading) {
+                                    if ((inputMsg.trim() || selectedFile || pastedTexts.length > 0) && !isChatLoading) {
                                         handleSendMessage(e as any);
                                     }
+                                }
+                            }}
+                            onPaste={(e) => {
+                                const text = e.clipboardData.getData('text');
+                                if (text && (text.length > 200 || text.split('\n').length > 3)) {
+                                    e.preventDefault();
+                                    setPastedTexts(prev => [...prev, text]);
                                 }
                             }}
                             placeholder="Hỏi Career Compass" 
@@ -1642,6 +1757,14 @@ export default function App() {
                 </div>
             </div>
         )}
+        {tab === DashboardTab.PROGRESS && (
+            <ProgressBoard 
+                chatHistory={chatHistory} 
+                user={auth.user} 
+                language={lang} 
+                onNavigateToChat={() => setTab(DashboardTab.CHAT)} 
+            />
+        )}
         {tab === DashboardTab.PROFILE && (
             <div className="flex-1 p-8 overflow-y-auto bg-white dark:bg-[#050505] flex justify-center">
                 <div className="max-w-2xl w-full">
@@ -1658,7 +1781,19 @@ export default function App() {
                                 <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
                                 <button onClick={changeAvatar} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline uppercase tracking-wider">Random Avatar</button>
                             </div>
-                            <div><h3 className="text-3xl font-bold text-gray-900 dark:text-white">{auth.user?.name}</h3><p className="text-gray-500 text-lg">{auth.user?.isGuest ? t.guestMode : auth.user?.email}</p>{auth.user?.isGuest && <span className="inline-block mt-3 px-4 py-1.5 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs rounded-full font-black uppercase tracking-wider">{t.guestMode}</span>}</div>
+                            <div>
+                                <div className="flex items-center gap-3">
+                                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{auth.user?.name}</h3>
+                                    {auth.user?.streak !== undefined && auth.user.streak > 0 && (
+                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl shadow-inner border border-gray-200 dark:border-white/5" title={`${auth.user.streak} day streak!`}>
+                                            <Icons.Flame className={`w-5 h-5 ${getStreakColor(auth.user.streak)}`} />
+                                            <span className={`text-sm font-black ${getStreakColor(auth.user.streak)}`}>{auth.user.streak}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-gray-500 text-lg">{auth.user?.isGuest ? t.guestMode : auth.user?.email}</p>
+                                {auth.user?.isGuest && <span className="inline-block mt-3 px-4 py-1.5 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs rounded-full font-black uppercase tracking-wider">{t.guestMode}</span>}
+                            </div>
                         </div>
                         
                         <div className="mb-10">
@@ -1691,6 +1826,30 @@ export default function App() {
                 </div>
             </div>
         )}
+        
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden shrink-0 h-16 bg-white dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-white/5 flex items-center justify-around px-2 z-20 pb-safe">
+            <button onClick={() => setTab(DashboardTab.CHAT)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.CHAT ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+                <Icons.MessageSquare className="w-5 h-5 mb-1" />
+                <span className="text-[10px] font-medium">Chat</span>
+            </button>
+            <button onClick={() => setTab(DashboardTab.VOICE)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.VOICE ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+                <Icons.Microphone className="w-5 h-5 mb-1" />
+                <span className="text-[10px] font-medium">Voice</span>
+            </button>
+            <button onClick={() => setTab(DashboardTab.QUIZ)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.QUIZ ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+                <Icons.Zap className="w-5 h-5 mb-1" />
+                <span className="text-[10px] font-medium">Quiz</span>
+            </button>
+            <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROGRESS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+                <Icons.Target className="w-5 h-5 mb-1" />
+                <span className="text-[10px] font-medium">Tiến độ</span>
+            </button>
+            <button onClick={() => setTab(DashboardTab.PROFILE)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROFILE ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+                <Icons.User className="w-5 h-5 mb-1" />
+                <span className="text-[10px] font-medium">Hồ sơ</span>
+            </button>
+        </div>
       </main>
     </div>
     );

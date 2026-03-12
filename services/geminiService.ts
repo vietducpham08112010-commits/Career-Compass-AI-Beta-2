@@ -5,6 +5,47 @@ import { TRANSLATIONS } from "../constants";
 import { Language, AIProvider, UserProfile } from "../types";
 import { downsampleBuffer } from "../utils/audio";
 
+export const generateRoadmap = async (
+  chatHistory: { role: string; text: string }[],
+  language: Language,
+  userProfile?: UserProfile | null
+) => {
+  const t = TRANSLATIONS[language];
+  const prompt = language === Language.EN
+    ? `Based on our conversation history, generate a personalized step-by-step career roadmap for me. Return ONLY a JSON array of objects, where each object has 'id' (string), 'title' (string), 'description' (string), and 'status' (must be exactly 'todo'). Do not include any markdown formatting like \`\`\`json.`
+    : `Dựa trên lịch sử trò chuyện của chúng ta, hãy tạo một lộ trình nghề nghiệp từng bước cá nhân hóa cho tôi. CHỈ trả về một mảng JSON chứa các đối tượng, mỗi đối tượng có 'id' (chuỗi), 'title' (chuỗi), 'description' (chuỗi), và 'status' (phải chính xác là 'todo'). Không bao gồm bất kỳ định dạng markdown nào như \`\`\`json.`;
+
+  try {
+    const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            history: chatHistory,
+            message: prompt,
+            systemInstruction: "You are an expert career counselor. Output ONLY valid JSON array. No other text.",
+        })
+    });
+
+    const text = await response.text();
+    try {
+        const data = JSON.parse(text);
+        if (data.error) throw new Error(data.error);
+        
+        let jsonStr = data.text.trim();
+        if (jsonStr.startsWith('```json')) {
+            jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        }
+        return JSON.parse(jsonStr);
+    } catch (e) {
+        console.error("Failed to parse roadmap JSON:", text);
+        throw new Error("Failed to generate roadmap format.");
+    }
+  } catch (error) {
+      console.error("Roadmap generation error:", error);
+      throw error;
+  }
+};
+
 // --- API CLIENT (Backend Proxy) ---
 
 export const sendChatMessage = async (

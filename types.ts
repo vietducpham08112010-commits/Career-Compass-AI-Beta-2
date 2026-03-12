@@ -18,7 +18,8 @@ export enum DashboardTab {
   CHAT = 'CHAT',
   VOICE = 'VOICE',
   PROFILE = 'PROFILE',
-  QUIZ = 'QUIZ'
+  QUIZ = 'QUIZ',
+  PROGRESS = 'PROGRESS'
 }
 
 export enum AIProvider {
@@ -33,6 +34,7 @@ export interface ChatMessage {
   text: string;
   timestamp: Date;
   file?: { data: string; mimeType: string; name: string }; // Base64 file data
+  pastedTexts?: string[]; // Array of long pasted texts
 }
 
 export interface ChatSession {
@@ -52,6 +54,8 @@ export interface UserProfile {
   aiProvider?: AIProvider;
   customEndpoint?: string; // e.g., http://localhost:11434/v1/chat/completions OR n8n Webhook URL
   customModelName?: string; // e.g., llama3 (Not used for n8n)
+  streak?: number;
+  lastCheckIn?: string;
 }
 
 export interface AuthState {
