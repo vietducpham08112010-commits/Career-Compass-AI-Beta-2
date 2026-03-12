@@ -21,7 +21,8 @@ wss.on('error', (err) => {
 });
 
 const PORT = 3000;
-const ai = new GoogleGenAI({ apiKey: "dummy_key" }); // Backend doesn't need API key anymore
+const API_KEY = process.env.GEMINI_API_KEY;
+const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key" });
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -50,7 +51,11 @@ const formatHistoryForGemini = (history: { role: string; text: string }[], newMe
 
 // --- API Routes ---
 app.get("/api/get-gemini-key", (req, res) => {
-    res.status(500).json({ error: "API key not available on server" });
+  if (API_KEY) {
+    res.json({ key: API_KEY });
+  } else {
+    res.status(500).json({ error: "API key not configured on server" });
+  }
 });
 
 app.post("/api/chat", async (req, res) => {

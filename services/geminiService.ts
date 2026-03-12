@@ -76,9 +76,23 @@ export const sendChatMessage = async (
 
   // --- DEFAULT: GOOGLE GEMINI (VIA FRONTEND) ---
   try {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    let apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    
     if (!apiKey) {
-        throw new Error("VITE_GEMINI_API_KEY is missing.");
+        // Fallback to fetching from server
+        try {
+            const keyResponse = await fetch('/api/get-gemini-key');
+            if (keyResponse.ok) {
+                const data = await keyResponse.json();
+                apiKey = data.key;
+            }
+        } catch (e) {
+            console.warn("Failed to fetch API key from server fallback", e);
+        }
+    }
+
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY is missing.");
     }
     const ai = new GoogleGenAI({ apiKey: apiKey });
     
