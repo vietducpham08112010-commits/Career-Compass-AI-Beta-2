@@ -173,12 +173,12 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
           <Icons.Map className="w-12 h-12" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          {language === Language.EN ? "Your Roadmap is Empty" : "Bảng Tiến Độ Đang Trống"}
+          {language === Language.EN ? "Your 3-Month Plan is Empty" : "Kế Hoạch 3 Tháng Đang Trống"}
         </h2>
         <p className="text-gray-500 dark:text-gray-400 max-w-md mb-8">
           {language === Language.EN 
-            ? "Chat with the AI first so it can understand your goals and generate a personalized step-by-step career roadmap for you." 
-            : "Hãy trò chuyện với AI trước để hệ thống hiểu rõ mục tiêu của bạn và tạo ra một lộ trình nghề nghiệp cá nhân hóa."}
+            ? "Chat with the AI first so it can analyze your academic data and generate a personalized 3-month action plan for you." 
+            : "Hãy trò chuyện với AI trước để hệ thống phân tích dữ liệu học tập của bạn và tạo ra một kế hoạch hành động 3 tháng cá nhân hóa."}
         </p>
         
         {chatHistory.length === 0 ? (
@@ -201,8 +201,8 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
               <Icons.Sparkles className="w-5 h-5" />
             )}
             {isGenerating 
-              ? (language === Language.EN ? "Generating..." : "Đang tạo lộ trình...") 
-              : (language === Language.EN ? "Generate Roadmap" : "Tạo Lộ Trình Ngay")}
+              ? (language === Language.EN ? "Analyzing & Generating..." : "Đang phân tích & tạo kế hoạch...") 
+              : (language === Language.EN ? "Generate 3-Month Plan" : "Tạo Kế Hoạch 3 Tháng")}
           </button>
         )}
       </div>
@@ -215,7 +215,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-              {language === Language.EN ? "Career Roadmap" : "Lộ Trình Nghề Nghiệp"}
+              {language === Language.EN ? "3-Month Action Plan" : "Kế Hoạch Hành Động 3 Tháng"}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
               {language === Language.EN ? "Track your progress and export to share." : "Theo dõi tiến độ và xuất file để chia sẻ với phụ huynh, giáo viên."}
