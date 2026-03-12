@@ -1475,7 +1475,7 @@ export default function App() {
                             </button>
                         </div>
                     </div>
-                    <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex flex-col bg-gray-100 dark:bg-[#1e1e1e] rounded-[32px] p-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20">
+                    <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex flex-col bg-gray-100 dark:bg-[#1e1e1e] rounded-[32px] p-4 transition-all shadow-sm">
                         <input type="file" id="chat-file-upload" className="hidden" accept="image/*,application/pdf,text/plain,text/csv" onChange={(e) => { handleFileUpload(e); setShowAttachmentMenu(false); }} />
                         
                         {/* File Preview Area */}
@@ -1521,7 +1521,7 @@ export default function App() {
                                 }
                             }}
                             placeholder="Hỏi Career Compass" 
-                            className="w-full bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-base resize-none min-h-[44px] max-h-[200px] overflow-y-auto mb-2"
+                            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-base resize-none min-h-[44px] max-h-[200px] overflow-y-auto mb-2"
                             rows={1}
                         />
 
