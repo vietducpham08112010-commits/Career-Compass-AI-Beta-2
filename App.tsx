@@ -1442,27 +1442,27 @@ export default function App() {
         {tab === DashboardTab.CHAT && (
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
-                    <div className="flex justify-center mb-4">
+                    <div className="flex justify-center mb-12">
                         <button 
                             onClick={() => setTab(DashboardTab.PROGRESS)} 
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-lg transition-all active:scale-95 animate-bounce-subtle"
+                            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-xl shadow-indigo-500/20 transition-all active:scale-95 hover:-translate-y-1"
                         >
-                            <Icons.Sparkles className="w-4 h-4" />
+                            <Icons.Sparkles className="w-5 h-5" />
                             {lang === Language.EN ? "Generate Career Roadmap" : "Tạo lộ trình nghề nghiệp"}
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                        <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 border border-indigo-500/20 flex flex-col items-center text-center">
-                            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{t.accuracyValue}</div>
-                            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{t.accuracyRate}</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 max-w-5xl mx-auto">
+                        <div className="p-6 rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
+                            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">{t.accuracyValue}</div>
+                            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-2">{t.accuracyRate}</div>
                         </div>
-                        <div className="p-6 rounded-3xl bg-gradient-to-br from-fuchsia-500/10 to-fuchsia-600/10 border border-fuchsia-500/20 flex flex-col items-center text-center">
-                            <div className="text-2xl font-bold text-fuchsia-600 dark:text-fuchsia-400">{t.userValue}</div>
-                            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{t.userCount}</div>
+                        <div className="p-6 rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
+                            <div className="text-3xl font-bold text-fuchsia-600 dark:text-fuchsia-400 tabular-nums">{t.userValue}</div>
+                            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-2">{t.userCount}</div>
                         </div>
-                        <div className="p-6 rounded-3xl bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 border border-cyan-500/20 flex flex-col items-center text-center">
-                            <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{t.sessionValue}</div>
-                            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{t.activeSessions}</div>
+                        <div className="p-6 rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
+                            <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">{t.sessionValue}</div>
+                            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-2">{t.activeSessions}</div>
                         </div>
                     </div>
                     {messages.length === 0 && (
@@ -1470,55 +1470,60 @@ export default function App() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: "easeOut" }}
-                            className="w-full max-w-4xl mx-auto flex flex-col justify-center h-full px-4 pb-32"
+                            className="w-full max-w-4xl mx-auto flex flex-col px-4 pb-20"
                         >
-                            <div className="flex items-center gap-4 mb-2">
-                                <motion.span 
-                                    className="text-4xl"
-                                    animate={{ 
-                                        rotate: [0, 15, -15, 0],
-                                        scale: [1, 1.2, 1]
-                                    }}
-                                    transition={{ 
-                                        duration: 2.5,
-                                        repeat: Infinity,
-                                        ease: "easeInOut"
-                                    }}
-                                >
-                                    ✨
-                                </motion.span>
-                                <h1 className="text-[40px] md:text-[48px] font-medium bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500">
-                                    Xin chào {auth.user?.name || 'Guest'}!
-                                </h1>
-                            </div>
-                            <motion.h2 
-                                key={welcomePhrase}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.2 }}
-                                className="text-[40px] md:text-[48px] leading-tight font-medium text-gray-500 dark:text-[#a0a0a0]"
-                            >
-                                {welcomePhrase}
-                            </motion.h2>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-12">
-                                {SUGGESTION_PROMPTS[lang].map((suggestion, idx) => (
-                                    <motion.button
-                                        key={idx}
-                                        whileHover={{ scale: 1.02, backgroundColor: theme === Theme.LIGHT ? 'rgba(79, 70, 229, 0.05)' : 'rgba(255, 255, 255, 0.05)' }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => handleSendMessage(undefined, suggestion.prompt)}
-                                        className="p-5 rounded-3xl border border-gray-200 dark:border-white/10 text-left transition-all hover:border-indigo-500/50 group bg-white dark:bg-white/5"
+                            <div className="flex flex-col items-start gap-4 mb-8">
+                                <div className="flex items-center gap-4">
+                                    <motion.span 
+                                        className="text-5xl"
+                                        animate={{ 
+                                            rotate: [0, 15, -15, 0],
+                                            scale: [1, 1.2, 1]
+                                        }}
+                                        transition={{ 
+                                            duration: 2.5,
+                                            repeat: Infinity,
+                                            ease: "easeInOut"
+                                        }}
                                     >
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                                {suggestion.icon}
+                                        ✨
+                                    </motion.span>
+                                    <h1 className="text-[44px] md:text-[56px] leading-tight font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 tracking-tight">
+                                        Xin chào {auth.user?.name || 'Guest'}!
+                                    </h1>
+                                </div>
+                                <motion.h2 
+                                    key={welcomePhrase}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.2 }}
+                                    className="text-[44px] md:text-[56px] leading-tight font-bold text-gray-900 dark:text-white tracking-tight"
+                                >
+                                    {welcomePhrase}
+                                </motion.h2>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                                {SUGGESTION_PROMPTS[lang] && SUGGESTION_PROMPTS[lang].map((suggestion, idx) => {
+                                    const IconComponent = (Icons as any)[suggestion.icon] || Icons.MessageSquare;
+                                    return (
+                                        <motion.button
+                                            key={idx}
+                                            whileHover={{ scale: 1.02, backgroundColor: theme === Theme.LIGHT ? 'rgba(79, 70, 229, 0.05)' : 'rgba(255, 255, 255, 0.05)' }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => handleSendMessage(undefined, suggestion.prompt)}
+                                            className="p-6 rounded-[2rem] border border-gray-100 dark:border-white/10 text-left transition-all hover:border-indigo-500/50 group bg-white dark:bg-white/5 shadow-sm hover:shadow-md"
+                                        >
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                    <IconComponent className="w-6 h-6" />
+                                                </div>
+                                                <span className="font-bold text-lg text-gray-900 dark:text-white">{suggestion.title}</span>
                                             </div>
-                                            <span className="font-bold text-gray-900 dark:text-white">{suggestion.title}</span>
-                                        </div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{suggestion.prompt}</p>
-                                    </motion.button>
-                                ))}
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{suggestion.prompt}</p>
+                                        </motion.button>
+                                    );
+                                })}
                             </div>
                         </motion.div>
                     )}

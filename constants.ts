@@ -123,12 +123,20 @@ export const CAREER_QUOTES = [
   { text: "Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work.", text_vi: "Công việc sẽ chiếm phần lớn cuộc đời bạn, cách duy nhất để thực sự hài lòng là làm những gì bạn tin là tuyệt vời.", author: "Steve Jobs" }
 ];
 
-export const SUGGESTION_PROMPTS = [
-  { id: 'strengths', text_en: 'Identify my strengths', text_vi: 'Tìm điểm mạnh của tôi', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400', icon: 'Activity' },
-  { id: 'passion', text_en: 'Discover my passion', text_vi: 'Khám phá đam mê', color: 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400', icon: 'Heart' },
-  { id: 'path', text_en: 'Plan a career path', text_vi: 'Lập lộ trình sự nghiệp', color: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400', icon: 'Target' },
-  { id: 'explore', text_en: 'Explore new industries', text_vi: 'Khám phá ngành mới', color: 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400', icon: 'Compass' }
-];
+export const SUGGESTION_PROMPTS = {
+  [Language.EN]: [
+    { title: 'Identify Strengths', prompt: 'Can you help me identify my core strengths and how they apply to a career?', icon: 'Activity' },
+    { title: 'Discover Passion', prompt: 'I am not sure what I am passionate about. How can I discover my true interests?', icon: 'Heart' },
+    { title: 'Career Roadmap', prompt: 'I want to become a Software Engineer. Can you create a 3-month roadmap for me?', icon: 'Target' },
+    { title: 'Explore Industries', prompt: 'What are the top trending industries in Vietnam right now for high school graduates?', icon: 'Compass' }
+  ],
+  [Language.VI]: [
+    { title: 'Tìm điểm mạnh', prompt: 'Bạn có thể giúp tôi xác định các điểm mạnh cốt lõi và cách áp dụng chúng vào sự nghiệp không?', icon: 'Activity' },
+    { title: 'Khám phá đam mê', prompt: 'Tôi không chắc mình đam mê điều gì. Làm thế nào để tôi khám phá được sở thích thực sự của mình?', icon: 'Heart' },
+    { title: 'Lộ trình sự nghiệp', prompt: 'Tôi muốn trở thành Kỹ sư phần mềm. Bạn có thể lập lộ trình 3 tháng cho tôi không?', icon: 'Target' },
+    { title: 'Khám phá ngành nghề', prompt: 'Những ngành nghề nào đang là xu hướng hàng đầu tại Việt Nam hiện nay cho học sinh tốt nghiệp THPT?', icon: 'Compass' }
+  ]
+};
 
 export const TRANSLATIONS = {
   [Language.EN]: {

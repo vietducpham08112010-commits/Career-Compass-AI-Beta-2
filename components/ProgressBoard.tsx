@@ -68,6 +68,10 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
       
       const generatedMilestones = await generateRoadmap(historyContext, language, user);
       
+      if (!Array.isArray(generatedMilestones)) {
+        throw new Error("Invalid roadmap format received from AI.");
+      }
+      
       // Ensure comments array exists
       const processedMilestones = generatedMilestones.map((m: any) => ({
         ...m,
@@ -284,7 +288,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                         title="Add Note"
                       >
                         <Icons.MessageSquare className="w-5 h-5" />
-                        {milestone.comments && milestone.comments.length > 0 && (
+                        {milestone.comments && milestone.comments?.length > 0 && (
                           <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white dark:border-[#111]"></span>
                         )}
                       </button>
@@ -300,14 +304,14 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
 
                   {/* Comments Section */}
                   <AnimatePresence>
-                    {(activeCommentId === milestone.id || (milestone.comments && milestone.comments.length > 0)) && (
+                    {(activeCommentId === milestone.id || (milestone.comments && milestone.comments?.length > 0)) && (
                       <motion.div 
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 overflow-hidden"
                       >
-                        {milestone.comments && milestone.comments.length > 0 && (
+                        {milestone.comments && milestone.comments?.length > 0 && (
                           <div className="space-y-2 mb-3">
                             {milestone.comments.map((comment, i) => (
                               <div key={i} className="flex gap-2 items-start text-sm bg-gray-50 dark:bg-white/5 p-3 rounded-xl text-gray-700 dark:text-gray-300">
