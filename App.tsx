@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Language, Theme, AppMode, DashboardTab, ChatMessage, ChatSession, AuthState, Transcript, UserProfile, AIProvider } from './types';
@@ -255,6 +256,10 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
 };
 
 // --- Main Component ---
+const WELCOME_PHRASES = [
+    "Hãy chia sẻ ý tưởng của bạn nhé!"
+];
+
 export default function App() {
   const [lang, setLang] = useState<Language>(Language.EN);
   // Default to LIGHT theme to avoid "black screen" feeling
@@ -282,11 +287,19 @@ export default function App() {
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isTemporaryChat, setIsTemporaryChat] = useState(false);
+  const [welcomePhrase, setWelcomePhrase] = useState(WELCOME_PHRASES[0]);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+        setWelcomePhrase(WELCOME_PHRASES[Math.floor(Math.random() * WELCOME_PHRASES.length)]);
+    }
+  }, [messages.length]);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [thinkingText, setThinkingText] = useState(''); 
-  const [selectedImage, setSelectedImage] = useState<{ data: string; mimeType: string } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{ data: string; mimeType: string; name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [isVoiceActive, setIsVoiceActive] = useState(false);
@@ -348,7 +361,7 @@ export default function App() {
             ctx.drawImage(videoRef.current, 0, 0);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             const base64Data = dataUrl.split(',')[1];
-            setSelectedImage({ data: base64Data, mimeType: 'image/jpeg' });
+            setSelectedFile({ data: base64Data, mimeType: 'image/jpeg', name: 'photo.jpg' });
             stopCamera();
         }
     }
@@ -731,7 +744,7 @@ export default function App() {
   };
 
   const startNewChat = () => {
-      if (messages.length > 0) {
+      if (messages.length > 0 && !isTemporaryChat) {
           const newSession: ChatSession = { id: Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
           setChatHistory(prev => [newSession, ...prev]);
       }
@@ -740,12 +753,13 @@ export default function App() {
   };
 
   const loadSession = (session: ChatSession) => {
-      if (messages.length > 0) {
+      if (messages.length > 0 && !isTemporaryChat) {
            const currentSession: ChatSession = { id: Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
            setChatHistory(prev => [currentSession, ...prev]);
       }
       setMessages(session.messages);
       setChatHistory(prev => prev.filter(s => s.id !== session.id));
+      setIsTemporaryChat(false); // Turn off temporary chat when loading a saved session
       setTab(DashboardTab.CHAT);
   };
 
@@ -754,7 +768,7 @@ export default function App() {
     if (isChatLoading) return; 
     
     const textToSend = overrideText || inputMsg;
-    if (!textToSend.trim() && !selectedImage) return;
+    if (!textToSend.trim() && !selectedFile) return;
     if (!overrideText) setInputMsg('');
     
     setThinkingText(getThinkingMessage(textToSend, lang));
@@ -764,19 +778,19 @@ export default function App() {
         role: 'user', 
         text: textToSend, 
         timestamp: new Date(),
-        image: selectedImage ? selectedImage.data : undefined
+        file: selectedFile ? { data: selectedFile.data, mimeType: selectedFile.mimeType, name: selectedFile.name } : undefined
     };
     setMessages(prev => [...prev, newMsg]);
     setIsChatLoading(true);
-    const currentImage = selectedImage;
-    setSelectedImage(null); // Clear image after sending
+    const currentFile = selectedFile;
+    setSelectedFile(null); // Clear file after sending
 
     try {
       const history = messages
         .filter(m => !m.text.startsWith('⚠️ Error'))
         .map(m => ({ role: m.role, text: m.text }));
         
-      const responseText = await sendChatMessage(history, textToSend, lang, auth.user, currentImage);
+      const responseText = await sendChatMessage(history, textToSend, lang, auth.user, currentFile);
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText || '', timestamp: new Date() }]);
     } catch (error: any) {
         const errorMsg = error.message || JSON.stringify(error) || t.error;
@@ -1228,14 +1242,15 @@ export default function App() {
     </div>
   );
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = (event) => {
             const data = event.target?.result as string;
             const base64Data = data.split(',')[1];
-            setSelectedImage({ data: base64Data, mimeType: file.type });
+            const mimeType = file.type || 'application/octet-stream';
+            setSelectedFile({ data: base64Data, mimeType, name: file.name });
         };
         reader.readAsDataURL(file);
     }
@@ -1344,31 +1359,63 @@ export default function App() {
                         </div>
                     </div>
                     {messages.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 animate-fade-in-up">
-                            <div className="bg-gradient-to-tr from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 p-6 rounded-full mb-6 shadow-xl"><CompassLogo className="w-16 h-16 opacity-100" /></div>
-                            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t.welcomeBack} {auth.user?.name}</h2>
-                            <p className="text-base max-w-md mx-auto leading-relaxed mb-8 opacity-70">{t.greetingSub}</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl px-4">
-                                {SUGGESTION_PROMPTS.map((prompt) => {
-                                    const IconComponent = Icons[prompt.icon as keyof typeof Icons] || Icons.Target;
-                                    return (
-                                        <button key={prompt.id} onClick={() => handleSendMessage(undefined, lang === Language.VI ? prompt.text_vi : prompt.text_en)} className="flex items-center gap-4 p-4 text-left rounded-2xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all group shadow-sm hover:shadow-md">
-                                            <div className={`p-2 rounded-lg ${prompt.color} group-hover:scale-110 transition-transform`}><IconComponent className="w-5 h-5" /></div>
-                                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{lang === Language.VI ? prompt.text_vi : prompt.text_en}</span>
-                                        </button>
-                                    );
-                                })}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            className="w-full max-w-4xl mx-auto flex flex-col justify-center h-full px-4 pb-32"
+                        >
+                            <div className="flex items-center gap-4 mb-2">
+                                <motion.span 
+                                    className="text-4xl"
+                                    animate={{ 
+                                        rotate: [0, 15, -15, 0],
+                                        scale: [1, 1.2, 1]
+                                    }}
+                                    transition={{ 
+                                        duration: 2.5,
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    }}
+                                >
+                                    ✨
+                                </motion.span>
+                                <h1 className="text-[40px] md:text-[48px] font-medium bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500">
+                                    Xin chào {auth.user?.name || 'Guest'}!
+                                </h1>
                             </div>
-                        </div>
+                            <motion.h2 
+                                key={welcomePhrase}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="text-[40px] md:text-[48px] leading-tight font-medium text-gray-500 dark:text-[#a0a0a0]"
+                            >
+                                {welcomePhrase}
+                            </motion.h2>
+                        </motion.div>
                     )}
                     {messages.map((m) => (
-                        <div key={m.id} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
+                        <motion.div 
+                            key={m.id} 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
                             {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CompassLogo className="w-5 h-5 text-white" /></div>)}
                             <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
                                  <div className={`px-6 py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
-                                    {m.image && (
+                                    {m.file && (
                                         <div className="mb-2 max-w-full overflow-hidden rounded-lg">
-                                            <img src={`data:image/jpeg;base64,${m.image}`} alt="Uploaded" className="max-h-60 object-contain" referrerPolicy="no-referrer" />
+                                            {m.file.mimeType.startsWith('image/') ? (
+                                                <img src={`data:${m.file.mimeType};base64,${m.file.data}`} alt="Uploaded" className="max-h-60 object-contain" referrerPolicy="no-referrer" />
+                                            ) : (
+                                                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/20">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                                    <span className="text-sm font-medium truncate max-w-[200px]">{m.file.name}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     <div className="leading-relaxed whitespace-pre-wrap text-[15px] markdown-body">
@@ -1377,21 +1424,25 @@ export default function App() {
                                 </div>
                                 <span className={`text-[10px] mt-1.5 opacity-40 font-bold px-1 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>{m.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
                     {isChatLoading && (
-                        <div className="flex w-full justify-start items-center">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex w-full justify-start items-center"
+                        >
                             <div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center mt-1">
                                 <CompassLogo className="w-5 h-5 text-white" isThinking={true} />
                             </div>
                             <div className="px-6 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5">
                                 <ShimmerText text={thinkingText} />
                             </div>
-                        </div>
+                        </motion.div>
                     )}
                     <div ref={messagesEndRef} className="h-4" />
                 </div>
-                <div className="p-6 bg-white dark:bg-[#050505] w-full flex flex-col items-center border-t border-gray-200 dark:border-white/5 relative">
+                <div className="p-4 bg-white dark:bg-[#050505] w-full flex flex-col items-center border-t border-gray-200 dark:border-white/5 relative">
                     {showCamera && (
                         <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4">
                             <div className="relative w-full max-w-md bg-black rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
@@ -1407,54 +1458,124 @@ export default function App() {
                             </div>
                         </div>
                     )}
-                    {selectedImage && (
-                        <div className="w-full max-w-4xl mb-4 relative animate-fade-in">
-                            <div className="relative inline-block">
-                                <img src={`data:${selectedImage.mimeType};base64,${selectedImage.data}`} alt="Preview" className="h-20 w-20 object-cover rounded-xl border-2 border-indigo-500 shadow-lg" referrerPolicy="no-referrer" />
-                                <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <div className="w-full max-w-4xl flex justify-end mb-2 px-4">
+                        <div className="flex items-center gap-2" title="Không lưu vào lịch sử trò chuyện">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Trò chuyện tạm thời</span>
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    if (messages.length > 0) {
+                                        startNewChat();
+                                    }
+                                    setIsTemporaryChat(!isTemporaryChat);
+                                }} 
+                                className={`w-9 h-5 rounded-full transition-colors relative ${isTemporaryChat ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-gray-700'}`}
+                            >
+                                <div className={`w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-transform ${isTemporaryChat ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                            </button>
+                        </div>
+                    </div>
+                    <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex flex-col bg-gray-100 dark:bg-[#1e1e1e] rounded-[32px] p-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20">
+                        <input type="file" id="chat-file-upload" className="hidden" accept="image/*,application/pdf,text/plain,text/csv" onChange={(e) => { handleFileUpload(e); setShowAttachmentMenu(false); }} />
+                        
+                        {/* File Preview Area */}
+                        <AnimatePresence>
+                            {selectedFile && (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="mb-3 relative inline-block self-start"
+                                >
+                                    {selectedFile.mimeType.startsWith('image/') ? (
+                                        <img src={`data:${selectedFile.mimeType};base64,${selectedFile.data}`} alt="Preview" className="h-16 w-16 object-cover rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm" referrerPolicy="no-referrer" />
+                                    ) : (
+                                        <div className="h-16 w-16 flex flex-col items-center justify-center bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-2 text-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500 mb-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                            <span className="text-[8px] font-medium text-gray-600 dark:text-gray-300 truncate w-full">{selectedFile.name}</span>
+                                        </div>
+                                    )}
+                                    <button type="button" onClick={() => setSelectedFile(null)} className="absolute -top-2 -right-2 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Text Input Area */}
+                        <textarea 
+                            value={inputMsg} 
+                            onClick={() => setShowAttachmentMenu(false)} 
+                            onChange={(e) => {
+                                setInputMsg(e.target.value);
+                                e.target.style.height = 'auto';
+                                e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+                            }} 
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    if ((inputMsg.trim() || selectedFile) && !isChatLoading) {
+                                        handleSendMessage(e as any);
+                                    }
+                                }
+                            }}
+                            placeholder="Hỏi Career Compass" 
+                            className="w-full bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-base resize-none min-h-[44px] max-h-[200px] overflow-y-auto mb-2"
+                            rows={1}
+                        />
+
+                        {/* Bottom Toolbar */}
+                        <div className="flex items-center justify-between mt-auto">
+                            <div className="flex items-center gap-1 relative">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
+                                    className={`p-2 rounded-full transition-colors ${showAttachmentMenu ? 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
+                                    title="Attach"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${showAttachmentMenu ? 'rotate-45' : ''}`}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                </button>
+
+                                <AnimatePresence>
+                                    {showAttachmentMenu && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            transition={{ duration: 0.15, ease: "easeOut" }}
+                                            className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col py-2 min-w-[160px] z-50 origin-bottom-left"
+                                        >
+                                            <button 
+                                                type="button" 
+                                                onClick={() => { document.getElementById('chat-file-upload')?.click(); }} 
+                                                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                                Upload File / Image
+                                            </button>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => { startCamera(); setShowAttachmentMenu(false); }} 
+                                                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
+                                            >
+                                                <Icons.Camera className="w-[18px] h-[18px] text-fuchsia-500" />
+                                                Take Photo
+                                            </button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                                <button type="button" onClick={switchToVoice} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-colors" title={t.switchToVoice}>
+                                    <Icons.Microphone className="w-5 h-5" />
+                                </button>
+                                <button type="submit" disabled={(!inputMsg.trim() && !selectedFile) || isChatLoading} className="p-2 rounded-full text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
+                                    {isChatLoading ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5" />}
                                 </button>
                             </div>
                         </div>
-                    )}
-                    <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex items-center bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all shadow-sm">
-                        <input type="file" id="chat-image-upload" className="hidden" accept="image/*" onChange={(e) => { handleImageUpload(e); setShowAttachmentMenu(false); }} />
-                        
-                        <div className="relative flex pl-2">
-                            <button 
-                                type="button" 
-                                onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
-                                className={`p-2 rounded-full transition-colors ${showAttachmentMenu ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-400 hover:text-indigo-600 dark:hover:text-white'}`}
-                                title="Attach"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${showAttachmentMenu ? 'rotate-45' : ''}`}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            </button>
-
-                            {showAttachmentMenu && (
-                                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col py-2 min-w-[160px] animate-fade-in-up z-50">
-                                    <button 
-                                        type="button" 
-                                        onClick={() => { document.getElementById('chat-image-upload')?.click(); }} 
-                                        className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                                        Upload Image
-                                    </button>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => { startCamera(); setShowAttachmentMenu(false); }} 
-                                        className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
-                                    >
-                                        <Icons.Camera className="w-[18px] h-[18px] text-fuchsia-500" />
-                                        Take Photo
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        <input type="text" value={inputMsg} onClick={() => setShowAttachmentMenu(false)} onChange={(e) => setInputMsg(e.target.value)} placeholder={t.typeMessage} className="w-full pl-2 pr-24 py-4 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-400 text-base font-medium"/>
-                         <button type="button" onClick={switchToVoice} className="absolute right-14 p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-white transition-colors" title={t.switchToVoice}><Icons.Microphone className="w-5 h-5" /></button>
-                        <button type="submit" disabled={(!inputMsg.trim() && !selectedImage) || isChatLoading} className="absolute right-3 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-md active:scale-95">{isChatLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5" />}</button>
                     </form>
                 </div>
                  <div className="text-center pb-2 text-[10px] text-gray-400 uppercase tracking-widest font-bold opacity-60">{t.footerDisclaimer}</div>

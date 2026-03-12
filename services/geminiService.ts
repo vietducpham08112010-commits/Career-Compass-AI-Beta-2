@@ -12,7 +12,7 @@ export const sendChatMessage = async (
   newMessage: string, 
   language: Language,
   userProfile?: UserProfile | null,
-  image?: { data: string; mimeType: string } | null
+  file?: { data: string; mimeType: string } | null
 ) => {
   const t = TRANSLATIONS[language];
   let systemInstruction = t.systemInstruction;
@@ -41,7 +41,7 @@ export const sendChatMessage = async (
             history,
             message: newMessage,
             systemInstruction,
-            image
+            file
         })
     });
 

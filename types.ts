@@ -32,7 +32,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
-  image?: string; // Base64 image data
+  file?: { data: string; mimeType: string; name: string }; // Base64 file data
 }
 
 export interface ChatSession {

@@ -30,7 +30,8 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key" }); // Prevent crash on init, but calls will fail
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Debug logging
 app.use((req, res, next) => {
@@ -65,22 +66,23 @@ app.get("/api/get-gemini-key", (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { history, message, systemInstruction, image } = req.body;
+    const { history, message, systemInstruction, file, image } = req.body;
+    const attachment = file || image;
 
-    if (!message && !image) {
-      return res.status(400).json({ error: "Message or image is required" });
+    if (!message && !attachment) {
+      return res.status(400).json({ error: "Message or file is required" });
     }
 
     const contents = formatHistoryForGemini(history || [], message || "");
 
-    // Add image if present
-    if (image && image.data && image.mimeType) {
+    // Add file if present
+    if (attachment && attachment.data && attachment.mimeType) {
       const lastTurn = contents[contents.length - 1];
       if (lastTurn.role === 'user') {
         lastTurn.parts.push({
           inlineData: {
-            data: image.data,
-            mimeType: image.mimeType
+            data: attachment.data,
+            mimeType: attachment.mimeType
           }
         } as any);
       }
