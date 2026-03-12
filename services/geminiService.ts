@@ -76,9 +76,9 @@ export const sendChatMessage = async (
 
   // --- DEFAULT: GOOGLE GEMINI (VIA FRONTEND) ---
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-        throw new Error("GEMINI_API_KEY is missing.");
+        throw new Error("VITE_GEMINI_API_KEY is missing.");
     }
     const ai = new GoogleGenAI({ apiKey: apiKey });
     
