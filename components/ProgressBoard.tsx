@@ -13,10 +13,11 @@ interface ProgressBoardProps {
   language: Language;
   milestones: Milestone[];
   setMilestones: React.Dispatch<React.SetStateAction<Milestone[]>>;
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   onNavigateToChat: () => void;
 }
 
-export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messages, user, language, milestones, setMilestones, onNavigateToChat }) => {
+export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messages, user, language, milestones, setMilestones, showToast, onNavigateToChat }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
       setMilestones(processedMilestones);
     } catch (error) {
       console.error("Failed to generate roadmap:", error);
-      alert(language === Language.EN ? "Failed to generate roadmap. Please try again." : "Không thể tạo lộ trình. Vui lòng thử lại.");
+      showToast(language === Language.EN ? "Failed to generate roadmap. Please try again." : "Không thể tạo lộ trình. Vui lòng thử lại.", 'error');
     } finally {
       setIsGenerating(false);
     }

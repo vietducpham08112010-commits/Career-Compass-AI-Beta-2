@@ -86,7 +86,10 @@ const Icons = {
   PanelLeftClose: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="m16 15-3-3 3-3"/></svg>,
   PanelLeftOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="m14 9 3 3-3 3"/></svg>,
   Save: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-  RefreshCw: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+  RefreshCw: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>,
+  CheckCircle2: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>,
+  AlertCircle: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  Info: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
 };
 
 // --- IMPRESSIVE FUTURISTIC COMPASS LOGO ---
@@ -294,6 +297,7 @@ export default function App() {
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
   const [welcomePhrase, setWelcomePhrase] = useState(WELCOME_PHRASES[0]);
@@ -385,7 +389,12 @@ export default function App() {
     }));
     setMilestones(processed);
     setTab(DashboardTab.PROGRESS);
-    alert(lang === Language.EN ? "Roadmap updated successfully!" : "Đã cập nhật lộ trình thành công!");
+    showToast(lang === Language.EN ? "Roadmap updated successfully!" : "Đã cập nhật lộ trình thành công!", 'success');
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
   const startCamera = async () => {
@@ -400,7 +409,7 @@ export default function App() {
             }
         }, 100);
     } catch (err) {
-        alert("Camera access denied or not available.");
+        showToast(lang === Language.EN ? "Camera access denied or not available." : "Không thể truy cập máy ảnh.", 'error');
     }
   };
 
@@ -645,7 +654,7 @@ export default function App() {
           }
       } catch (e) {
           console.error("Failed to save user profile to localStorage", e);
-          alert("Failed to save profile. The image might be too large.");
+          showToast(lang === Language.EN ? "Failed to save profile. The image might be too large." : "Không thể lưu hồ sơ. Ảnh có thể quá lớn.", 'error');
       }
   };
 
@@ -794,7 +803,7 @@ export default function App() {
       if (userIndex > -1) {
           users[userIndex].password = pass;
           localStorage.setItem('users', JSON.stringify(users));
-          alert("Password updated successfully! Please login.");
+          showToast(lang === Language.EN ? "Password updated successfully! Please login." : "Cập nhật mật khẩu thành công! Vui lòng đăng nhập.", 'success');
           setAuthType('login');
           setAuthError('');
           setIsResetSent(false); 
@@ -986,7 +995,7 @@ export default function App() {
           customModelName,
           aiProvider: auth.user?.aiProvider || AIProvider.GEMINI 
       });
-      alert("Settings Saved!");
+      showToast(lang === Language.EN ? "Settings Saved!" : "Đã lưu cài đặt!", 'success');
   };
 
   const renderLanding = () => {
@@ -1881,6 +1890,7 @@ export default function App() {
                 language={lang} 
                 milestones={milestones}
                 setMilestones={setMilestones}
+                showToast={showToast}
                 onNavigateToChat={() => setTab(DashboardTab.CHAT)} 
             />
         )}
@@ -2012,6 +2022,31 @@ export default function App() {
           </div>
         </div>
       )}
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 20, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] pointer-events-none"
+          >
+            <div className={`px-6 py-3 rounded-2xl shadow-2xl border flex items-center gap-3 backdrop-blur-xl ${
+              toast.type === 'success' 
+                ? 'bg-emerald-500/90 border-emerald-400/50 text-white' 
+                : toast.type === 'error'
+                ? 'bg-rose-500/90 border-rose-400/50 text-white'
+                : 'bg-indigo-500/90 border-indigo-400/50 text-white'
+            }`}>
+              {toast.type === 'success' && <Icons.CheckCircle2 className="w-5 h-5" />}
+              {toast.type === 'error' && <Icons.AlertCircle className="w-5 h-5" />}
+              {toast.type === 'info' && <Icons.Info className="w-5 h-5" />}
+              <span className="font-bold tracking-tight">{toast.message}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {renderContent()}
     </>
   );
