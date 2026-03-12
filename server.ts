@@ -50,11 +50,7 @@ const formatHistoryForGemini = (history: { role: string; text: string }[], newMe
 
 // --- API Routes ---
 app.get("/api/get-gemini-key", (req, res) => {
-  if (API_KEY) {
-    res.json({ key: API_KEY });
-  } else {
-    res.status(500).json({ error: "API key not configured on server" });
-  }
+    res.status(500).json({ error: "API key not available on server" });
 });
 
 app.post("/api/chat", async (req, res) => {
@@ -132,12 +128,6 @@ wss.on("connection", (ws: WebSocket) => {
       console.log("Received WebSocket message type:", msg.type);
 
       if (msg.type === "config") {
-        if (!API_KEY) {
-            console.error("API_KEY is missing. Cannot connect to Gemini Live.");
-            ws.send(JSON.stringify({ error: "Server Configuration Error: API Key is missing." }));
-            return;
-        }
-
         // Initialize Gemini Live Session
         const connectToGemini = async (model: string) => {
             console.log(`Attempting to connect to Gemini Live with model: ${model}`);
