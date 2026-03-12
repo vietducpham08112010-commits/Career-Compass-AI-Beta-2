@@ -1363,7 +1363,7 @@ export default function App() {
             <button onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.chatMode}><Icons.MessageSquare className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.chatMode}</span>}</button>
             <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</button>
             <button onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</button>
-            <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={lang === Language.EN ? "3-Month Plan" : "Kế hoạch 3 tháng"}><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{lang === Language.EN ? "3-Month Plan" : "Kế hoạch 3 tháng"}</span>}</button>
+            <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title="Bảng Tiến Độ"><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">Bảng Tiến Độ</span>}</button>
              <button onClick={() => setTab(DashboardTab.PROFILE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROFILE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.profile}><Icons.User className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.profile}</span>}</button>
             
             {chatHistory.length > 0 && isSidebarOpen && (
@@ -1448,7 +1448,7 @@ export default function App() {
                             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-lg transition-all active:scale-95 animate-bounce-subtle"
                         >
                             <Icons.Sparkles className="w-4 h-4" />
-                            {lang === Language.EN ? "Generate 3-Month Action Plan" : "Tạo kế hoạch hành động 3 tháng"}
+                            {lang === Language.EN ? "Generate Career Roadmap" : "Tạo lộ trình nghề nghiệp"}
                         </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -1500,6 +1500,26 @@ export default function App() {
                             >
                                 {welcomePhrase}
                             </motion.h2>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-12">
+                                {SUGGESTION_PROMPTS[lang].map((suggestion, idx) => (
+                                    <motion.button
+                                        key={idx}
+                                        whileHover={{ scale: 1.02, backgroundColor: theme === Theme.LIGHT ? 'rgba(79, 70, 229, 0.05)' : 'rgba(255, 255, 255, 0.05)' }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleSendMessage(undefined, suggestion.prompt)}
+                                        className="p-5 rounded-3xl border border-gray-200 dark:border-white/10 text-left transition-all hover:border-indigo-500/50 group bg-white dark:bg-white/5"
+                                    >
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                {suggestion.icon}
+                                            </div>
+                                            <span className="font-bold text-gray-900 dark:text-white">{suggestion.title}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{suggestion.prompt}</p>
+                                    </motion.button>
+                                ))}
+                            </div>
                         </motion.div>
                     )}
                     {messages.map((m) => (
@@ -1887,7 +1907,7 @@ export default function App() {
             </button>
             <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROGRESS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Target className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium">{lang === Language.EN ? "Plan" : "Kế hoạch"}</span>
+                <span className="text-[10px] font-medium">Tiến độ</span>
             </button>
             <button onClick={() => setTab(DashboardTab.PROFILE)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROFILE ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.User className="w-5 h-5 mb-1" />
