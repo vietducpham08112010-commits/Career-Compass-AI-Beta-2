@@ -9,9 +9,11 @@ import { sendChatMessage, LiveSessionManager } from './services/geminiService';
 import { decode, encode, decodeAudioData, createPcmBlob } from './utils/audio';
 import { Visualizer } from './components/Visualizer';
 import { ProgressBoard } from './components/ProgressBoard';
+import { Portfolio } from './components/Portfolio';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
+import { storage } from './utils/storage';
 
 // --- CONFIGURATION ---
 const EMAILJS_CONFIG = {
@@ -82,6 +84,7 @@ const Icons = {
   Key: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>,
   Check: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>,
   Search: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Plus: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   Menu: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
   PanelLeftClose: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="m16 15-3-3 3-3"/></svg>,
   PanelLeftOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="m14 9 3 3-3 3"/></svg>,
@@ -90,6 +93,7 @@ const Icons = {
   CheckCircle2: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>,
   AlertCircle: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
   Info: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+  FolderOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>,
 };
 
 // --- IMPRESSIVE FUTURISTIC COMPASS LOGO ---
@@ -271,13 +275,14 @@ const WELCOME_PHRASES = [
 ];
 
 export default function App() {
-  const [lang, setLang] = useState<Language>(Language.EN);
+  const [lang, setLang] = useState<Language>(Language.VI);
   // Default to LIGHT theme to avoid "black screen" feeling
   const [theme, setTheme] = useState<Theme>(Theme.LIGHT);
   const [mode, setMode] = useState<AppMode>(AppMode.LANDING);
   const [tab, setTab] = useState<DashboardTab>(DashboardTab.CHAT);
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [auth, setAuth] = useState<AuthState>({ isAuthenticated: false, user: null });
@@ -310,15 +315,17 @@ export default function App() {
   }, [messages.length]);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
 
-  // Load chat history from local storage on mount
+  // Load chat history and current messages from IndexedDB on mount
   useEffect(() => {
-    if (auth.user?.email) {
-      const stored = localStorage.getItem(`chatHistory_${auth.user.email}`);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          // Convert date strings back to Date objects
-          const historyWithDates = parsed.map((session: any) => ({
+    const loadChatData = async () => {
+      if (auth.user?.email || auth.user?.isGuest) {
+        const userKey = auth.user?.email || 'guest';
+        
+        // Load History
+        const storedHistory = await storage.get<ChatSession[]>(`chatHistory_${userKey}`);
+        if (storedHistory) {
+          // Ensure dates are actual Date objects
+          const historyWithDates = storedHistory.map((session: any) => ({
             ...session,
             date: new Date(session.date),
             messages: session.messages.map((m: any) => ({
@@ -327,40 +334,48 @@ export default function App() {
             }))
           }));
           setChatHistory(historyWithDates);
-        } catch (e) {
-          console.error("Failed to parse stored chat history");
-        }
-      } else {
+        } else {
           setChatHistory([]);
-      }
-    } else if (auth.user?.isGuest) {
-        // Load guest chat history
-        const stored = localStorage.getItem('chatHistory_guest');
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                const historyWithDates = parsed.map((session: any) => ({
-                    ...session,
-                    date: new Date(session.date),
-                    messages: session.messages.map((m: any) => ({
-                        ...m,
-                        timestamp: new Date(m.timestamp)
-                    }))
-                }));
-                setChatHistory(historyWithDates);
-            } catch (e) {}
         }
-    }
+
+        // Load Current Messages
+        const storedMessages = await storage.get<ChatMessage[]>(`currentMessages_${userKey}`);
+        if (storedMessages) {
+          // Ensure dates are actual Date objects
+          const messagesWithDates = storedMessages.map((m: any) => ({
+            ...m,
+            timestamp: new Date(m.timestamp)
+          }));
+          setMessages(messagesWithDates);
+        } else {
+          setMessages([]);
+        }
+      }
+    };
+    loadChatData();
   }, [auth.user?.email, auth.user?.isGuest]);
 
-  // Save chat history to local storage whenever it changes
+  // Save chat history to IndexedDB whenever it changes
   useEffect(() => {
-    if (auth.user?.email) {
-      localStorage.setItem(`chatHistory_${auth.user.email}`, JSON.stringify(chatHistory));
-    } else if (auth.user?.isGuest) {
-        localStorage.setItem('chatHistory_guest', JSON.stringify(chatHistory));
-    }
+    const saveHistory = async () => {
+      if (auth.user?.email || auth.user?.isGuest) {
+        const userKey = auth.user?.email || 'guest';
+        await storage.set(`chatHistory_${userKey}`, chatHistory);
+      }
+    };
+    saveHistory();
   }, [chatHistory, auth.user?.email, auth.user?.isGuest]);
+
+  // Save current messages to IndexedDB whenever they change
+  useEffect(() => {
+    const saveMessages = async () => {
+      if (auth.user?.email || auth.user?.isGuest) {
+        const userKey = auth.user?.email || 'guest';
+        await storage.set(`currentMessages_${userKey}`, messages);
+      }
+    };
+    saveMessages();
+  }, [messages, auth.user?.email, auth.user?.isGuest]);
 
   const [inputMsg, setInputMsg] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
@@ -566,26 +581,6 @@ export default function App() {
   // Listen for Firebase Auth State Changes
   useEffect(() => {
       if (!firebaseAuth) return;
-      
-      const applyCheckIn = (user: UserProfile) => {
-          const now = new Date();
-          const todayStr = now.toISOString().split('T')[0];
-          const yesterday = new Date(now);
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-          let currentStreak = user.streak || 0;
-          if (user.lastCheckIn !== todayStr) {
-              if (user.lastCheckIn === yesterdayStr) {
-                  currentStreak += 1;
-              } else {
-                  currentStreak = 1;
-              }
-              user.streak = currentStreak;
-              user.lastCheckIn = todayStr;
-          }
-          return user;
-      };
 
       const unsubscribe = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
           if (firebaseUser) {
@@ -614,8 +609,6 @@ export default function App() {
                   users.push(user);
                   localStorage.setItem('users', JSON.stringify(users));
               }
-              
-              user = applyCheckIn(user);
 
               setAuth({ isAuthenticated: true, user });
               localStorage.setItem('currentUser', JSON.stringify(user));
@@ -629,7 +622,6 @@ export default function App() {
               if (storedUser) {
                   try {
                       let userObj = JSON.parse(storedUser);
-                      userObj = applyCheckIn(userObj);
                       setAuth({ isAuthenticated: true, user: userObj });
                       localStorage.setItem('currentUser', JSON.stringify(userObj));
                       if (mode === AppMode.AUTH) {
@@ -888,6 +880,22 @@ export default function App() {
       updateUserProfile({ avatar: getRandomAvatar() });
   };
 
+  const clearChatHistory = async () => {
+    if (!auth.user) return;
+    const userKey = auth.user.email || 'guest';
+    await storage.delete(`chatHistory_${userKey}`);
+    setChatHistory([]);
+    showToast(lang === Language.EN ? "Chat history cleared" : "Đã xóa lịch sử trò chuyện", 'info');
+  };
+
+  const clearCurrentSession = async () => {
+    if (!auth.user) return;
+    const userKey = auth.user.email || 'guest';
+    await storage.delete(`currentMessages_${userKey}`);
+    setMessages([]);
+    showToast(lang === Language.EN ? "Current session cleared" : "Đã xóa phiên trò chuyện hiện tại", 'info');
+  };
+
   const handleLogout = async () => {
     try {
         if (firebaseAuth) await signOut(firebaseAuth);
@@ -1144,43 +1152,43 @@ export default function App() {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-8 mt-16 w-full max-w-3xl">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 mt-12 md:mt-16 w-full max-w-3xl">
                 <div className="text-center">
-                    <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{t.userValue}</div>
-                    <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.userCount}</div>
+                    <div className="text-2xl md:text-3xl font-bold text-indigo-600 dark:text-indigo-400">{t.userValue}</div>
+                    <div className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.userCount}</div>
                 </div>
-                <div className="text-center border-x border-gray-200 dark:border-white/10">
-                    <div className="text-3xl font-bold text-fuchsia-600 dark:text-fuchsia-400">{t.accuracyValue}</div>
-                    <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.accuracyRate}</div>
+                <div className="text-center border-y sm:border-y-0 sm:border-x border-gray-200 dark:border-white/10 py-4 sm:py-0">
+                    <div className="text-2xl md:text-3xl font-bold text-fuchsia-600 dark:text-fuchsia-400">{t.accuracyValue}</div>
+                    <div className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.accuracyRate}</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{t.sessionValue}</div>
-                    <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.activeSessions}</div>
+                    <div className="text-2xl md:text-3xl font-bold text-cyan-600 dark:text-cyan-400">{t.sessionValue}</div>
+                    <div className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">{t.activeSessions}</div>
                 </div>
             </div>
           </div>
         </section>
 
-        <section className="py-20 px-6 max-w-7xl mx-auto">
-             <div className="glass-card rounded-[3rem] p-12 bg-gradient-to-br from-indigo-600/5 to-fuchsia-600/5 border border-indigo-500/20 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
-                    <div className="flex-1">
-                        <h2 className="text-4xl font-bold mb-6">{t.vnLaborMarketTitle}</h2>
-                        <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-8">
+        <section className="py-12 md:py-20 px-6 max-w-7xl mx-auto">
+             <div className="glass-card rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 bg-gradient-to-br from-indigo-600/5 to-fuchsia-600/5 border border-indigo-500/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 md:w-96 h-64 md:h-96 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+                    <div className="flex-1 text-center md:text-left">
+                        <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">{t.vnLaborMarketTitle}</h2>
+                        <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-6 md:mb-8">
                             {t.vnLaborMarketDesc}
                         </p>
-                        <div className="flex flex-wrap gap-4">
+                        <div className="flex flex-wrap justify-center md:justify-start gap-2 md:gap-4">
                             {['AI Engineer', 'Logistics Manager', 'Semiconductor Tech', 'Green Energy'].map(tag => (
-                                <span key={tag} className="px-4 py-2 bg-white dark:bg-white/10 rounded-full text-sm font-bold border border-indigo-500/20">{tag}</span>
+                                <span key={tag} className="px-3 py-1.5 md:px-4 md:py-2 bg-white dark:bg-white/10 rounded-full text-[10px] md:text-sm font-bold border border-indigo-500/20">{tag}</span>
                             ))}
                         </div>
                     </div>
-                    <div className="w-full md:w-1/3 aspect-square bg-white dark:bg-white/5 rounded-3xl border border-white/10 shadow-2xl flex items-center justify-center p-8">
+                    <div className="w-full max-w-[240px] md:w-1/3 aspect-square bg-white dark:bg-white/5 rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl flex items-center justify-center p-6 md:p-8">
                         <div className="text-center">
-                            <Icons.TrendingUp className="w-20 h-20 text-indigo-500 mx-auto mb-4 animate-bounce" />
-                            <div className="text-2xl font-bold text-gray-900 dark:text-white">+25%</div>
-                            <div className="text-sm text-gray-500 uppercase font-bold tracking-widest">Growth Rate</div>
+                            <Icons.TrendingUp className="w-12 h-12 md:w-20 md:h-20 text-indigo-500 mx-auto mb-2 md:mb-4 animate-bounce" />
+                            <div className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">+25%</div>
+                            <div className="text-[10px] md:text-sm text-gray-500 uppercase font-bold tracking-widest">Growth Rate</div>
                         </div>
                     </div>
                 </div>
@@ -1226,55 +1234,55 @@ export default function App() {
              </div>
         </section>
 
-        <section className="py-24 px-6 max-w-7xl mx-auto">
-             <div className="mb-16">
-                 <h2 className="text-4xl md:text-5xl font-bold mb-6 text-balance">{t.featureHeader} <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-fuchsia-500 italic">{t.featureHeaderHighlight}</span> {t.featureHeaderSuffix}</h2>
-                 <p className="text-xl text-gray-500 max-w-2xl">{t.featureSub}</p>
+        <section className="py-16 md:py-24 px-6 max-w-7xl mx-auto">
+             <div className="mb-12 md:mb-16">
+                 <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 text-balance">{t.featureHeader} <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-fuchsia-500 italic">{t.featureHeaderHighlight}</span> {t.featureHeaderSuffix}</h2>
+                 <p className="text-lg md:text-xl text-gray-500 max-w-2xl">{t.featureSub}</p>
              </div>
 
              <div className="bento-grid">
-                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-red-500/50 transition-colors col-span-2">
+                 <div className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-red-500/50 transition-colors md:col-span-2">
                      <div className="relative z-10">
-                         <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                             <Icons.Microphone className="w-6 h-6" />
+                         <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                             <Icons.Microphone className="w-5 h-5 md:w-6 md:h-6" />
                          </div>
-                         <h3 className="text-2xl font-bold mb-2">{t.featureVoiceTitle}</h3>
-                         <p className="text-gray-500 dark:text-gray-400">{t.featureVoiceDesc}</p>
+                         <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureVoiceTitle}</h3>
+                         <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureVoiceDesc}</p>
                      </div>
-                     <div className="absolute right-0 bottom-0 w-64 h-64 bg-gradient-to-tl from-red-500/10 to-transparent rounded-full translate-x-20 translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
+                     <div className="absolute right-0 bottom-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-tl from-red-500/10 to-transparent rounded-full translate-x-10 translate-y-10 md:translate-x-20 md:translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
                  </div>
 
-                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors">
+                 <div className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors">
                      <div className="relative z-10">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                             <Icons.Stars className="w-6 h-6" />
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                             <Icons.Stars className="w-5 h-5 md:w-6 md:h-6" />
                          </div>
-                         <h3 className="text-2xl font-bold mb-2">{t.feature247Title}</h3>
-                         <p className="text-gray-500 dark:text-gray-400">{t.feature247Desc}</p>
+                         <h3 className="text-xl md:text-2xl font-bold mb-2">{t.feature247Title}</h3>
+                         <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.feature247Desc}</p>
                      </div>
-                     <div className="absolute right-0 top-0 w-32 h-32 bg-blue-500/5 rounded-bl-full group-hover:bg-blue-500/10 transition-colors"></div>
+                     <div className="absolute right-0 top-0 w-24 md:w-32 h-24 md:h-32 bg-blue-500/5 rounded-bl-full group-hover:bg-blue-500/10 transition-colors"></div>
                  </div>
 
-                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+                 <div className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
                      <div className="relative z-10">
-                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                             <Icons.FileText className="w-6 h-6" />
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                             <Icons.FileText className="w-5 h-5 md:w-6 md:h-6" />
                          </div>
-                         <h3 className="text-2xl font-bold mb-2">{t.featureScanTitle}</h3>
-                         <p className="text-gray-500 dark:text-gray-400">{t.featureScanDesc}</p>
+                         <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureScanTitle}</h3>
+                         <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureScanDesc}</p>
                      </div>
-                     <div className="absolute left-0 bottom-0 w-32 h-32 bg-purple-500/5 rounded-tr-full group-hover:bg-purple-500/10 transition-colors"></div>
+                     <div className="absolute left-0 bottom-0 w-24 md:w-32 h-24 md:h-32 bg-purple-500/5 rounded-tr-full group-hover:bg-purple-500/10 transition-colors"></div>
                  </div>
 
-                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:border-green-500/50 transition-colors col-span-2">
+                 <div className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-green-500/50 transition-colors md:col-span-2">
                      <div className="relative z-10">
-                         <div className="w-12 h-12 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                             <Icons.Compass className="w-6 h-6" />
+                         <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-red-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                             <Icons.Compass className="w-5 h-5 md:w-6 md:h-6" />
                          </div>
-                         <h3 className="text-2xl font-bold mb-2">{t.featureRoadmapTitle}</h3>
-                         <p className="text-gray-500 dark:text-gray-400">{t.featureRoadmapDesc}</p>
+                         <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureRoadmapTitle}</h3>
+                         <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureRoadmapDesc}</p>
                      </div>
-                      <div className="absolute right-0 bottom-0 w-64 h-64 bg-gradient-to-tl from-green-500/10 to-transparent rounded-full translate-x-20 translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
+                      <div className="absolute right-0 bottom-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-tl from-green-500/10 to-transparent rounded-full translate-x-10 translate-y-10 md:translate-x-20 md:translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
                  </div>
              </div>
         </section>
@@ -1454,6 +1462,87 @@ export default function App() {
     const filteredHistory = chatHistory.filter(session => session.title.toLowerCase().includes(searchQuery.toLowerCase()));
     return (
     <div className="flex h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden transition-colors duration-300 relative font-sans">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Sidebar Drawer */}
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <motion.aside
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0a0a0a] z-[70] md:hidden flex flex-col border-r border-gray-200 dark:border-white/5 shadow-2xl"
+          >
+            <div className="p-4 flex items-center justify-between">
+                <button onClick={() => { setMode(AppMode.LANDING); setIsMobileSidebarOpen(false); }} className="flex items-center gap-3 text-left">
+                    <CompassLogo className="w-8 h-8" />
+                    <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">Career Compass</span>
+                </button>
+                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl">
+                    <Icons.PanelLeftClose className="w-5 h-5" />
+                </button>
+            </div>
+            
+            <div className="px-4 mb-2">
+                <button onClick={() => { startNewChat(); setIsMobileSidebarOpen(false); }} className="w-full flex items-center justify-center gap-3 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold shadow-lg">
+                    <span className="text-xl leading-none">+</span> {t.newChat}
+                </button>
+            </div>
+            
+            <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+                <button onClick={() => { setTab(DashboardTab.CHAT); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.MessageSquare className="w-5 h-5" />{t.chatMode}</button>
+                <button onClick={() => { setTab(DashboardTab.VOICE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Microphone className="w-5 h-5" />{t.voiceMode}</button>
+                <button onClick={() => { setTab(DashboardTab.QUIZ); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Zap className="w-5 h-5" />{t.careerQuizTitle}</button>
+                <button onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />Bảng Tiến Độ</button>
+                <button onClick={() => { setTab(DashboardTab.PORTFOLIO); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.FolderOpen className="w-5 h-5" />{t.portfolio}</button>
+                <button onClick={() => { setTab(DashboardTab.PROFILE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROFILE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.User className="w-5 h-5" />{t.profile}</button>
+                
+                {chatHistory.length > 0 && (
+                    <div className="mt-8">
+                        <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div>
+                        <div className="space-y-1">
+                            {chatHistory.slice(0, 10).map((session) => (
+                                <button key={session.id} onClick={() => { loadSession(session); setIsMobileSidebarOpen(false); }} className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors">{session.title}</button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </nav>
+            
+            <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 space-y-3">
+                <div className="flex gap-2">
+                    <button onClick={toggleLang} className="flex-1 flex items-center justify-center py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"><span className="uppercase">{lang}</span></button>
+                    <button onClick={toggleTheme} className="flex-1 flex items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button>
+                </div>
+                <div className="flex items-center justify-between">
+                    <div onClick={() => { setTab(DashboardTab.PROFILE); setIsMobileSidebarOpen(false); }} className="flex items-center gap-3 cursor-pointer p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex-1 overflow-hidden">
+                        <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
+                        <div className="overflow-hidden flex-1">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p>
+                            <p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? t.guestSession : auth.user?.email}</p>
+                        </div>
+                    </div>
+                    <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors ml-2">
+                        <Icons.LogOut className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
       <aside className={`hidden md:flex flex-col transition-all duration-300 h-full border-r border-gray-200 dark:border-white/5 z-10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-lg ${isSidebarOpen ? 'w-72' : 'w-20'}`}>
         <div className="p-4 flex items-center justify-between">
             {isSidebarOpen && (
@@ -1480,6 +1569,7 @@ export default function App() {
             <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</button>
             <button onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</button>
             <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title="Bảng Tiến Độ"><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">Bảng Tiến Độ</span>}</button>
+            <button onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.FolderOpen className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</button>
              <button onClick={() => setTab(DashboardTab.PROFILE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROFILE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.profile}><Icons.User className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.profile}</span>}</button>
             
             {chatHistory.length > 0 && isSidebarOpen && (
@@ -1513,7 +1603,7 @@ export default function App() {
                             </div>
                         </div>
                         {auth.user?.streak !== undefined && auth.user.streak > 0 && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg shadow-inner" title={`${auth.user.streak} day streak!`}>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg shadow-inner" title={`Chuỗi ${auth.user.streak} ngày hoàn thành nhiệm vụ!`}>
                                 <Icons.Flame className={`w-4 h-4 ${getStreakColor(auth.user.streak)}`} />
                                 <span className={`text-xs font-bold ${getStreakColor(auth.user.streak)}`}>{auth.user.streak}</span>
                             </div>
@@ -1541,21 +1631,30 @@ export default function App() {
                 {isSidebarOpen ? <Icons.PanelLeftClose className="w-5 h-5" /> : <Icons.PanelLeftOpen className="w-5 h-5" />}
             </button>
         </div>
-        <header className="md:hidden h-16 bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20 shrink-0">
-            <button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-2">
-                <CompassLogo className="w-8 h-8" />
-                <span className="font-bold text-gray-800 dark:text-white">Career Compass</span>
+        {/* Mobile Header */}
+        <header className="md:hidden h-14 flex items-center justify-between px-4 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/5 z-50 sticky top-0">
+            <button onClick={() => setIsMobileSidebarOpen(true)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
+                <Icons.Menu className="w-5 h-5" />
             </button>
-            <div className="flex gap-2">
-                <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400">
-                    {theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}
-                </button>
-                <button onClick={handleLogout} className="p-2 text-red-500">
-                    <Icons.LogOut className="w-5 h-5"/>
-                </button>
+            <div className="flex items-center gap-1.5">
+                <CompassLogo className="w-5 h-5" />
+                <span className="font-bold text-xs tracking-tight text-gray-900 dark:text-white uppercase">Career Compass</span>
             </div>
+            <button onClick={startNewChat} className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-colors">
+                <Icons.Plus className="w-5 h-5" />
+            </button>
         </header>
-        {tab === DashboardTab.CHAT && (
+        
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="flex-1 flex flex-col h-full overflow-hidden relative"
+          >
+            {tab === DashboardTab.CHAT && (
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
                         <div className="flex flex-col items-center gap-2 mb-12">
@@ -1570,18 +1669,18 @@ export default function App() {
                                 {lang === Language.EN ? "Based on your conversation history" : "Dựa trên lịch sử trò chuyện của bạn"}
                             </p>
                         </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 max-w-5xl mx-auto">
-                        <div className="p-6 rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
-                            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">{t.accuracyValue}</div>
-                            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-2">{t.accuracyRate}</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-16 max-w-5xl mx-auto px-4">
+                        <div className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
+                            <div className="text-2xl md:text-3xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">{t.accuracyValue}</div>
+                            <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-1 md:mt-2">{t.accuracyRate}</div>
                         </div>
-                        <div className="p-6 rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
-                            <div className="text-3xl font-bold text-fuchsia-600 dark:text-fuchsia-400 tabular-nums">{t.userValue}</div>
-                            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-2">{t.userCount}</div>
+                        <div className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
+                            <div className="text-2xl md:text-3xl font-bold text-fuchsia-600 dark:text-fuchsia-400 tabular-nums">{t.userValue}</div>
+                            <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-1 md:mt-2">{t.userCount}</div>
                         </div>
-                        <div className="p-6 rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
-                            <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">{t.sessionValue}</div>
-                            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-2">{t.activeSessions}</div>
+                        <div className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
+                            <div className="text-2xl md:text-3xl font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">{t.sessionValue}</div>
+                            <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-1 md:mt-2">{t.activeSessions}</div>
                         </div>
                     </div>
                     {messages.length === 0 && (
@@ -1589,12 +1688,12 @@ export default function App() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: "easeOut" }}
-                            className="w-full max-w-4xl mx-auto flex flex-col px-4 pb-20"
+                            className="w-full max-w-4xl mx-auto flex flex-col px-4 pb-12 md:pb-20"
                         >
-                            <div className="flex flex-col items-start gap-4 mb-8">
-                                <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-start gap-1 md:gap-4 mb-6 md:mb-8">
+                                <div className="flex flex-wrap items-center gap-2 md:gap-4">
                                     <motion.span 
-                                        className="text-5xl"
+                                        className="text-2xl md:text-5xl"
                                         animate={{ 
                                             rotate: [0, 15, -15, 0],
                                             scale: [1, 1.2, 1]
@@ -1607,7 +1706,7 @@ export default function App() {
                                     >
                                         ✨
                                     </motion.span>
-                                    <h1 className="text-[44px] md:text-[56px] leading-tight font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 tracking-tight">
+                                    <h1 className="text-[24px] md:text-[56px] leading-tight font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 tracking-tight">
                                         Xin chào {auth.user?.name || 'Guest'}!
                                     </h1>
                                 </div>
@@ -1616,13 +1715,13 @@ export default function App() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.5, delay: 0.2 }}
-                                    className="text-[44px] md:text-[56px] leading-tight font-bold text-gray-900 dark:text-white tracking-tight"
+                                    className="text-[24px] md:text-[56px] leading-tight font-bold text-gray-900 dark:text-white tracking-tight"
                                 >
                                     {welcomePhrase}
                                 </motion.h2>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 mt-2 md:mt-8">
                                 {SUGGESTION_PROMPTS[lang] && SUGGESTION_PROMPTS[lang].map((suggestion, idx) => {
                                     const IconComponent = (Icons as any)[suggestion.icon] || Icons.MessageSquare;
                                     return (
@@ -1631,15 +1730,15 @@ export default function App() {
                                             whileHover={{ scale: 1.02, backgroundColor: theme === Theme.LIGHT ? 'rgba(79, 70, 229, 0.05)' : 'rgba(255, 255, 255, 0.05)' }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => handleSendMessage(undefined, suggestion.prompt)}
-                                            className="p-6 rounded-[2rem] border border-gray-100 dark:border-white/10 text-left transition-all hover:border-indigo-500/50 group bg-white dark:bg-white/5 shadow-sm hover:shadow-md"
+                                            className="p-4 md:p-6 rounded-[1.2rem] md:rounded-[2rem] border border-gray-100 dark:border-white/10 text-left transition-all hover:border-indigo-500/50 group bg-white dark:bg-white/5 shadow-sm hover:shadow-md"
                                         >
-                                            <div className="flex items-center gap-4 mb-4">
-                                                <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                                    <IconComponent className="w-6 h-6" />
+                                            <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-4">
+                                                <div className="p-2 md:p-3 rounded-lg md:rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                    <IconComponent className="w-4 h-4 md:w-6 md:h-6" />
                                                 </div>
-                                                <span className="font-bold text-lg text-gray-900 dark:text-white">{suggestion.title}</span>
+                                                <span className="font-bold text-sm md:text-lg text-gray-900 dark:text-white">{suggestion.title}</span>
                                             </div>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{suggestion.prompt}</p>
+                                            <p className="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">{suggestion.prompt}</p>
                                         </motion.button>
                                     );
                                 })}
@@ -1655,14 +1754,14 @@ export default function App() {
                             className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                             {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CompassLogo className="w-5 h-5 text-white" /></div>)}
-                            <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
-                                 <div className={`px-6 py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
+                            <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[95%] md:max-w-[70%]`}>
+                                 <div className={`px-4 md:px-6 py-2.5 md:py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
                                     {m.pastedTexts && m.pastedTexts.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mb-3">
+                                        <div className="flex flex-wrap gap-1.5 md:gap-2 mb-2 md:mb-3">
                                             {m.pastedTexts.map((text, idx) => (
-                                                <div key={idx} className="h-24 w-32 flex flex-col bg-white/10 rounded-2xl border border-white/20 shadow-sm p-3 overflow-hidden">
-                                                    <p className="text-[10px] text-white/80 line-clamp-3 mb-auto leading-relaxed">{text}</p>
-                                                    <div className="mt-2 text-[9px] font-bold uppercase tracking-wider text-white/60 border border-white/20 rounded-md px-1.5 py-0.5 self-start bg-white/5">
+                                                <div key={idx} className="h-14 w-20 md:h-24 md:w-32 flex flex-col bg-white/10 rounded-lg md:rounded-2xl border border-white/20 shadow-sm p-1.5 md:p-3 overflow-hidden">
+                                                    <p className="text-[7px] md:text-[10px] text-white/80 line-clamp-2 md:line-clamp-3 mb-auto leading-relaxed">{text}</p>
+                                                    <div className="mt-1 md:mt-2 text-[6px] md:text-[9px] font-bold uppercase tracking-wider text-white/60 border border-white/20 rounded-md px-1 md:px-1.5 py-0.5 self-start bg-white/5">
                                                         PASTED
                                                     </div>
                                                 </div>
@@ -1672,16 +1771,16 @@ export default function App() {
                                     {m.file && (
                                         <div className="mb-2 max-w-full overflow-hidden rounded-lg">
                                             {m.file.mimeType.startsWith('image/') ? (
-                                                <img src={`data:${m.file.mimeType};base64,${m.file.data}`} alt="Uploaded" className="max-h-60 object-contain" referrerPolicy="no-referrer" />
+                                                <img src={`data:${m.file.mimeType};base64,${m.file.data}`} alt="Uploaded" className="max-h-32 md:max-h-60 object-contain rounded-lg" referrerPolicy="no-referrer" />
                                             ) : (
-                                                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/20">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                                    <span className="text-sm font-medium truncate max-w-[200px]">{m.file.name}</span>
+                                                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-white/10 rounded-xl border border-white/20">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white md:w-5 md:h-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                                    <span className="text-[10px] md:text-sm font-medium truncate max-w-[100px] md:max-w-[200px]">{m.file.name}</span>
                                                 </div>
                                             )}
                                         </div>
                                     )}
-                                    <div className="leading-relaxed whitespace-pre-wrap text-[15px] markdown-body">
+                                    <div className="leading-relaxed whitespace-pre-wrap text-[14px] md:text-[15px] markdown-body">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanText(m.text)}</ReactMarkdown>
                                     </div>
                                     {m.role === 'model' && extractRoadmapJson(m.text) && (
@@ -1749,12 +1848,12 @@ export default function App() {
                             </button>
                         </div>
                     </div>
-                    <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex flex-col bg-gray-100 dark:bg-[#1e1e1e] rounded-[32px] p-4 transition-all shadow-sm">
+                    <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex flex-col bg-gray-100 dark:bg-[#1e1e1e] rounded-[24px] md:rounded-[32px] p-3 md:p-4 transition-all shadow-sm">
                         <input type="file" id="chat-file-upload" className="hidden" accept="image/*,application/pdf,text/plain,text/csv" onChange={(e) => { handleFileUpload(e); setShowAttachmentMenu(false); }} />
                         
                         {/* File Preview Area */}
                         <AnimatePresence>
-                            <div className="flex flex-wrap gap-3 mb-3">
+                            <div className="flex flex-wrap gap-2 md:gap-3 mb-2 md:mb-3">
                                 {selectedFile && (
                                     <motion.div 
                                         initial={{ opacity: 0, scale: 0.8, y: 10 }}
@@ -1764,15 +1863,15 @@ export default function App() {
                                         className="relative inline-block self-start"
                                     >
                                         {selectedFile.mimeType.startsWith('image/') ? (
-                                            <img src={`data:${selectedFile.mimeType};base64,${selectedFile.data}`} alt="Preview" className="h-16 w-16 object-cover rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm" referrerPolicy="no-referrer" />
+                                            <img src={`data:${selectedFile.mimeType};base64,${selectedFile.data}`} alt="Preview" className="h-12 w-12 md:h-16 md:w-16 object-cover rounded-xl md:rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm" referrerPolicy="no-referrer" />
                                         ) : (
-                                            <div className="h-16 w-16 flex flex-col items-center justify-center bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-2 text-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500 mb-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                                <span className="text-[8px] font-medium text-gray-600 dark:text-gray-300 truncate w-full">{selectedFile.name}</span>
+                                            <div className="h-12 w-12 md:h-16 md:w-16 flex flex-col items-center justify-center bg-white dark:bg-white/5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-1.5 md:p-2 text-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500 mb-0.5 md:mb-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                                <span className="text-[7px] md:text-[8px] font-medium text-gray-600 dark:text-gray-300 truncate w-full">{selectedFile.name}</span>
                                             </div>
                                         )}
-                                        <button type="button" onClick={() => setSelectedFile(null)} className="absolute -top-2 -right-2 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        <button type="button" onClick={() => setSelectedFile(null)} className="absolute -top-1.5 -right-1.5 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-0.5 md:p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         </button>
                                     </motion.div>
                                 )}
@@ -1785,14 +1884,14 @@ export default function App() {
                                         transition={{ duration: 0.2, ease: "easeOut" }}
                                         className="relative inline-block self-start"
                                     >
-                                        <div className="h-24 w-32 flex flex-col bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-3 overflow-hidden">
-                                            <p className="text-[10px] text-gray-600 dark:text-gray-300 line-clamp-3 mb-auto leading-relaxed">{text}</p>
-                                            <div className="mt-2 text-[9px] font-bold uppercase tracking-wider text-gray-400 border border-gray-200 dark:border-white/10 rounded-md px-1.5 py-0.5 self-start bg-gray-50 dark:bg-white/5">
+                                        <div className="h-16 w-24 md:h-24 md:w-32 flex flex-col bg-white dark:bg-white/5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-2 md:p-3 overflow-hidden">
+                                            <p className="text-[8px] md:text-[10px] text-gray-600 dark:text-gray-300 line-clamp-2 md:line-clamp-3 mb-auto leading-relaxed">{text}</p>
+                                            <div className="mt-1 md:mt-2 text-[7px] md:text-[9px] font-bold uppercase tracking-wider text-gray-400 border border-gray-200 dark:border-white/10 rounded-md px-1 md:px-1.5 py-0.5 self-start bg-gray-50 dark:bg-white/5">
                                                 PASTED
                                             </div>
                                         </div>
-                                        <button type="button" onClick={() => setPastedTexts(prev => prev.filter((_, i) => i !== index))} className="absolute -top-2 -right-2 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        <button type="button" onClick={() => setPastedTexts(prev => prev.filter((_, i) => i !== index))} className="absolute -top-1.5 -right-1.5 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-0.5 md:p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         </button>
                                     </motion.div>
                                 ))}
@@ -1809,7 +1908,7 @@ export default function App() {
                                 e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
                             }} 
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
+                                if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 768) {
                                     if (e.nativeEvent.isComposing) return; // Prevent Enter during IME composition
                                     e.preventDefault();
                                     if ((inputMsg.trim() || selectedFile || pastedTexts.length > 0) && !isChatLoading) {
@@ -1824,8 +1923,8 @@ export default function App() {
                                     setPastedTexts(prev => [...prev, text]);
                                 }
                             }}
-                            placeholder="Hỏi Career Compass" 
-                            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-base resize-none min-h-[44px] max-h-[200px] overflow-y-auto mb-2"
+                            placeholder={t.chatPlaceholder} 
+                            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-[13px] md:text-base resize-none min-h-[36px] md:min-h-[44px] max-h-[200px] overflow-y-auto mb-1 md:mb-2"
                             rows={1}
                         />
 
@@ -1835,10 +1934,10 @@ export default function App() {
                                 <button 
                                     type="button" 
                                     onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
-                                    className={`p-2 rounded-full transition-colors ${showAttachmentMenu ? 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
+                                    className={`p-2.5 md:p-2 rounded-full transition-colors ${showAttachmentMenu ? 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
                                     title="Attach"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${showAttachmentMenu ? 'rotate-45' : ''}`}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 md:w-5 md:h-5 ${showAttachmentMenu ? 'rotate-45' : ''}`}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 </button>
 
                                 <AnimatePresence>
@@ -1848,22 +1947,22 @@ export default function App() {
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                             transition={{ duration: 0.15, ease: "easeOut" }}
-                                            className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col py-2 min-w-[160px] z-50 origin-bottom-left"
+                                            className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col py-1 md:py-2 min-w-[140px] md:min-w-[160px] z-50 origin-bottom-left"
                                         >
                                             <button 
                                                 type="button" 
-                                                onClick={() => { document.getElementById('chat-file-upload')?.click(); }} 
-                                                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
+                                                onClick={() => { document.getElementById('chat-file-upload')?.click(); setShowAttachmentMenu(false); }} 
+                                                className="flex items-center gap-3 px-4 py-3 md:py-3 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                                Upload File / Image
+                                                <Icons.FileText className="w-[18px] h-[18px] md:w-[18px] md:h-[18px] text-indigo-500" />
+                                                Upload File
                                             </button>
                                             <button 
                                                 type="button" 
                                                 onClick={() => { startCamera(); setShowAttachmentMenu(false); }} 
-                                                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
+                                                className="flex items-center gap-3 px-4 py-3 md:py-3 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
                                             >
-                                                <Icons.Camera className="w-[18px] h-[18px] text-fuchsia-500" />
+                                                <Icons.Camera className="w-[18px] h-[18px] md:w-[18px] md:h-[18px] text-fuchsia-500" />
                                                 Take Photo
                                             </button>
                                         </motion.div>
@@ -1871,15 +1970,16 @@ export default function App() {
                                 </AnimatePresence>
                             </div>
 
-                            <div className="flex items-center gap-1">
-                                <button type="button" onClick={switchToVoice} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-colors" title={t.switchToVoice}>
-                                    <Icons.Microphone className="w-5 h-5" />
+                            <div className="flex items-center gap-1 md:gap-2">
+                                <button type="button" onClick={switchToVoice} className="p-2.5 md:p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-colors" title={t.switchToVoice}>
+                                    <Icons.Microphone className="w-5 h-5 md:w-5 md:h-5" />
                                 </button>
-                                <button type="submit" disabled={(!inputMsg.trim() && !selectedFile) || isChatLoading} className="p-2 rounded-full text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
-                                    {isChatLoading ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5" />}
+                                <button type="submit" disabled={(!inputMsg.trim() && !selectedFile && pastedTexts.length === 0) || isChatLoading} className="p-2.5 md:p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-30 disabled:hover:bg-indigo-600 transition-all shadow-lg active:scale-95">
+                                    {isChatLoading ? <div className="w-5 h-5 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5 md:w-5 md:h-5" />}
                                 </button>
                             </div>
                         </div>
+
                     </form>
                 </div>
                  <div className="text-center pb-2 text-[10px] text-gray-400 uppercase tracking-widest font-bold opacity-60">{t.footerDisclaimer}</div>
@@ -1958,6 +2058,11 @@ export default function App() {
                 onNavigateToChat={() => setTab(DashboardTab.CHAT)} 
             />
         )}
+        {tab === DashboardTab.PORTFOLIO && (
+            <div className="flex-1 overflow-y-auto bg-white dark:bg-[#050505]">
+                <Portfolio language={lang} userId={auth.user?.email || 'guest'} updateUserProfile={updateUserProfile} />
+            </div>
+        )}
         {tab === DashboardTab.PROFILE && (
             <div className="flex-1 p-8 overflow-y-auto bg-white dark:bg-[#050505] flex justify-center">
                 <div className="max-w-2xl w-full">
@@ -1978,7 +2083,7 @@ export default function App() {
                                 <div className="flex items-center gap-3">
                                     <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{auth.user?.name}</h3>
                                     {auth.user?.streak !== undefined && auth.user.streak > 0 && (
-                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl shadow-inner border border-gray-200 dark:border-white/5" title={`${auth.user.streak} day streak!`}>
+                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl shadow-inner border border-gray-200 dark:border-white/5" title={`Chuỗi ${auth.user.streak} ngày hoàn thành nhiệm vụ!`}>
                                             <Icons.Flame className={`w-5 h-5 ${getStreakColor(auth.user.streak)}`} />
                                             <span className={`text-sm font-black ${getStreakColor(auth.user.streak)}`}>{auth.user.streak}</span>
                                         </div>
@@ -2013,12 +2118,32 @@ export default function App() {
                             </div>
                             
                         </div>
-                        <div className="mt-12 pt-8 border-t border-gray-100 dark:border-white/5 flex justify-end gap-4">
+                        <div className="mt-12 pt-8 border-t border-gray-100 dark:border-white/5 flex flex-col gap-4">
+                            <div className="flex justify-between items-center">
+                                <div className="flex flex-col">
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Storage Management</h4>
+                                    <p className="text-xs text-gray-500">Manage your persistent chat data</p>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        if (window.confirm(lang === Language.EN ? "Are you sure you want to clear all chat history? This cannot be undone." : "Bạn có chắc chắn muốn xóa tất cả lịch sử trò chuyện? Hành động này không thể hoàn tác.")) {
+                                            clearChatHistory();
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                >
+                                    Clear All History
+                                </button>
+                            </div>
+                        </div>
+                        <div className="mt-8 flex justify-end gap-4">
                         </div>
                     </div>
                 </div>
             </div>
         )}
+        </motion.div>
+        </AnimatePresence>
         
         {/* Mobile Bottom Navigation */}
         <div className="md:hidden shrink-0 h-16 bg-white dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-white/5 flex items-center justify-around px-2 z-20 pb-safe">
@@ -2033,6 +2158,10 @@ export default function App() {
             <button onClick={() => setTab(DashboardTab.QUIZ)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.QUIZ ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Zap className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium">Quiz</span>
+            </button>
+            <button onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PORTFOLIO ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+                <Icons.FolderOpen className="w-5 h-5 mb-1" />
+                <span className="text-[10px] font-medium">CV</span>
             </button>
             <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROGRESS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Target className="w-5 h-5 mb-1" />

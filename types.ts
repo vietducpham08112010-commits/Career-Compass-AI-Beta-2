@@ -19,7 +19,8 @@ export enum DashboardTab {
   VOICE = 'VOICE',
   PROFILE = 'PROFILE',
   QUIZ = 'QUIZ',
-  PROGRESS = 'PROGRESS'
+  PROGRESS = 'PROGRESS',
+  PORTFOLIO = 'PORTFOLIO'
 }
 
 export enum AIProvider {
@@ -44,6 +45,16 @@ export interface ChatSession {
   messages: ChatMessage[];
 }
 
+export interface PortfolioItem {
+  id: string;
+  type: 'certificate' | 'grade' | 'project';
+  title: string;
+  description: string;
+  date: string;
+  score?: string;
+  link?: string;
+}
+
 export interface UserProfile {
   name: string;
   email: string;
@@ -57,6 +68,7 @@ export interface UserProfile {
   streak?: number;
   lastCheckIn?: string;
   provider?: 'google' | 'local';
+  portfolio?: PortfolioItem[];
 }
 
 export interface AuthState {

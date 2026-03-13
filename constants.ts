@@ -162,6 +162,7 @@ export const TRANSLATIONS = {
     modelName: 'Model Name',
     
     // New Translations
+    chatPlaceholder: 'Ask me anything about your career...',
     heroBadge: 'AI-Powered Guidance',
     heroTitlePrefix: 'Career clarity for ',
     heroTitleSuffix: 'everyone',
@@ -187,6 +188,22 @@ export const TRANSLATIONS = {
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
     discussWithAI: 'Discuss result with AI',
+    
+    // Portfolio
+    portfolio: 'Portfolio / CV',
+    portfolioDesc: 'Store your certificates, grades, and personal projects. Export as a complete CV/Portfolio for college applications.',
+    addPortfolioItem: 'Add Item',
+    itemType: 'Type',
+    typeCertificate: 'Certificate',
+    typeGrade: 'Grade/Score',
+    typeProject: 'Personal Project',
+    itemTitle: 'Title',
+    itemDesc: 'Description',
+    itemDate: 'Date/Period',
+    itemScore: 'Score/Result',
+    itemLink: 'Link (Optional)',
+    exportCV: 'Export CV/Portfolio',
+    noPortfolioItems: 'No items in your portfolio yet. Add your achievements to build your CV!',
     
     // Feature Translations - UPDATED
     featureVoiceTitle: 'Direct 1-on-1 Consultation',
@@ -242,6 +259,7 @@ export const TRANSLATIONS = {
     modelName: 'Tên Mô hình',
     
     // New Translations
+    chatPlaceholder: 'Hỏi tôi bất cứ điều gì về sự nghiệp của bạn...',
     heroBadge: 'Định hướng bằng AI',
     heroTitlePrefix: 'Định hướng cho ',
     heroTitleSuffix: 'mọi người',
@@ -267,6 +285,22 @@ export const TRANSLATIONS = {
     collapseSidebar: 'Thu gọn thanh bên',
     expandSidebar: 'Mở rộng thanh bên',
     discussWithAI: 'Thảo luận kết quả với AI',
+
+    // Portfolio
+    portfolio: 'Hồ sơ năng lực / CV',
+    portfolioDesc: 'Lưu trữ chứng chỉ, điểm số và các dự án cá nhân. Dễ dàng trích xuất thành một CV/Portfolio hoàn chỉnh khi nộp hồ sơ xét tuyển.',
+    addPortfolioItem: 'Thêm mục mới',
+    itemType: 'Loại',
+    typeCertificate: 'Chứng chỉ',
+    typeGrade: 'Điểm số / Thành tích học tập',
+    typeProject: 'Dự án cá nhân',
+    itemTitle: 'Tiêu đề',
+    itemDesc: 'Mô tả chi tiết',
+    itemDate: 'Thời gian',
+    itemScore: 'Điểm số / Kết quả',
+    itemLink: 'Đường dẫn (Tùy chọn)',
+    exportCV: 'Xuất CV/Portfolio',
+    noPortfolioItems: 'Chưa có mục nào trong hồ sơ của bạn. Hãy thêm thành tích để xây dựng CV nhé!',
 
     // Feature Translations - UPDATED
     featureVoiceTitle: 'Tư vấn 1-1 Trực tiếp',
