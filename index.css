@@ -63,20 +63,47 @@
   50% { background-size: 200% 200%; background-position: right center; }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body { 
   font-family: 'Plus Jakarta Sans', sans-serif; 
   background-color: #f8fafc; 
   color: #0f172a; 
   transition: background-color 0.3s ease, color 0.3s ease; 
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 .dark body { background-color: #050505; color: #f8fafc; }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-.dark ::-webkit-scrollbar-thumb { background: #333; }
+/* Custom Scrollbar for smoother feel */
+::-webkit-scrollbar { 
+  width: 6px; 
+  height: 6px;
+}
+::-webkit-scrollbar-track { 
+  background: transparent; 
+}
+::-webkit-scrollbar-thumb { 
+  background: rgba(156, 163, 175, 0.5); 
+  border-radius: 10px; 
+  transition: background 0.2s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.8);
+}
+.dark ::-webkit-scrollbar-thumb { 
+  background: rgba(75, 85, 99, 0.5); 
+}
+.dark ::-webkit-scrollbar-thumb:hover { 
+  background: rgba(107, 114, 128, 0.8); 
+}
+
+/* Enable momentum scrolling on iOS for all scrollable elements */
+* {
+  -webkit-overflow-scrolling: touch;
+}
 
 /* Utilities */
 .text-balance { text-wrap: balance; }
@@ -115,18 +142,18 @@ body {
 /* Markdown Styles */
 .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 {
   font-weight: 700;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
   line-height: 1.2;
 }
 .markdown-body h1 { font-size: 1.5em; }
 .markdown-body h2 { font-size: 1.3em; }
 .markdown-body h3 { font-size: 1.1em; }
-.markdown-body p { margin-top: 0; margin-bottom: 0.5em; }
-.markdown-body ul, .markdown-body ol { margin-top: 0; margin-bottom: 0.5em; padding-left: 2em; }
+.markdown-body p { margin-top: 0; margin-bottom: 0.4em; }
+.markdown-body ul, .markdown-body ol { margin-top: 0; margin-bottom: 0.4em; padding-left: 1.5em; }
 .markdown-body ul { list-style-type: disc; }
 .markdown-body ol { list-style-type: decimal; }
-.markdown-body li + li { margin-top: 0.25em; }
+.markdown-body li + li { margin-top: 0.15em; }
 .markdown-body strong { font-weight: 700; color: #4f46e5; }
 .dark .markdown-body strong { color: #818cf8; }
 .markdown-body em { font-style: italic; }

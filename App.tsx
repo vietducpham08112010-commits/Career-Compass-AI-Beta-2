@@ -48,6 +48,7 @@ try {
 // --- Icons ---
 const Icons = {
   Home: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  X: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   Microphone: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
   MessageSquare: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
   User: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
@@ -283,6 +284,7 @@ export default function App() {
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [auth, setAuth] = useState<AuthState>({ isAuthenticated: false, user: null });
@@ -516,6 +518,16 @@ export default function App() {
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
+          if (!file.type.startsWith('image/')) {
+              showToast(lang === Language.EN ? "Please select a valid image file." : "Vui lòng chọn một tệp hình ảnh hợp lệ.", 'error');
+              if (e.target) e.target.value = '';
+              return;
+          }
+          if (file.size > 5 * 1024 * 1024) { // 5MB limit
+              showToast(lang === Language.EN ? "Image size should be less than 5MB." : "Kích thước ảnh phải nhỏ hơn 5MB.", 'error');
+              if (e.target) e.target.value = '';
+              return;
+          }
           const reader = new FileReader();
           reader.onload = (event) => {
               const img = new Image();
@@ -551,14 +563,30 @@ export default function App() {
                   const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
                   updateUserProfile({ avatar: dataUrl });
               };
+              img.onerror = () => {
+                  showToast(lang === Language.EN ? "Failed to load image." : "Không thể tải hình ảnh.", 'error');
+              };
               if (typeof event.target?.result === 'string') {
                   img.src = event.target.result;
               }
+          };
+          reader.onerror = () => {
+              showToast(lang === Language.EN ? "Failed to read file." : "Không thể đọc tệp.", 'error');
           };
           reader.readAsDataURL(file);
       }
       if (e.target) e.target.value = '';
   };
+
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.key === 'Escape' && isProfileModalOpen) {
+              setIsProfileModalOpen(false);
+          }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isProfileModalOpen]);
 
   // Custom Model State
   const [customEndpoint, setCustomEndpoint] = useState('http://localhost:11434/v1/chat/completions');
@@ -1505,9 +1533,9 @@ export default function App() {
                 <button onClick={() => { setTab(DashboardTab.CHAT); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.MessageSquare className="w-5 h-5" />{t.chatMode}</button>
                 <button onClick={() => { setTab(DashboardTab.VOICE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Microphone className="w-5 h-5" />{t.voiceMode}</button>
                 <button onClick={() => { setTab(DashboardTab.QUIZ); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Zap className="w-5 h-5" />{t.careerQuizTitle}</button>
-                <button onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />Bảng Tiến Độ</button>
+                <button onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />{t.progress}</button>
                 <button onClick={() => { setTab(DashboardTab.PORTFOLIO); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.FolderOpen className="w-5 h-5" />{t.portfolio}</button>
-                <button onClick={() => { setTab(DashboardTab.PROFILE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROFILE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.User className="w-5 h-5" />{t.profile}</button>
+                <button onClick={() => { setIsProfileModalOpen(true); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5`}><Icons.User className="w-5 h-5" />{t.profile}</button>
                 
                 {chatHistory.length > 0 && (
                     <div className="mt-8">
@@ -1527,8 +1555,8 @@ export default function App() {
                     <button onClick={toggleTheme} className="flex-1 flex items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button>
                 </div>
                 <div className="flex items-center justify-between">
-                    <div onClick={() => { setTab(DashboardTab.PROFILE); setIsMobileSidebarOpen(false); }} className="flex items-center gap-3 cursor-pointer p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex-1 overflow-hidden">
-                        <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
+                    <div onClick={() => { setIsProfileModalOpen(true); setIsMobileSidebarOpen(false); }} className="flex items-center gap-3 cursor-pointer p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex-1 overflow-hidden">
+                        <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=random'; }} className="w-9 h-9 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
                         <div className="overflow-hidden flex-1">
                             <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p>
                             <p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? t.guestSession : auth.user?.email}</p>
@@ -1568,9 +1596,9 @@ export default function App() {
             <button onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.chatMode}><Icons.MessageSquare className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.chatMode}</span>}</button>
             <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</button>
             <button onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</button>
-            <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title="Bảng Tiến Độ"><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">Bảng Tiến Độ</span>}</button>
+            <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.progress}><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.progress}</span>}</button>
             <button onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.FolderOpen className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</button>
-             <button onClick={() => setTab(DashboardTab.PROFILE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROFILE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.profile}><Icons.User className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.profile}</span>}</button>
+             <button onClick={() => setIsProfileModalOpen(true)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5 ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.profile}><Icons.User className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.profile}</span>}</button>
             
             {chatHistory.length > 0 && isSidebarOpen && (
                 <div className="mt-8 animate-fade-in">
@@ -1594,16 +1622,16 @@ export default function App() {
         <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm flex flex-col gap-2">
             {isSidebarOpen ? (
                 <>
-                    <div className="flex items-center justify-between mb-2 px-2 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group">
-                        <div onClick={changeAvatar} title={t.chooseAvatar} className="flex items-center gap-3 cursor-pointer overflow-hidden flex-1">
-                            <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
+                    <div className="flex items-center justify-between mb-2 px-2 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group cursor-pointer" onClick={() => setIsProfileModalOpen(true)}>
+                        <div title={t.profile} className="flex items-center gap-3 overflow-hidden flex-1">
+                            <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=random'; }} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
                             <div className="overflow-hidden flex-1">
                                 <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p>
                                 <p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? t.guestSession : auth.user?.email}</p>
                             </div>
                         </div>
                         {auth.user?.streak !== undefined && auth.user.streak > 0 && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg shadow-inner" title={`Chuỗi ${auth.user.streak} ngày hoàn thành nhiệm vụ!`}>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg shadow-inner" title={t.streakTooltip.replace('{{streak}}', auth.user.streak.toString())}>
                                 <Icons.Flame className={`w-4 h-4 ${getStreakColor(auth.user.streak)}`} />
                                 <span className={`text-xs font-bold ${getStreakColor(auth.user.streak)}`}>{auth.user.streak}</span>
                             </div>
@@ -1617,7 +1645,7 @@ export default function App() {
                 </>
             ) : (
                 <>
-                    <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm mx-auto mb-2 cursor-pointer" onClick={changeAvatar} title={t.randomAvatar} />
+                    <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=random'; }} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm mx-auto mb-2 cursor-pointer" onClick={() => setIsProfileModalOpen(true)} title={t.profile} />
                     <button onClick={toggleLang} className="w-full flex items-center justify-center py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all mb-2"><span className="uppercase">{lang}</span></button>
                     <button onClick={toggleTheme} className="w-full flex items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all mb-2">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button>
                     <button onClick={handleLogout} className="w-full flex items-center justify-center py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title={t.logout}><Icons.LogOut className="w-4 h-4" /></button>
@@ -1656,7 +1684,7 @@ export default function App() {
           >
             {tab === DashboardTab.CHAT && (
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6 scroll-smooth">
                         <div className="flex flex-col items-center gap-2 mb-12">
                             <button 
                                 onClick={() => setTab(DashboardTab.PROGRESS)} 
@@ -1707,7 +1735,7 @@ export default function App() {
                                         ✨
                                     </motion.span>
                                     <h1 className="text-[24px] md:text-[56px] leading-tight font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 tracking-tight">
-                                        Xin chào {auth.user?.name || 'Guest'}!
+                                        {t.welcomeBack} {auth.user?.name || 'Guest'}!
                                     </h1>
                                 </div>
                                 <motion.h2 
@@ -1780,7 +1808,7 @@ export default function App() {
                                             )}
                                         </div>
                                     )}
-                                    <div className="leading-relaxed whitespace-pre-wrap text-[14px] md:text-[15px] markdown-body">
+                                    <div className="leading-normal text-[14px] md:text-[15px] markdown-body">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanText(m.text)}</ReactMarkdown>
                                     </div>
                                     {m.role === 'model' && extractRoadmapJson(m.text) && (
@@ -1791,7 +1819,7 @@ export default function App() {
                                             className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95"
                                         >
                                             <Icons.RefreshCw className="w-3.5 h-3.5" />
-                                            {lang === Language.EN ? "Sync to Progress Board" : "Đồng bộ vào Bảng Tiến Độ"}
+                                            {lang === Language.EN ? "Sync to " + t.progress : "Đồng bộ vào " + t.progress}
                                         </motion.button>
                                     )}
                                 </div>
@@ -2063,85 +2091,6 @@ export default function App() {
                 <Portfolio language={lang} userId={auth.user?.email || 'guest'} updateUserProfile={updateUserProfile} />
             </div>
         )}
-        {tab === DashboardTab.PROFILE && (
-            <div className="flex-1 p-8 overflow-y-auto bg-white dark:bg-[#050505] flex justify-center">
-                <div className="max-w-2xl w-full">
-                    <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">{t.profile}</h2>
-                    <div className="glass-card bg-white dark:bg-[#0a0a0a] rounded-[2rem] border border-gray-200 dark:border-white/10 p-10">
-                        <div className="flex items-center gap-8 mb-10">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                    <img src={auth.user?.avatar || AVATARS[0]} alt="Profile" referrerPolicy="no-referrer" className="w-28 h-28 rounded-full object-cover border-4 border-gray-100 dark:border-white/5 shadow-xl group-hover:scale-105 transition-transform"/>
-                                    <div className="absolute bottom-0 right-0 w-10 h-10 bg-indigo-600 border-4 border-white dark:border-black rounded-full flex items-center justify-center text-white shadow-lg">
-                                        <Icons.Camera className="w-5 h-5" />
-                                    </div>
-                                </div>
-                                <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
-                                <button onClick={changeAvatar} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline uppercase tracking-wider">Random Avatar</button>
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-3">
-                                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{auth.user?.name}</h3>
-                                    {auth.user?.streak !== undefined && auth.user.streak > 0 && (
-                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl shadow-inner border border-gray-200 dark:border-white/5" title={`Chuỗi ${auth.user.streak} ngày hoàn thành nhiệm vụ!`}>
-                                            <Icons.Flame className={`w-5 h-5 ${getStreakColor(auth.user.streak)}`} />
-                                            <span className={`text-sm font-black ${getStreakColor(auth.user.streak)}`}>{auth.user.streak}</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <p className="text-gray-500 text-lg">{auth.user?.isGuest ? t.guestMode : auth.user?.email}</p>
-                                {auth.user?.isGuest && <span className="inline-block mt-3 px-4 py-1.5 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs rounded-full font-black uppercase tracking-wider">{t.guestMode}</span>}
-                            </div>
-                        </div>
-                        
-                        <div className="mb-10">
-                            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Choose Default Avatar</label>
-                            <div className="flex flex-wrap gap-3">
-                                {AVATARS.slice(0, 10).map((avatar, idx) => (
-                                    <img 
-                                        key={idx} 
-                                        src={avatar} 
-                                        alt={`Avatar ${idx}`} 
-                                        referrerPolicy="no-referrer"
-                                        onClick={() => updateUserProfile({ avatar })}
-                                        className={`w-12 h-12 rounded-full object-cover cursor-pointer transition-transform hover:scale-110 border-2 ${auth.user?.avatar === avatar ? 'border-indigo-500 shadow-md' : 'border-transparent'}`}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-8">
-                            <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.careerGoal}</label><input disabled value={auth.user?.careerGoal} className="w-full px-6 py-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all" /></div>
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t.prefLang}</label>
-                                <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className="w-full px-6 py-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"><option value={Language.EN}>English</option><option value={Language.VI}>Tiếng Việt</option></select>
-                            </div>
-                            
-                        </div>
-                        <div className="mt-12 pt-8 border-t border-gray-100 dark:border-white/5 flex flex-col gap-4">
-                            <div className="flex justify-between items-center">
-                                <div className="flex flex-col">
-                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Storage Management</h4>
-                                    <p className="text-xs text-gray-500">Manage your persistent chat data</p>
-                                </div>
-                                <button 
-                                    onClick={() => {
-                                        if (window.confirm(lang === Language.EN ? "Are you sure you want to clear all chat history? This cannot be undone." : "Bạn có chắc chắn muốn xóa tất cả lịch sử trò chuyện? Hành động này không thể hoàn tác.")) {
-                                            clearChatHistory();
-                                        }
-                                    }}
-                                    className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                                >
-                                    Clear All History
-                                </button>
-                            </div>
-                        </div>
-                        <div className="mt-8 flex justify-end gap-4">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )}
         </motion.div>
         </AnimatePresence>
         
@@ -2149,30 +2098,140 @@ export default function App() {
         <div className="md:hidden shrink-0 h-16 bg-white dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-white/5 flex items-center justify-around px-2 z-20 pb-safe">
             <button onClick={() => setTab(DashboardTab.CHAT)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.CHAT ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.MessageSquare className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium">Chat</span>
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.chatMode}</span>
             </button>
             <button onClick={() => setTab(DashboardTab.VOICE)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.VOICE ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Microphone className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium">Voice</span>
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.voiceMode}</span>
             </button>
             <button onClick={() => setTab(DashboardTab.QUIZ)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.QUIZ ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Zap className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium">Quiz</span>
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.careerQuizTitle}</span>
             </button>
             <button onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PORTFOLIO ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.FolderOpen className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium">CV</span>
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.portfolio}</span>
             </button>
             <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROGRESS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Target className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium">Tiến độ</span>
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.progress}</span>
             </button>
-            <button onClick={() => setTab(DashboardTab.PROFILE)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROFILE ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+            <button onClick={() => setIsProfileModalOpen(true)} className={`flex flex-col items-center justify-center w-16 h-full ${isProfileModalOpen ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.User className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium">Hồ sơ</span>
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.profile}</span>
             </button>
         </div>
       </main>
+
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {isProfileModalOpen && (
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                onClick={() => setIsProfileModalOpen(false)}
+            >
+                <motion.div 
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="profile-modal-title"
+                >
+                    <button 
+                        onClick={() => setIsProfileModalOpen(false)}
+                        className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors"
+                        aria-label="Close"
+                    >
+                        <Icons.X className="w-5 h-5" />
+                    </button>
+                    
+                    <h2 id="profile-modal-title" className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{t.profile}</h2>
+                    
+                    <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                <img src={auth.user?.avatar || AVATARS[0]} alt="Profile" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=random'; }} className="w-24 h-24 rounded-full object-cover border-4 border-gray-100 dark:border-white/5 shadow-xl group-hover:scale-105 transition-transform"/>
+                                <div className="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 border-2 border-white dark:border-black rounded-full flex items-center justify-center text-white shadow-lg">
+                                    <Icons.Camera className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
+                            <button onClick={changeAvatar} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline uppercase tracking-wider">{t.randomAvatar}</button>
+                        </div>
+                        <div className="flex-1 text-center md:text-left">
+                            <div className="flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-3 mb-1">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{auth.user?.name}</h3>
+                                {auth.user?.streak !== undefined && auth.user.streak > 0 && (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg shadow-inner border border-gray-200 dark:border-white/5" title={t.streakTooltip.replace('{{streak}}', auth.user.streak.toString())}>
+                                        <Icons.Flame className={`w-4 h-4 ${getStreakColor(auth.user.streak)}`} />
+                                        <span className={`text-xs font-black ${getStreakColor(auth.user.streak)}`}>{auth.user.streak}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-gray-500 text-sm">{auth.user?.isGuest ? t.guestMode : auth.user?.email}</p>
+                            {auth.user?.isGuest && <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-[10px] rounded-full font-black uppercase tracking-wider">{t.guestMode}</span>}
+                        </div>
+                    </div>
+                    
+                    <div className="mb-8">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">{t.chooseAvatar}</label>
+                        <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                            {AVATARS.slice(0, 10).map((avatar, idx) => (
+                                <img 
+                                    key={idx} 
+                                    src={avatar} 
+                                    alt={`Avatar ${idx}`} 
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=random'; }}
+                                    onClick={() => updateUserProfile({ avatar })}
+                                    className={`w-10 h-10 rounded-full object-cover cursor-pointer transition-transform hover:scale-110 border-2 ${auth.user?.avatar === avatar ? 'border-indigo-500 shadow-md' : 'border-transparent'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{t.careerGoal}</label>
+                            <input disabled={auth.user?.isGuest} value={auth.user?.careerGoal || ''} onChange={(e) => updateUserProfile({ careerGoal: e.target.value })} className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-xl text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
+                            {auth.user?.isGuest && <p className="text-[10px] text-gray-500 mt-1">{lang === Language.EN ? 'Please login to set your career goal.' : 'Vui lòng đăng nhập để thiết lập mục tiêu sự nghiệp.'}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{t.prefLang}</label>
+                            <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-xl text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer">
+                                <option value={Language.EN}>English</option>
+                                <option value={Language.VI}>Tiếng Việt</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex flex-col">
+                            <h4 className="text-sm font-bold text-gray-900 dark:text-white">{t.storageManagement}</h4>
+                            <p className="text-[10px] text-gray-500">{t.manageChatData}</p>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                if (window.confirm(t.clearHistoryConfirm)) {
+                                    clearChatHistory();
+                                    setIsProfileModalOpen(false);
+                                }
+                            }}
+                            className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors w-full sm:w-auto"
+                        >
+                            {t.clearAllHistory}
+                        </button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </div>
     );
   };

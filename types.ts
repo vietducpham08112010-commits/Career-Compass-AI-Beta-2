@@ -17,7 +17,6 @@ export enum AppMode {
 export enum DashboardTab {
   CHAT = 'CHAT',
   VOICE = 'VOICE',
-  PROFILE = 'PROFILE',
   QUIZ = 'QUIZ',
   PROGRESS = 'PROGRESS',
   PORTFOLIO = 'PORTFOLIO'

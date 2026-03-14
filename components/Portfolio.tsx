@@ -47,12 +47,11 @@ export const Portfolio: React.FC<PortfolioProps> = ({ language, userId, updateUs
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
 
     const newItem: PortfolioItem = {
       id: editingId || Date.now().toString(),
       type,
-      title,
+      title: title.trim() ? title : (language === Language.EN ? 'Untitled' : 'Chưa có tiêu đề'),
       description,
       date,
       score,
