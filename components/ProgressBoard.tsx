@@ -275,6 +275,32 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
           ref={boardRef} 
           className="bg-white dark:bg-[#111] rounded-3xl border border-gray-200 dark:border-white/10 p-6 md:p-10 shadow-sm"
         >
+          {/* User Info Header for Export */}
+          <div className="mb-10 pb-8 border-b border-gray-100 dark:border-white/5 flex flex-col md:flex-row items-center gap-6">
+            <img 
+              src={user?.avatar || 'https://ui-avatars.com/api/?name=User&background=random'} 
+              alt="Avatar" 
+              className="w-20 h-20 rounded-full border-4 border-white dark:border-gray-800 shadow-lg"
+              referrerPolicy="no-referrer"
+            />
+            <div className="text-center md:text-left">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                {language === Language.EN ? "Personal Profile" : "Hồ sơ cá nhân"}
+              </h1>
+              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-gray-500 dark:text-gray-400">
+                <span className="font-semibold text-gray-900 dark:text-white">{user?.name}</span>
+                <span className="hidden md:inline">•</span>
+                <span>{user?.email}</span>
+                {user?.careerGoal && (
+                  <>
+                    <span className="hidden md:inline">•</span>
+                    <span className="italic">"{user.careerGoal}"</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="mb-8 text-center">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               {language === Language.EN ? "Progress Board" : "Bảng Đánh Giá Tiến Độ"}
