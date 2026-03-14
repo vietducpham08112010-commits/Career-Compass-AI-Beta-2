@@ -192,7 +192,6 @@ export const Portfolio: React.FC<PortfolioProps> = ({ language, userId, updateUs
                   <label className="text-xs font-semibold text-gray-500 uppercase">{t.itemTitle}</label>
                   <input
                     type="text"
-                    required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. IELTS 7.5, 1st Prize Math Olympiad"
@@ -202,7 +201,6 @@ export const Portfolio: React.FC<PortfolioProps> = ({ language, userId, updateUs
                 <div className="space-y-1 md:col-span-2">
                   <label className="text-xs font-semibold text-gray-500 uppercase">{t.itemDesc}</label>
                   <textarea
-                    required
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe the achievement, project details, or what you learned..."
@@ -213,7 +211,6 @@ export const Portfolio: React.FC<PortfolioProps> = ({ language, userId, updateUs
                   <label className="text-xs font-semibold text-gray-500 uppercase">{t.itemDate}</label>
                   <input
                     type="text"
-                    required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     placeholder="e.g. 2023 - 2024, May 2024"
