@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import * as Icons from 'lucide-react';
-import { ChatSession, UserProfile, Language, ChatMessage, Milestone } from '../types';
+import { ChatSession, UserProfile, Language, ChatMessage, Milestone, Theme } from '../types';
 import { generateRoadmap } from '../services/geminiService';
 
 interface ProgressBoardProps {
@@ -11,13 +11,14 @@ interface ProgressBoardProps {
   messages: ChatMessage[];
   user: UserProfile | null;
   language: Language;
+  theme: Theme;
   milestones: Milestone[];
   setMilestones: React.Dispatch<React.SetStateAction<Milestone[]>>;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   onNavigateToChat: () => void;
 }
 
-export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messages, user, language, milestones, setMilestones, showToast, onNavigateToChat }) => {
+export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messages, user, language, theme, milestones, setMilestones, showToast, onNavigateToChat }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
@@ -87,17 +88,50 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
   const exportToPDF = async () => {
     if (!boardRef.current) return;
     setIsExporting(true);
+    showToast(language === Language.EN ? "Preparing your PDF..." : "Đang chuẩn bị bản PDF của bạn...", 'info');
+    
     try {
-      const canvas = await html2canvas(boardRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      // Use a small delay to ensure any animations are settled
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const canvas = await html2canvas(boardRef.current, { 
+        scale: 2, 
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: theme === Theme.DARK ? '#111111' : '#ffffff',
+        windowWidth: boardRef.current.scrollWidth,
+        windowHeight: boardRef.current.scrollHeight
+      });
+      
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      // Add subsequent pages if content is longer than one page
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
       pdf.save('Lo-Trinh-Nghe-Nghiep.pdf');
+      showToast(language === Language.EN ? "PDF exported successfully!" : "Xuất PDF thành công!", 'success');
     } catch (error) {
       console.error('Export failed:', error);
+      showToast(language === Language.EN ? "Export failed. Please try again." : "Xuất file thất bại. Vui lòng thử lại.", 'error');
     } finally {
       setIsExporting(false);
     }
@@ -106,14 +140,33 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
   const exportToImage = async () => {
     if (!boardRef.current) return;
     setIsExporting(true);
+    showToast(language === Language.EN ? "Generating image..." : "Đang tạo ảnh...", 'info');
+    
     try {
-      const canvas = await html2canvas(boardRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      // Use a small delay to ensure any animations are settled
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const canvas = await html2canvas(boardRef.current, { 
+        scale: 2, 
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: theme === Theme.DARK ? '#111111' : '#ffffff',
+        windowWidth: boardRef.current.scrollWidth,
+        windowHeight: boardRef.current.scrollHeight
+      });
+      
       const link = document.createElement('a');
       link.download = 'Lo-Trinh-Nghe-Nghiep.png';
       link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      
+      showToast(language === Language.EN ? "Image saved successfully!" : "Lưu ảnh thành công!", 'success');
     } catch (error) {
       console.error('Export failed:', error);
+      showToast(language === Language.EN ? "Export failed. Please try again." : "Lưu ảnh thất bại. Vui lòng thử lại.", 'error');
     } finally {
       setIsExporting(false);
     }

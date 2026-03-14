@@ -2078,6 +2078,7 @@ export default function App() {
                 messages={messages}
                 user={auth.user} 
                 language={lang} 
+                theme={theme}
                 milestones={milestones}
                 setMilestones={setMilestones}
                 showToast={showToast}

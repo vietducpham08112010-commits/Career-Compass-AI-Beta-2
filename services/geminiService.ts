@@ -107,10 +107,6 @@ export const sendChatMessage = async (
       systemInstruction += `\n\nUser's Career Profile (RIASEC): ${userProfile.careerProfile}`;
   }
 
-  if (userProfile?.portfolio && userProfile.portfolio.length > 0) {
-      systemInstruction += `\n\nUser's Portfolio/CV Data:\n${JSON.stringify(userProfile.portfolio, null, 2)}`;
-  }
-
   // Check Provider - ONLY use external APIs if user explicitly configured them
   if (userProfile?.aiProvider === AIProvider.N8N && userProfile.customEndpoint) {
       return await sendN8NMessage(userProfile.customEndpoint, history, newMessage, systemInstruction, userProfile);
