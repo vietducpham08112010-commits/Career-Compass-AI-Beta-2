@@ -3,13 +3,14 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Language, Theme, AppMode, DashboardTab, ChatMessage, ChatSession, AuthState, Transcript, UserProfile, AIProvider, Milestone, PortfolioItem } from './types';
+import { Language, Theme, AppMode, DashboardTab, ChatMessage, ChatSession, AuthState, Transcript, UserProfile, AIProvider, Milestone, PortfolioItem, Clarification } from './types';
 import { AVATARS, CAREER_TAGS, CAREER_QUOTES, SUGGESTION_PROMPTS, TRANSLATIONS, HOT_INDUSTRIES } from './constants';
 import { sendChatMessage, LiveSessionManager } from './services/geminiService';
 import { decode, encode, decodeAudioData, createPcmBlob } from './utils/audio';
 import { Visualizer } from './components/Visualizer';
 import { ProgressBoard } from './components/ProgressBoard';
 import { Portfolio } from './components/Portfolio';
+import { ClarificationCard } from './components/ClarificationCard';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -146,8 +147,13 @@ const ShimmerText = ({ text }: { text: string }) => (
 );
 
 const cleanText = (text: string) => {
-    // Hide JSON roadmap blocks from the chat UI
-    return text.replace(/```json\s*[\s\S]*?\s*```/g, '').trim();
+    // Hide JSON blocks from the chat UI
+    let cleaned = text.replace(/```json\s*[\s\S]*?\s*```/g, '');
+    // Also hide raw clarification JSON if it exists
+    cleaned = cleaned.replace(/\{\s*"type":\s*"clarification"[\s\S]*?\}/g, '');
+    // Also hide raw roadmap JSON if it exists (starts with [ { "id": ...)
+    cleaned = cleaned.replace(/\[\s*\{\s*"id":[\s\S]*?\}\s*\]/g, '');
+    return cleaned.trim();
 };
 
 // --- HELPER FOR THINKING TEXT ---
@@ -441,6 +447,22 @@ export default function App() {
         const jsonStr = jsonMatch[1] || jsonMatch[0];
         const data = JSON.parse(jsonStr);
         if (Array.isArray(data) && data.length > 0 && data[0].id && data[0].title) {
+          return data;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const extractClarificationJson = (text: string): Clarification | null => {
+    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/\{\s*"type":\s*"clarification"[\s\S]*?\}/);
+    if (jsonMatch) {
+      try {
+        const jsonStr = jsonMatch[1] || jsonMatch[0];
+        const data = JSON.parse(jsonStr);
+        if (data.type === 'clarification' && data.question && Array.isArray(data.options)) {
           return data;
         }
       } catch (e) {
@@ -1811,6 +1833,13 @@ export default function App() {
                                     <div className="leading-normal text-[14px] md:text-[15px] markdown-body">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanText(m.text)}</ReactMarkdown>
                                     </div>
+                                    {m.role === 'model' && extractClarificationJson(m.text) && (
+                                        <ClarificationCard 
+                                            clarification={extractClarificationJson(m.text)!} 
+                                            onSelect={(option) => handleSendMessage(undefined, option)}
+                                            disabled={isChatLoading}
+                                        />
+                                    )}
                                     {m.role === 'model' && extractRoadmapJson(m.text) && (
                                         <motion.button
                                             whileHover={{ scale: 1.02 }}

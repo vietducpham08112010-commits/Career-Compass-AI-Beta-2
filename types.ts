@@ -28,6 +28,12 @@ export enum AIProvider {
   N8N = 'N8N' // n8n Workflow Webhook
 }
 
+export interface Clarification {
+  question: string;
+  options: string[];
+  allowMultiple?: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
@@ -35,6 +41,7 @@ export interface ChatMessage {
   timestamp: Date;
   file?: { data: string; mimeType: string; name: string }; // Base64 file data
   pastedTexts?: string[]; // Array of long pasted texts
+  clarification?: Clarification;
 }
 
 export interface ChatSession {

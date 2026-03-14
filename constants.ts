@@ -140,7 +140,7 @@ export const SUGGESTION_PROMPTS = {
 
 export const TRANSLATIONS = {
   [Language.EN]: {
-    appName: 'Career Compass AI', home: 'Home', tagline: 'Career guidance for everyone.', subTagline: 'Pause or cancel your confusion anytime. Available 24/7.', getStarted: 'Get Started', login: 'Login', register: 'Register', guestLogin: 'Try as Guest', email: 'Email Address', password: 'Password', forgotPassword: 'Forgot Password?', loginWithGoogle: 'Login with Google', or: 'or', dontHaveAccount: "Don't have an account?", alreadyHaveAccount: 'Already have an account?', chatMode: 'Chat Consultant', voiceMode: 'Live Consultation', welcomeBack: 'Welcome Back,', greeting: "How can I help you today?", greetingSub: "Ask me about careers, majors, or RIASEC results.", typeMessage: 'Type your career question...', startVoice: 'Start Live Conversation', endVoice: 'End Conversation', listening: 'Listening...', speaking: 'Speaking...', connecting: 'Connecting to Career Compass...', disconnecting: 'Disconnecting...', micPermission: 'Mic access required', readyToConnect: 'Ready to connect', error: 'An error occurred. Please try again.', hotIndustries: 'Trending Industries', dailyQuote: 'Daily Inspiration', chatHistory: 'Chat History', switchToVoice: 'Switch to Live Voice', newChat: 'New Chat', footerDisclaimer: 'AI can make mistakes. All information is for reference only, the decision is yours.', thinking: 'Thinking...', saveChanges: 'Save Changes', guestMode: 'Guest Mode', selectMic: 'Select Microphone', transcript: 'Live Transcript', aiBusy: 'The AI is currently busy due to high demand. Please wait a moment and try again.',
+    appName: 'Career Compass AI', home: 'Home', tagline: 'Career guidance for everyone.', subTagline: 'Pause or cancel your confusion anytime. Available 24/7.', getStarted: 'Get Started', login: 'Login', register: 'Register', guestLogin: 'Try as Guest', email: 'Email Address', password: 'Password', forgotPassword: 'Forgot Password?', loginWithGoogle: 'Login with Google', or: 'or', dontHaveAccount: "Don't have an account?", alreadyHaveAccount: 'Already have an account?', chatMode: 'Chat Consultant', voiceMode: 'Live Consultation', profile: 'My Profile', welcomeBack: 'Welcome Back,', greeting: "How can I help you today?", greetingSub: "Ask me about careers, majors, or RIASEC results.", typeMessage: 'Type your career question...', startVoice: 'Start Live Conversation', endVoice: 'End Conversation', listening: 'Listening...', speaking: 'Speaking...', connecting: 'Connecting to Career Compass...', disconnecting: 'Disconnecting...', micPermission: 'Mic access required', readyToConnect: 'Ready to connect', error: 'An error occurred. Please try again.', hotIndustries: 'Trending Industries', dailyQuote: 'Daily Inspiration', chatHistory: 'Chat History', switchToVoice: 'Switch to Live Voice', newChat: 'New Chat', footerDisclaimer: 'AI can make mistakes. All information is for reference only, the decision is yours.', thinking: 'Thinking...', profileName: 'Full Name', careerGoal: 'Career Goal', prefLang: 'Preferred Language', saveChanges: 'Save Changes', guestMode: 'Guest Mode', selectMic: 'Select Microphone', transcript: 'Live Transcript', aiBusy: 'The AI is currently busy due to high demand. Please wait a moment and try again.',
     
     // Auth - Forgot Password
     resetPasswordTitle: 'Reset Password',
@@ -182,12 +182,34 @@ export const TRANSLATIONS = {
     goToDashboard: 'Go to Dashboard',
     guestSession: 'Guest Session',
     logout: 'Logout',
+    chooseAvatar: 'Choose Default Avatar',
+    randomAvatar: 'Random Avatar',
     searchChats: 'Search chats...',
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
     discussWithAI: 'Discuss result with AI',
     progress: 'Progress',
+    storageManagement: 'Storage Management',
+    manageChatData: 'Manage your persistent chat data',
+    clearAllHistory: 'Clear All History',
+    clearHistoryConfirm: 'Are you sure you want to clear all chat history? This cannot be undone.',
     streakTooltip: '{{streak}} day streak!',
+    
+    // Portfolio
+    portfolio: 'Portfolio / CV',
+    portfolioDesc: 'Store your certificates, grades, and personal projects. Export as a complete CV/Portfolio for college applications.',
+    addPortfolioItem: 'Add Item',
+    itemType: 'Type',
+    typeCertificate: 'Certificate',
+    typeGrade: 'Grade/Score',
+    typeProject: 'Personal Project',
+    itemTitle: 'Title',
+    itemDesc: 'Description',
+    itemDate: 'Date/Period',
+    itemScore: 'Score/Result',
+    itemLink: 'Link (Optional)',
+    exportCV: 'Export CV/Portfolio',
+    noPortfolioItems: 'No items in your portfolio yet. Add your achievements to build your CV!',
     
     // Feature Translations - UPDATED
     featureVoiceTitle: 'Direct 1-on-1 Consultation',
@@ -203,7 +225,7 @@ export const TRANSLATIONS = {
     featureHeaderSuffix: 'have always been.',
     featureSub: 'One platform replacing expensive counselors and scattered Google searches.',
     
-    systemInstruction: 'You are an expert career counselor for high school students named Career Compass. Your mission is to help students identify their strengths, choose the right academic tracks (khối thi), majors, and universities in Vietnam. You should also help them create a 3-month action plan to achieve their career goals. ONLY when the user explicitly requests a roadmap, a plan, or asks to update their progress board, you should provide a structured roadmap by outputting a JSON block like this: ```json [{"id": "1", "title": "Step 1", "description": "Details", "status": "todo"}] ```. Do NOT include this JSON block in normal conversation unless specifically requested. Encourage the user to sync this to their board to track their progress. Be professional, encouraging, and concise. If the user shares a RIASEC profile, use it for personalized suggestions. Use English and Vietnamese only.',
+    systemInstruction: 'You are an expert career counselor for high school students named Career Compass. Your mission is to help students identify their strengths, choose the right academic tracks (khối thi), majors, and universities in Vietnam. Your goal is to be as helpful as possible while ensuring accuracy. \n\nCRITICAL: If a user\'s request is ambiguous, too broad, or lacks necessary context (like their current grade, interests, or academic block), you MUST ask clarifying questions instead of giving generic advice. \n\nTo ask clarifying questions interactively, output a JSON block like this:\n```json\n{\n  "type": "clarification",\n  "question": "To give you the best advice, I need to know: Which academic block (khối) are you currently focusing on?",\n  "options": ["Khối A (Toán, Lý, Hóa)", "Khối A1 (Toán, Lý, Anh)", "Khối D (Toán, Văn, Anh)", "Khối C (Văn, Sử, Địa)", "Other / Not sure"]\n}\n```\n\nONLY use this JSON format when you need specific information to proceed. Otherwise, answer normally. \n\nONLY when the user explicitly requests a roadmap, a plan, or asks to update their progress board, you should provide a structured roadmap by outputting a JSON block like this: ```json [{"id": "1", "title": "Step 1", "description": "Details", "status": "todo"}] ```. Do NOT include this JSON block in normal conversation unless specifically requested. Encourage the user to sync this to their board to track their progress. Be professional, encouraging, and concise. If the user shares a RIASEC profile, use it for personalized suggestions. Use English and Vietnamese only.',
     voiceSystemInstruction: 'You are an expert career counselor for high school students. Engage in a natural, friendly, and encouraging conversation. Keep responses short and focused on academic and career orientation. Use English and Vietnamese only.',
     
     // Terms of Service
@@ -221,7 +243,7 @@ export const TRANSLATIONS = {
     termsAccept: 'I Understand & Got It'
   },
   [Language.VI]: {
-    appName: 'Career Compass AI', home: 'Trang chủ', tagline: 'Hướng nghiệp cho mọi người.', subTagline: 'Xóa tan mọi sự bối rối về sự nghiệp. Sẵn sàng 24/7.', getStarted: 'Bắt đầu ngay', login: 'Đăng nhập', register: 'Đăng ký', guestLogin: 'Dùng thử ngay', email: 'Địa chỉ Email', password: 'Mật khẩu', forgotPassword: 'Quên mật khẩu?', loginWithGoogle: 'Đăng nhập bằng Google', or: 'hoặc', dontHaveAccount: "Chưa có tài khoản?", alreadyHaveAccount: 'Đã có tài khoản?', chatMode: 'Trợ lý Chat', voiceMode: 'Hội thoại trực tiếp', welcomeBack: 'Chào mừng trở lại,', greeting: "Tôi có thể giúp gì cho bạn?", greetingSub: "Hỏi tôi về nghề nghiệp, ngành học hoặc kết quả RIASEC.", typeMessage: 'Nhập câu hỏi của bạn...', startVoice: 'Bắt đầu cuộc gọi', endVoice: 'Kết thúc cuộc gọi', listening: 'Đang nghe...', speaking: 'Đang nói...', connecting: 'Đang kết nối...', disconnecting: 'Đang ngắt kết nối...', micPermission: 'Cần cấp quyền micro', readyToConnect: 'Sẵn sàng kết nối', error: 'Đã xảy ra lỗi. Vui lòng thử lại.', hotIndustries: 'Xu hướng nghề nghiệp', dailyQuote: 'Cảm Hứng Mỗi Ngày', chatHistory: 'Lịch sử trò chuyện', switchToVoice: 'Chuyển sang hội thoại', newChat: 'Cuộc trò chuyện mới', footerDisclaimer: 'AI có thể gây ra sai sót, mọi thông tin chỉ mang tính chất tham khảo, quyền quyết định thuộc về bạn.', thinking: 'Đang suy nghĩ...', saveChanges: 'Lưu thay đổi', guestMode: 'Chế độ khách', selectMic: 'Chọn Micro', transcript: 'Hội thoại trực tiếp', aiBusy: 'Hệ thống AI đang bận do lượng yêu cầu cao. Vui lòng đợi giây lát và thử lại.',
+    appName: 'Career Compass AI', home: 'Trang chủ', tagline: 'Hướng nghiệp cho mọi người.', subTagline: 'Xóa tan mọi sự bối rối về sự nghiệp. Sẵn sàng 24/7.', getStarted: 'Bắt đầu ngay', login: 'Đăng nhập', register: 'Đăng ký', guestLogin: 'Dùng thử ngay', email: 'Địa chỉ Email', password: 'Mật khẩu', forgotPassword: 'Quên mật khẩu?', loginWithGoogle: 'Đăng nhập bằng Google', or: 'hoặc', dontHaveAccount: "Chưa có tài khoản?", alreadyHaveAccount: 'Đã có tài khoản?', chatMode: 'Trợ lý Chat', voiceMode: 'Hội thoại trực tiếp', profile: 'Hồ sơ cá nhân', welcomeBack: 'Chào mừng trở lại,', greeting: "Tôi có thể giúp gì cho bạn?", greetingSub: "Hỏi tôi về nghề nghiệp, ngành học hoặc kết quả RIASEC.", typeMessage: 'Nhập câu hỏi của bạn...', startVoice: 'Bắt đầu cuộc gọi', endVoice: 'Kết thúc cuộc gọi', listening: 'Đang nghe...', speaking: 'Đang nói...', connecting: 'Đang kết nối...', disconnecting: 'Đang ngắt kết nối...', micPermission: 'Cần cấp quyền micro', readyToConnect: 'Sẵn sàng kết nối', error: 'Đã xảy ra lỗi. Vui lòng thử lại.', hotIndustries: 'Xu hướng nghề nghiệp', dailyQuote: 'Cảm Hứng Mỗi Ngày', chatHistory: 'Lịch sử trò chuyện', switchToVoice: 'Chuyển sang hội thoại', newChat: 'Cuộc trò chuyện mới', footerDisclaimer: 'AI có thể gây ra sai sót, mọi thông tin chỉ mang tính chất tham khảo, quyền quyết định thuộc về bạn.', thinking: 'Đang suy nghĩ...', profileName: 'Họ và tên', careerGoal: 'Mục tiêu sự nghiệp', prefLang: 'Ngôn ngữ ưu tiên', saveChanges: 'Lưu thay đổi', guestMode: 'Chế độ khách', selectMic: 'Chọn Micro', transcript: 'Hội thoại trực tiếp', aiBusy: 'Hệ thống AI đang bận do lượng yêu cầu cao. Vui lòng đợi giây lát và thử lại.',
     
     // Auth - Forgot Password
     resetPasswordTitle: 'Đặt lại Mật khẩu',
@@ -270,8 +292,28 @@ export const TRANSLATIONS = {
     expandSidebar: 'Mở rộng thanh bên',
     discussWithAI: 'Thảo luận kết quả với AI',
     progress: 'Tiến độ',
+    storageManagement: 'Quản lý Dữ liệu',
+    manageChatData: 'Quản lý dữ liệu trò chuyện của bạn',
+    clearAllHistory: 'Xóa tất cả lịch sử',
+    clearHistoryConfirm: 'Bạn có chắc chắn muốn xóa tất cả lịch sử trò chuyện? Hành động này không thể hoàn tác.',
     streakTooltip: 'Chuỗi {{streak}} ngày hoàn thành nhiệm vụ!',
-    
+
+    // Portfolio
+    portfolio: 'Hồ sơ năng lực / CV',
+    portfolioDesc: 'Lưu trữ chứng chỉ, điểm số và các dự án cá nhân. Dễ dàng trích xuất thành một CV/Portfolio hoàn chỉnh khi nộp hồ sơ xét tuyển.',
+    addPortfolioItem: 'Thêm mục mới',
+    itemType: 'Loại',
+    typeCertificate: 'Chứng chỉ',
+    typeGrade: 'Điểm số / Thành tích học tập',
+    typeProject: 'Dự án cá nhân',
+    itemTitle: 'Tiêu đề',
+    itemDesc: 'Mô tả chi tiết',
+    itemDate: 'Thời gian',
+    itemScore: 'Điểm số / Kết quả',
+    itemLink: 'Đường dẫn (Tùy chọn)',
+    exportCV: 'Xuất CV/Portfolio',
+    noPortfolioItems: 'Chưa có mục nào trong hồ sơ của bạn. Hãy thêm thành tích để xây dựng CV nhé!',
+
     // Feature Translations - UPDATED
     featureVoiceTitle: 'Tư vấn 1-1 Trực tiếp',
     featureVoiceDesc: 'Trò chuyện thoại với AI như một cố vấn học tập thực thụ. Nhận phản hồi và định hướng ngay lập tức.',
@@ -286,7 +328,7 @@ export const TRANSLATIONS = {
     featureHeaderSuffix: 'được thực hiện từ lâu.',
     featureSub: 'Một nền tảng thay thế các chuyên gia đắt đỏ và việc tìm kiếm thông tin rời rạc.',
 
-    systemInstruction: 'Bạn là chuyên gia tư vấn hướng nghiệp dành riêng cho học sinh THPT tên là Career Compass. Nhiệm vụ của bạn là giúp học sinh xác định thế mạnh, chọn khối thi, ngành học và trường đại học phù hợp tại Việt Nam. Bạn cũng cần hỗ trợ học sinh lập kế hoạch hành động cụ thể trong 3 tháng tới để đạt được mục tiêu nghề nghiệp. CHỈ khi người dùng yêu cầu lập lộ trình, kế hoạch hoặc yêu cầu cập nhật bảng tiến độ, bạn mới cung cấp lộ trình dưới dạng khối JSON như sau: ```json [{"id": "1", "title": "Bước 1", "description": "Chi tiết", "status": "todo"}] ```. KHÔNG bao gồm khối JSON này trong các cuộc trò chuyện thông thường trừ khi được yêu cầu cụ thể. Hãy trả lời chuyên nghiệp, khích lệ và súc tích. Nếu có kết quả RIASEC, hãy dựa vào đó để tư vấn. CHỈ sử dụng tiếng Anh và tiếng Việt.',
+    systemInstruction: 'Bạn là chuyên gia tư vấn hướng nghiệp dành riêng cho học sinh THPT tên là Career Compass. Nhiệm vụ của bạn là giúp học sinh xác định thế mạnh, chọn khối thi, ngành học và trường đại học phù hợp tại Việt Nam. Mục tiêu của bạn là hỗ trợ tận tâm và chính xác nhất.\n\nQUAN TRỌNG: Nếu yêu cầu của người dùng không rõ ràng, quá rộng hoặc thiếu ngữ cảnh cần thiết (như lớp học, sở thích hoặc khối thi hiện tại), bạn PHẢI đặt câu hỏi làm rõ thay vì đưa ra lời khuyên chung chung.\n\nĐể đặt câu hỏi làm rõ một cách tương tác, hãy xuất một khối JSON như sau:\n```json\n{\n  "type": "clarification",\n  "question": "Để tư vấn tốt nhất, tôi cần biết: Bạn đang tập trung vào khối thi nào?",\n  "options": ["Khối A (Toán, Lý, Hóa)", "Khối A1 (Toán, Lý, Anh)", "Khối D (Toán, Văn, Anh)", "Khối C (Văn, Sử, Địa)", "Khác / Chưa rõ"]\n}\n```\n\nCHỈ sử dụng định dạng JSON này khi bạn cần thông tin cụ thể để tiếp tục. Nếu không, hãy trả lời bình thường.\n\nCHỈ khi người dùng yêu cầu lập lộ trình, kế hoạch hoặc yêu cầu cập nhật bảng tiến độ, bạn mới cung cấp lộ trình dưới dạng khối JSON như sau: ```json [{"id": "1", "title": "Bước 1", "description": "Chi tiết", "status": "todo"}] ```. KHÔNG bao gồm khối JSON này trong các cuộc trò chuyện thông thường trừ khi được yêu cầu cụ thể. Hãy trả lời chuyên nghiệp, khích lệ và súc tích. Nếu có kết quả RIASEC, hãy dựa vào đó để tư vấn. CHỈ sử dụng tiếng Anh và tiếng Việt.',
     voiceSystemInstruction: 'Bạn là chuyên gia tư vấn hướng nghiệp cho học sinh THPT. Hãy trò chuyện tự nhiên, thân thiện, khích lệ và ngắn gọn. CHỈ sử dụng tiếng Anh và tiếng Việt.',
 
     // Terms of Service
