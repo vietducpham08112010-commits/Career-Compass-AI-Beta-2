@@ -9,7 +9,6 @@ import { sendChatMessage, LiveSessionManager } from './services/geminiService';
 import { decode, encode, decodeAudioData, createPcmBlob } from './utils/audio';
 import { Visualizer } from './components/Visualizer';
 import { ProgressBoard } from './components/ProgressBoard';
-import { Portfolio } from './components/Portfolio';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -1534,7 +1533,6 @@ export default function App() {
                 <button onClick={() => { setTab(DashboardTab.VOICE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Microphone className="w-5 h-5" />{t.voiceMode}</button>
                 <button onClick={() => { setTab(DashboardTab.QUIZ); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Zap className="w-5 h-5" />{t.careerQuizTitle}</button>
                 <button onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />{t.progress}</button>
-                <button onClick={() => { setTab(DashboardTab.PORTFOLIO); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.FolderOpen className="w-5 h-5" />{t.portfolio}</button>
                 <button onClick={() => { setIsProfileModalOpen(true); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5`}><Icons.User className="w-5 h-5" />{t.profile}</button>
                 
                 {chatHistory.length > 0 && (
@@ -1597,7 +1595,6 @@ export default function App() {
             <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</button>
             <button onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</button>
             <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.progress}><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.progress}</span>}</button>
-            <button onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.FolderOpen className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</button>
              <button onClick={() => setIsProfileModalOpen(true)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5 ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.profile}><Icons.User className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.profile}</span>}</button>
             
             {chatHistory.length > 0 && isSidebarOpen && (
@@ -1676,10 +1673,10 @@ export default function App() {
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
             className="flex-1 flex flex-col h-full overflow-hidden relative"
           >
             {tab === DashboardTab.CHAT && (
@@ -1776,9 +1773,9 @@ export default function App() {
                     {messages.map((m) => (
                         <motion.div 
                             key={m.id} 
-                            initial={{ opacity: 0, y: 10 }}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                             className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                             {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CompassLogo className="w-5 h-5 text-white" /></div>)}
@@ -1829,8 +1826,9 @@ export default function App() {
                     ))}
                     {isChatLoading && (
                         <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                             className="flex w-full justify-start items-center"
                         >
                             <div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center mt-1">
@@ -2086,11 +2084,6 @@ export default function App() {
                 onNavigateToChat={() => setTab(DashboardTab.CHAT)} 
             />
         )}
-        {tab === DashboardTab.PORTFOLIO && (
-            <div className="flex-1 overflow-y-auto bg-white dark:bg-[#050505]">
-                <Portfolio language={lang} userId={auth.user?.email || 'guest'} updateUserProfile={updateUserProfile} />
-            </div>
-        )}
         </motion.div>
         </AnimatePresence>
         
@@ -2107,10 +2100,6 @@ export default function App() {
             <button onClick={() => setTab(DashboardTab.QUIZ)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.QUIZ ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Zap className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.careerQuizTitle}</span>
-            </button>
-            <button onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PORTFOLIO ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
-                <Icons.FolderOpen className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.portfolio}</span>
             </button>
             <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROGRESS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Target className="w-5 h-5 mb-1" />
