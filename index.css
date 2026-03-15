@@ -105,8 +105,27 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Utilities */
-.text-balance { text-wrap: balance; }
+/* Export Compatibility Overrides */
+.progress-board-export {
+  --color-emerald-100: rgb(209, 250, 229);
+  --color-emerald-700: rgb(4, 120, 87);
+  --color-emerald-200: rgb(167, 243, 208);
+  --color-emerald-900: rgb(6, 78, 59);
+  --color-emerald-400: rgb(52, 211, 153);
+  --color-emerald-800: rgb(6, 95, 70);
+  --color-amber-100: rgb(254, 252, 232);
+  --color-amber-700: rgb(180, 83, 9);
+  --color-amber-200: rgb(253, 230, 138);
+  --color-amber-900: rgb(120, 53, 15);
+  --color-amber-400: rgb(251, 191, 36);
+  --color-amber-800: rgb(146, 64, 14);
+  --color-gray-100: rgb(243, 244, 246);
+  --color-gray-600: rgb(75, 85, 99);
+  --color-gray-200: rgb(229, 231, 235);
+  --color-gray-800: rgb(31, 41, 55);
+  --color-gray-400: rgb(156, 163, 175);
+  --color-gray-700: rgb(55, 65, 81);
+}
 
 /* Enhanced Glass Card */
 .glass-card {

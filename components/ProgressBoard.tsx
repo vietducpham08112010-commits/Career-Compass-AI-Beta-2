@@ -277,7 +277,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
 
         <div 
           ref={boardRef} 
-          className="bg-white dark:bg-[#111] rounded-3xl border border-gray-200 dark:border-white/10 p-6 md:p-10 shadow-sm"
+          className="progress-board-export bg-white dark:bg-[#111] rounded-3xl border border-gray-200 dark:border-white/10 p-6 md:p-10 shadow-sm"
         >
           {/* User Info Header for Export */}
           <div className="mb-10 pb-8 border-b border-gray-100 dark:border-white/5 flex flex-col md:flex-row items-center gap-6">
