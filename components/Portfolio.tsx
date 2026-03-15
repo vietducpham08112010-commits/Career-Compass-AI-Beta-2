@@ -43,7 +43,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
       delete: 'Delete'
     },
     vi: {
-      portfolio: 'Hồ sơ năng lực / CV',
+      portfolio: 'Hồ sơ cá nhân',
       portfolioDesc: 'Lưu trữ chứng chỉ, điểm số và các dự án cá nhân. Dễ dàng trích xuất thành một CV/Portfolio hoàn chỉnh khi nộp hồ sơ xét tuyển.',
       addPortfolioItem: 'Thêm mục mới',
       itemType: 'Loại',

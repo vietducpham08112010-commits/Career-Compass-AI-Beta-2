@@ -91,14 +91,16 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
     showToast(language === Language.EN ? "Preparing your PDF..." : "Đang chuẩn bị bản PDF của bạn...", 'info');
     
     try {
-      // Use a small delay to ensure any animations are settled
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Use a delay to ensure any animations are settled
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const canvas = await html2canvas(boardRef.current, { 
         scale: 2, 
         useCORS: true,
         allowTaint: true,
-        logging: false,
+        logging: true,
+        scrollX: 0,
+        scrollY: 0,
         backgroundColor: theme === Theme.DARK ? '#111111' : '#ffffff',
         windowWidth: boardRef.current.scrollWidth,
         windowHeight: boardRef.current.scrollHeight
@@ -143,14 +145,16 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
     showToast(language === Language.EN ? "Generating image..." : "Đang tạo ảnh...", 'info');
     
     try {
-      // Use a small delay to ensure any animations are settled
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Use a delay to ensure any animations are settled
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const canvas = await html2canvas(boardRef.current, { 
         scale: 2, 
         useCORS: true,
         allowTaint: true,
-        logging: false,
+        logging: true,
+        scrollX: 0,
+        scrollY: 0,
         backgroundColor: theme === Theme.DARK ? '#111111' : '#ffffff',
         windowWidth: boardRef.current.scrollWidth,
         windowHeight: boardRef.current.scrollHeight
