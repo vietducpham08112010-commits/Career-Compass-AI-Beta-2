@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import * as Icons from 'lucide-react';
 import { ChatSession, UserProfile, Language, ChatMessage, Milestone, Theme } from '../types';
@@ -94,38 +94,41 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
       // Use a delay to ensure any animations are settled
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const canvas = await html2canvas(boardRef.current, { 
-        scale: 2, 
-        useCORS: true,
-        allowTaint: true,
-        logging: true,
-        scrollX: 0,
-        scrollY: 0,
+      const dataUrl = await htmlToImage.toPng(boardRef.current, {
+        quality: 1,
+        pixelRatio: 2,
         backgroundColor: theme === Theme.DARK ? '#111111' : '#ffffff',
-        windowWidth: boardRef.current.scrollWidth,
-        windowHeight: boardRef.current.scrollHeight
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+        }
       });
       
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // We need to get the image dimensions to calculate the aspect ratio
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve) => { img.onload = resolve; });
+      
       const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight = (img.height * imgWidth) / img.width;
       
       let heightLeft = imgHeight;
       let position = 0;
 
       // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
 
       // Add subsequent pages if content is longer than one page
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
 
@@ -152,21 +155,19 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
       // Use a delay to ensure any animations are settled
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const canvas = await html2canvas(boardRef.current, { 
-        scale: 2, 
-        useCORS: true,
-        allowTaint: true,
-        logging: true,
-        scrollX: 0,
-        scrollY: 0,
+      const dataUrl = await htmlToImage.toPng(boardRef.current, {
+        quality: 1,
+        pixelRatio: 2,
         backgroundColor: theme === Theme.DARK ? '#111111' : '#ffffff',
-        windowWidth: boardRef.current.scrollWidth,
-        windowHeight: boardRef.current.scrollHeight
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+        }
       });
       
       const link = document.createElement('a');
       link.download = 'Lo-Trinh-Nghe-Nghiep.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -284,6 +285,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
         </div>
 
         <div 
+          id="progress-board-container"
           ref={boardRef} 
           className="progress-board-export bg-white dark:bg-[#111] rounded-3xl border border-gray-200 dark:border-white/10 p-6 md:p-10 shadow-sm"
         >
@@ -294,6 +296,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
               alt="Avatar" 
               className="w-20 h-20 rounded-full border-4 border-white dark:border-gray-800 shadow-lg"
               referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
             />
             <div className="text-center md:text-left">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
@@ -322,19 +325,30 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
             </p>
           </div>
 
-          <div className="relative border-l-2 border-indigo-100 dark:border-indigo-900/30 ml-4 md:ml-8 space-y-8">
+          <motion.div layout className="relative border-l-2 border-indigo-100 dark:border-indigo-900/30 ml-4 md:ml-8 space-y-8">
             {milestones.map((milestone, index) => (
               <motion.div 
+                layout
                 key={milestone.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.4, 
+                  delay: index * 0.1,
+                  layout: { type: "spring", stiffness: 300, damping: 30 }
+                }}
                 className="relative pl-8 md:pl-12"
               >
                 {/* Timeline dot */}
-                <div className={`absolute -left-[11px] top-1.5 w-5 h-5 rounded-full border-4 border-white dark:border-[#111] ${milestone.status === 'done' ? 'bg-emerald-500' : milestone.status === 'in-progress' ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                <motion.div 
+                  layout
+                  className={`absolute -left-[11px] top-1.5 w-5 h-5 rounded-full border-4 border-white dark:border-[#111] ${milestone.status === 'done' ? 'bg-emerald-500' : milestone.status === 'in-progress' ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`} 
+                />
                 
-                <div className={`group p-5 rounded-2xl border transition-all duration-200 hover:shadow-md ${milestone.status === 'done' ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30' : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-500/30'}`}>
+                <motion.div 
+                  layout
+                  className={`group p-5 rounded-2xl border transition-all duration-200 hover:shadow-md ${milestone.status === 'done' ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30' : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-500/30'}`}
+                >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1 cursor-pointer" onClick={() => toggleStatus(milestone.id)}>
                       <h4 className={`text-lg font-bold mb-1 ${milestone.status === 'done' ? 'text-emerald-900 dark:text-emerald-400 line-through opacity-70' : 'text-gray-900 dark:text-white'}`}>
@@ -370,9 +384,11 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                   <AnimatePresence>
                     {(activeCommentId === milestone.id || (milestone.comments && milestone.comments?.length > 0)) && (
                       <motion.div 
+                        layout
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 overflow-hidden"
                       >
                         {milestone.comments && milestone.comments?.length > 0 && (
@@ -409,10 +425,10 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                </motion.div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
           
           {/* Footer for exported image/pdf */}
           <div className="mt-12 pt-6 border-t border-gray-100 dark:border-white/10 flex justify-between items-center text-xs text-gray-400">
@@ -421,6 +437,34 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
           </div>
         </div>
       </div>
+
+      {/* Export Loading Overlay */}
+      <AnimatePresence>
+        {isExporting && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          >
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-5 max-w-sm mx-4 text-center border border-gray-200 dark:border-gray-700">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-indigo-100 dark:border-indigo-900/30 rounded-full"></div>
+                <div className="w-16 h-16 border-4 border-indigo-600 dark:border-indigo-500 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                <Icons.FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                  {language === Language.EN ? "Generating Document" : "Đang Tạo Tài Liệu"}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {language === Language.EN ? "Please wait a moment while we prepare your file..." : "Vui lòng đợi trong giây lát, hệ thống đang xử lý..."}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
