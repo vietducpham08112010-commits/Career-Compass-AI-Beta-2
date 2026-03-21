@@ -5,7 +5,6 @@ import { jsPDF } from 'jspdf';
 import * as Icons from 'lucide-react';
 import { ChatSession, UserProfile, Language, ChatMessage, Milestone, Theme } from '../types';
 import { generateRoadmap } from '../services/geminiService';
-import { TRANSLATIONS } from '../constants';
 
 interface ProgressBoardProps {
   chatHistory: ChatSession[];
@@ -25,7 +24,6 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const boardRef = useRef<HTMLDivElement>(null);
-  const t = TRANSLATIONS[language];
 
   const handleGenerateRoadmap = async () => {
     if (chatHistory.length === 0 && messages.length === 0) {
@@ -59,7 +57,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
       setMilestones(processedMilestones);
     } catch (error) {
       console.error("Failed to generate roadmap:", error);
-      showToast(t.failedToGenerateRoadmap, 'error');
+      showToast(language === Language.EN ? "Failed to generate roadmap. Please try again." : "Không thể tạo lộ trình. Vui lòng thử lại.", 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -90,7 +88,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
   const exportToPDF = async () => {
     if (!boardRef.current) return;
     setIsExporting(true);
-    showToast(t.preparingPDF, 'info');
+    showToast(language === Language.EN ? "Preparing your PDF..." : "Đang chuẩn bị bản PDF của bạn...", 'info');
     
     try {
       // Use a delay to ensure any animations are settled
@@ -134,15 +132,15 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
         heightLeft -= pdfHeight;
       }
 
-      pdf.save(t.pdfFilename);
-      showToast(t.pdfExportSuccess, 'success');
+      pdf.save('Lo-Trinh-Nghe-Nghiep.pdf');
+      showToast(language === Language.EN ? "PDF exported successfully!" : "Xuất PDF thành công!", 'success');
     } catch (error) {
       console.error('Export failed:', error);
       if (error instanceof Error) {
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
       }
-      showToast(t.exportFailed, 'error');
+      showToast(language === Language.EN ? "Export failed. Please try again." : "Xuất file thất bại. Vui lòng thử lại.", 'error');
     } finally {
       setIsExporting(false);
     }
@@ -151,7 +149,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
   const exportToImage = async () => {
     if (!boardRef.current) return;
     setIsExporting(true);
-    showToast(t.generatingImage, 'info');
+    showToast(language === Language.EN ? "Generating image..." : "Đang tạo ảnh...", 'info');
     
     try {
       // Use a delay to ensure any animations are settled
@@ -168,20 +166,20 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
       });
       
       const link = document.createElement('a');
-      link.download = t.imageFilename;
+      link.download = 'Lo-Trinh-Nghe-Nghiep.png';
       link.href = dataUrl;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      showToast(t.imageSaveSuccess, 'success');
+      showToast(language === Language.EN ? "Image saved successfully!" : "Lưu ảnh thành công!", 'success');
     } catch (error) {
       console.error('Export failed:', error);
       if (error instanceof Error) {
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
       }
-      showToast(t.imageSaveFailed, 'error');
+      showToast(language === Language.EN ? "Export failed. Please try again." : "Lưu ảnh thất bại. Vui lòng thử lại.", 'error');
     } finally {
       setIsExporting(false);
     }
@@ -197,9 +195,9 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'done': return t.statusDone;
-      case 'in-progress': return t.statusInProgress;
-      default: return t.statusTodo;
+      case 'done': return language === Language.EN ? 'Done' : 'Hoàn thành';
+      case 'in-progress': return language === Language.EN ? 'In Progress' : 'Đang thực hiện';
+      default: return language === Language.EN ? 'To Do' : 'Chưa bắt đầu';
     }
   };
 
@@ -218,10 +216,12 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
           <Icons.Map className="w-12 h-12" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          {t.roadmapEmptyTitle}
+          {language === Language.EN ? "Your Roadmap is Empty" : "Bảng Tiến Độ Đang Trống"}
         </h2>
         <p className="text-gray-500 dark:text-gray-400 max-w-md mb-8">
-          {t.roadmapEmptyDesc}
+          {language === Language.EN 
+            ? "Chat with the AI first so it can understand your goals and generate a personalized step-by-step career roadmap for you." 
+            : "Hãy trò chuyện với AI trước để hệ thống hiểu rõ mục tiêu của bạn và tạo ra một lộ trình nghề nghiệp cá nhân hóa."}
         </p>
         
         {chatHistory.length === 0 ? (
@@ -232,7 +232,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
             className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-lg transition-shadow shadow-lg hover:shadow-indigo-500/30 flex items-center gap-3"
           >
             <Icons.MessageSquare className="w-5 h-5" />
-            {t.startChatting}
+            {language === Language.EN ? "Start Chatting" : "Bắt đầu trò chuyện"}
           </motion.button>
         ) : (
           <motion.button 
@@ -248,8 +248,8 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
               <Icons.Sparkles className="w-5 h-5" />
             )}
             {isGenerating 
-              ? t.generating 
-              : t.generateRoadmapNow}
+              ? (language === Language.EN ? "Generating..." : "Đang tạo lộ trình...") 
+              : (language === Language.EN ? "Generate Roadmap" : "Tạo Lộ Trình Ngay")}
           </motion.button>
         )}
       </div>
@@ -262,10 +262,10 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-              {t.careerRoadmap}
+              {language === Language.EN ? "Career Roadmap" : "Bảng Tiến Độ"}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {t.roadmapSub}
+              {language === Language.EN ? "Track your progress and export to share." : "Theo dõi tiến độ và xuất file để chia sẻ với phụ huynh, giáo viên."}
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
@@ -277,7 +277,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <Icons.Image className="w-4 h-4" />
-              <span>{t.saveImage}</span>
+              <span>{language === Language.EN ? "Save Image" : "Lưu Ảnh"}</span>
             </motion.button>
             <motion.button 
               whileHover={{ scale: 1.05 }}
@@ -287,7 +287,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
             >
               <Icons.FileText className="w-4 h-4" />
-              <span>{t.exportPDF}</span>
+              <span>{language === Language.EN ? "Export PDF" : "Xuất PDF"}</span>
             </motion.button>
           </div>
         </div>
@@ -308,7 +308,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
             />
             <div className="text-center md:text-left">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                {t.personalProfile}
+                {language === Language.EN ? "Personal Profile" : "Hồ sơ cá nhân"}
               </h1>
               <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-gray-500 dark:text-gray-400">
                 <span className="font-semibold text-gray-900 dark:text-white">{user?.name}</span>
@@ -326,10 +326,10 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
 
           <div className="mb-8 text-center">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-              {t.progressBoardTitle}
+              {language === Language.EN ? "Progress Board" : "Bảng Đánh Giá Tiến Độ"}
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              {t.progressBoardSub}
+              {language === Language.EN ? "Click on items to update status" : "Nhấn vào từng mục để cập nhật trạng thái"}
             </p>
           </div>
 
@@ -444,7 +444,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                               value={commentText}
                               onChange={(e) => setCommentText(e.target.value)}
                               onKeyDown={(e) => e.key === 'Enter' && addComment(milestone.id)}
-                              placeholder={t.addNotePlaceholder}
+                              placeholder={language === Language.EN ? "Add a note or evaluation..." : "Thêm ghi chú hoặc đánh giá..."}
                               className="flex-1 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
                               autoFocus
                             />
@@ -469,8 +469,8 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
           
           {/* Footer for exported image/pdf */}
           <div className="mt-12 pt-6 border-t border-gray-100 dark:border-white/10 flex justify-between items-center text-xs text-gray-400">
-            <span>{t.generatedBy}</span>
-            <span>{t.dateLabel} {new Date().toLocaleDateString(language === Language.EN ? 'en-US' : 'vi-VN')}</span>
+            <span>{language === Language.EN ? "Generated by Career Compass AI" : "Tạo bởi Career Compass AI"}</span>
+            <span>{language === Language.EN ? "Date:" : "Ngày xuất:"} {new Date().toLocaleDateString(language === Language.EN ? 'en-US' : 'vi-VN')}</span>
           </div>
         </div>
       </div>
@@ -492,10 +492,10 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                  {t.generatingDocument}
+                  {language === Language.EN ? "Generating Document" : "Đang Tạo Tài Liệu"}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {t.preparingFile}
+                  {language === Language.EN ? "Please wait a moment while we prepare your file..." : "Vui lòng đợi trong giây lát, hệ thống đang xử lý..."}
                 </p>
               </div>
             </div>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Icons from 'lucide-react';
 import { UserProfile, Language, PortfolioItem, Theme } from '../types';
-import { TRANSLATIONS } from '../constants';
 
 interface PortfolioProps {
   user: UserProfile | null;
@@ -23,11 +22,50 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
     link: ''
   });
 
-  const t = TRANSLATIONS[language];
+  const t = {
+    en: {
+      portfolio: 'Portfolio / CV',
+      portfolioDesc: 'Store your certificates, grades, and personal projects. Export as a complete CV/Portfolio for college applications.',
+      addPortfolioItem: 'Add Item',
+      itemType: 'Type',
+      typeCertificate: 'Certificate',
+      typeGrade: 'Grade/Score',
+      typeProject: 'Personal Project',
+      itemTitle: 'Title',
+      itemDesc: 'Description',
+      itemDate: 'Date/Period',
+      itemScore: 'Score/Result',
+      itemLink: 'Link (Optional)',
+      exportCV: 'Export CV/Portfolio',
+      noPortfolioItems: 'No items in your portfolio yet. Add your achievements to build your CV!',
+      save: 'Save',
+      cancel: 'Cancel',
+      delete: 'Delete'
+    },
+    vi: {
+      portfolio: 'Hồ sơ cá nhân',
+      portfolioDesc: 'Lưu trữ chứng chỉ, điểm số và các dự án cá nhân. Dễ dàng trích xuất thành một CV/Portfolio hoàn chỉnh khi nộp hồ sơ xét tuyển.',
+      addPortfolioItem: 'Thêm mục mới',
+      itemType: 'Loại',
+      typeCertificate: 'Chứng chỉ',
+      typeGrade: 'Điểm số / Thành tích học tập',
+      typeProject: 'Dự án cá nhân',
+      itemTitle: 'Tiêu đề',
+      itemDesc: 'Mô tả chi tiết',
+      itemDate: 'Thời gian',
+      itemScore: 'Điểm số / Kết quả',
+      itemLink: 'Đường dẫn (Tùy chọn)',
+      exportCV: 'Xuất CV/Portfolio',
+      noPortfolioItems: 'Chưa có mục nào trong hồ sơ của bạn. Hãy thêm thành tích để xây dựng CV nhé!',
+      save: 'Lưu',
+      cancel: 'Hủy',
+      delete: 'Xóa'
+    }
+  }[language === Language.EN ? 'en' : 'vi'];
 
   const handleAddItem = () => {
     if (!newItem.title) {
-      showToast(t.enterTitleError, 'error');
+      showToast(language === Language.EN ? "Please enter a title" : "Vui lòng nhập tiêu đề", 'error');
       return;
     }
 
@@ -45,13 +83,13 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
     onUpdateUser({ portfolio: [...currentPortfolio, item] });
     setIsAddingItem(false);
     setNewItem({ type: 'Certificate', title: '', description: '', date: '', score: '', link: '' });
-    showToast(t.itemAdded, 'success');
+    showToast(language === Language.EN ? "Item added to portfolio" : "Đã thêm mục vào hồ sơ", 'success');
   };
 
   const deleteItem = (id: string) => {
     const currentPortfolio = user?.portfolio || [];
     onUpdateUser({ portfolio: currentPortfolio.filter(item => item.id !== id) });
-    showToast(t.itemRemoved, 'info');
+    showToast(language === Language.EN ? "Item removed" : " Đã xóa mục", 'info');
   };
 
   const getItemIcon = (type: string) => {
@@ -114,7 +152,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
                     type="text" 
                     value={newItem.title} 
                     onChange={(e) => setNewItem({...newItem, title: e.target.value})}
-                    placeholder={t.placeholderPortfolioTitle}
+                    placeholder={language === Language.EN ? "e.g. IELTS 8.0" : "VD: IELTS 8.0"}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -123,7 +161,6 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
                   <textarea 
                     value={newItem.description} 
                     onChange={(e) => setNewItem({...newItem, description: e.target.value})}
-                    placeholder={t.placeholderPortfolioDesc}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
                   />
                 </div>
@@ -133,7 +170,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
                     type="text" 
                     value={newItem.date} 
                     onChange={(e) => setNewItem({...newItem, date: e.target.value})}
-                    placeholder={t.placeholderPortfolioDate}
+                    placeholder="2023 - 2024"
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -143,7 +180,6 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
                     type="text" 
                     value={newItem.score} 
                     onChange={(e) => setNewItem({...newItem, score: e.target.value})}
-                    placeholder={t.placeholderPortfolioScore}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
