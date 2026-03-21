@@ -133,6 +133,10 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
       showToast(language === Language.EN ? "PDF exported successfully!" : "Xuất PDF thành công!", 'success');
     } catch (error) {
       console.error('Export failed:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       showToast(language === Language.EN ? "Export failed. Please try again." : "Xuất file thất bại. Vui lòng thử lại.", 'error');
     } finally {
       setIsExporting(false);
@@ -170,6 +174,10 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
       showToast(language === Language.EN ? "Image saved successfully!" : "Lưu ảnh thành công!", 'success');
     } catch (error) {
       console.error('Export failed:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       showToast(language === Language.EN ? "Export failed. Please try again." : "Lưu ảnh thất bại. Vui lòng thử lại.", 'error');
     } finally {
       setIsExporting(false);

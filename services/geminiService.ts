@@ -144,7 +144,17 @@ export const sendChatMessage = async (
         role: h.role === 'model' ? 'model' : 'user',
         parts: [{ text: h.text }]
     }));
-    contents.push({ role: 'user', parts: [{ text: newMessage }] });
+    
+    const userParts: any[] = [{ text: newMessage }];
+    if (file) {
+        userParts.push({
+            inlineData: {
+                mimeType: file.mimeType,
+                data: file.data
+            }
+        });
+    }
+    contents.push({ role: 'user', parts: userParts });
 
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
