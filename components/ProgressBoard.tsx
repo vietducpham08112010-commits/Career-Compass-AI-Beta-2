@@ -225,18 +225,22 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
         </p>
         
         {chatHistory.length === 0 ? (
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onNavigateToChat}
-            className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-indigo-500/30 flex items-center gap-3"
+            className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-lg transition-shadow shadow-lg hover:shadow-indigo-500/30 flex items-center gap-3"
           >
             <Icons.MessageSquare className="w-5 h-5" />
             {language === Language.EN ? "Start Chatting" : "Bắt đầu trò chuyện"}
-          </button>
+          </motion.button>
         ) : (
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleGenerateRoadmap}
             disabled={isGenerating}
-            className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-indigo-500/30 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-lg transition-shadow shadow-lg hover:shadow-indigo-500/30 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isGenerating ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -246,7 +250,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
             {isGenerating 
               ? (language === Language.EN ? "Generating..." : "Đang tạo lộ trình...") 
               : (language === Language.EN ? "Generate Roadmap" : "Tạo Lộ Trình Ngay")}
-          </button>
+          </motion.button>
         )}
       </div>
     );
@@ -265,22 +269,26 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={exportToImage}
               disabled={isExporting}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <Icons.Image className="w-4 h-4" />
               <span>{language === Language.EN ? "Save Image" : "Lưu Ảnh"}</span>
-            </button>
-            <button 
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={exportToPDF}
               disabled={isExporting}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
             >
               <Icons.FileText className="w-4 h-4" />
               <span>{language === Language.EN ? "Export PDF" : "Xuất PDF"}</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -352,9 +360,9 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                     {/* Flowing stream effect */}
                     {(milestone.status === 'done' || milestone.status === 'in-progress') && (
                       <motion.div
-                        className="absolute left-[-2px] w-[6px] h-1/2 bg-gradient-to-b from-transparent via-indigo-400 dark:via-indigo-300 to-transparent opacity-80 blur-[2px]"
+                        className={`absolute left-[-3px] w-[8px] h-[50%] bg-gradient-to-b from-transparent ${milestone.status === 'done' ? 'via-emerald-400 dark:via-emerald-300' : 'via-cyan-400 dark:via-cyan-300'} to-transparent opacity-90 blur-[2px]`}
                         animate={{ top: ['-50%', '150%'] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                        transition={{ duration: milestone.status === 'done' ? 1.2 : 2, repeat: Infinity, ease: "linear" }}
                       />
                     )}
                   </div>
@@ -383,7 +391,9 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <button 
+                      <motion.button 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => setActiveCommentId(activeCommentId === milestone.id ? null : milestone.id)}
                         className="p-2 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-full transition-colors relative"
                         title="Add Note"
@@ -392,14 +402,16 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                         {milestone.comments && milestone.comments?.length > 0 && (
                           <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white dark:border-[#111]"></span>
                         )}
-                      </button>
-                      <div 
+                      </motion.button>
+                      <motion.div 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => toggleStatus(milestone.id)}
                         className={`cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors ${getStatusColor(milestone.status)}`}
                       >
                         {getStatusIcon(milestone.status)}
                         {getStatusText(milestone.status)}
-                      </div>
+                      </motion.div>
                     </div>
                   </div>
 
@@ -436,13 +448,15 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                               className="flex-1 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
                               autoFocus
                             />
-                            <button 
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => addComment(milestone.id)}
                               disabled={!commentText.trim()}
                               className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-800/50 transition-colors disabled:opacity-50"
                             >
                               <Icons.Send className="w-4 h-4" />
-                            </button>
+                            </motion.button>
                           </div>
                         )}
                       </motion.div>

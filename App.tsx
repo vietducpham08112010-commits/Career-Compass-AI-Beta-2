@@ -203,16 +203,17 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
   const handleAnswer = (value: number) => {
     const q = questions[step];
     const typeKey = q.type as keyof typeof scores;
-    setScores(prev => ({ ...prev, [typeKey]: prev[typeKey] + value }));
+    const newScores = { ...scores, [typeKey]: scores[typeKey] + value };
+    setScores(newScores);
     if (step < questions.length - 1) {
       setStep(step + 1);
     } else {
-      calculateResult();
+      calculateResult(newScores);
     }
   };
 
-  const calculateResult = () => {
-    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const calculateResult = (finalScores: typeof scores) => {
+    const sorted = Object.entries(finalScores).sort((a, b) => b[1] - a[1]);
     const topType = sorted[0][0];
     const descriptions: any = {
       R: lang === Language.EN ? "Realistic: You are practical and hands-on." : "Thực tế (Realistic): Bạn là người thực tế, thích làm việc với đôi tay và công cụ.",
@@ -227,52 +228,97 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
 
   if (result) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center animate-fade-in-up">
-        <div className="w-20 h-20 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/20">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center justify-center p-8 text-center"
+      >
+        <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="w-20 h-20 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/20"
+        >
           <Icons.Check className="w-10 h-10" />
-        </div>
+        </motion.div>
         <h3 className="text-2xl font-bold mb-4">{lang === Language.EN ? "Your Career Profile" : "Kết Quả Trắc Nghiệm Của Bạn"}</h3>
         <p className="text-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xl max-w-md">
           {result}
         </p>
         <div className="flex gap-4 mt-8">
-            <button onClick={() => { setStep(0); setScores({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }); setResult(null); }} className="px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-all active:scale-95">
+            <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { setStep(0); setScores({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }); setResult(null); }} 
+                className="px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+            >
             {lang === Language.EN ? "Retake Quiz" : "Làm lại trắc nghiệm"}
-            </button>
-            <button onClick={() => onComplete(result)} className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:from-indigo-500 hover:to-purple-500 transition-all shadow-lg active:scale-95 flex items-center gap-2">
+            </motion.button>
+            <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onComplete(result)} 
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:from-indigo-500 hover:to-purple-500 transition-colors shadow-lg flex items-center gap-2"
+            >
             <Icons.MessageSquare className="w-5 h-5" /> {t.discussWithAI}
-            </button>
+            </motion.button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 animate-fade-in-up">
+    <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto p-6"
+    >
       <div className="mb-8">
         <div className="flex justify-between text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
           <span>{lang === Language.EN ? `Question ${step + 1} of ${questions.length}` : `Câu hỏi ${step + 1} / ${questions.length}`}</span>
           <span>{Math.round(((step + 1) / questions.length) * 100)}%</span>
         </div>
         <div className="w-full h-2 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style={{ width: `${((step + 1) / questions.length) * 100}%` }}></div>
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${((step + 1) / questions.length) * 100}%` }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+          />
         </div>
       </div>
-      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-10 text-center leading-relaxed">
-        {questions[step].text}
-      </h3>
+      <div className="min-h-[6rem] flex items-center justify-center mb-10">
+        <AnimatePresence mode="wait">
+          <motion.h3 
+              key={step}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="text-2xl font-bold text-gray-900 dark:text-white text-center leading-relaxed w-full"
+          >
+            {questions[step].text}
+          </motion.h3>
+        </AnimatePresence>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: lang === Language.EN ? "No" : "Không thích", value: 0, color: 'bg-red-50 dark:bg-red-500/10 text-red-600 border-red-200 dark:border-red-500/20' },
           { label: lang === Language.EN ? "Maybe" : "Tạm được", value: 1, color: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 border-yellow-200 dark:border-yellow-500/20' },
           { label: lang === Language.EN ? "Yes" : "Rất thích", value: 2, color: 'bg-green-50 dark:bg-green-500/10 text-green-600 border-green-200 dark:border-green-500/20' },
         ].map((opt) => (
-          <button key={opt.value} onClick={() => handleAnswer(opt.value)} className={`p-6 rounded-2xl border-2 font-bold text-lg transition-all hover:scale-105 active:scale-95 ${opt.color} flex flex-col items-center gap-2 shadow-sm hover:shadow-md`}>
+          <motion.button 
+            key={opt.value} 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleAnswer(opt.value)} 
+            className={`p-6 rounded-2xl border-2 font-bold text-lg transition-colors ${opt.color} flex flex-col items-center gap-2 shadow-sm hover:shadow-md`}
+          >
             {opt.label}
-          </button>
+          </motion.button>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -313,6 +359,7 @@ export default function App() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [welcomePhrase, setWelcomePhrase] = useState(WELCOME_PHRASES[0]);
   const isSendingRef = useRef(false);
 
@@ -962,20 +1009,23 @@ export default function App() {
 
   const startNewChat = () => {
       if (messages.length > 0 && !isTemporaryChat) {
-          const newSession: ChatSession = { id: Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
-          setChatHistory(prev => [newSession, ...prev]);
+          const newSession: ChatSession = { id: currentSessionId || Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
+          setChatHistory(prev => [newSession, ...prev.filter(s => s.id !== newSession.id)]);
       }
       setMessages([]);
+      setCurrentSessionId(null);
       setTab(DashboardTab.CHAT);
   };
 
   const loadSession = (session: ChatSession) => {
       if (messages.length > 0 && !isTemporaryChat) {
-           const currentSession: ChatSession = { id: Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
-           setChatHistory(prev => [currentSession, ...prev]);
+           const currentSession: ChatSession = { id: currentSessionId || Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
+           setChatHistory(prev => [currentSession, ...prev.filter(s => s.id !== currentSession.id && s.id !== session.id)]);
+      } else {
+           setChatHistory(prev => prev.filter(s => s.id !== session.id));
       }
       setMessages(session.messages);
-      setChatHistory(prev => prev.filter(s => s.id !== session.id));
+      setCurrentSessionId(session.id);
       setIsTemporaryChat(false); // Turn off temporary chat when loading a saved session
       setTab(DashboardTab.CHAT);
   };
@@ -1140,14 +1190,26 @@ export default function App() {
               </button>
              
              {auth.isAuthenticated && !auth.user?.isGuest ? (
-                 <button onClick={() => setMode(AppMode.DASHBOARD)} className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold hover:scale-105 transition-transform hover:shadow-lg hover:shadow-indigo-500/20 flex items-center gap-2">
+                 <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setMode(AppMode.DASHBOARD)} 
+                    className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold transition-shadow hover:shadow-lg hover:shadow-indigo-500/20 flex items-center gap-2"
+                 >
                     <Icons.Briefcase className="w-4 h-4" />
                     Dashboard
-                 </button>
+                 </motion.button>
              ) : (
                  <>
                     <button onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} className="hidden md:block font-medium hover:text-indigo-500 transition-colors">{t.login}</button>
-                    <button onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold hover:scale-105 transition-transform hover:shadow-lg hover:shadow-indigo-500/20">{t.getStarted}</button>
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} 
+                        className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold transition-shadow hover:shadow-lg hover:shadow-indigo-500/20"
+                    >
+                        {t.getStarted}
+                    </motion.button>
                  </>
              )}
           </div>
@@ -1188,16 +1250,33 @@ export default function App() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               {auth.isAuthenticated && !auth.user?.isGuest ? (
-                  <button onClick={() => setMode(AppMode.DASHBOARD)} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1 flex items-center justify-center gap-2">
+                  <motion.button 
+                      whileHover={{ scale: 1.05, y: -4 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setMode(AppMode.DASHBOARD)} 
+                      className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-bold text-lg transition-shadow shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 flex items-center justify-center gap-2"
+                  >
                       {t.goToDashboard} <Icons.ArrowRight className="w-5 h-5" />
-                  </button>
+                  </motion.button>
               ) : (
                   <>
-                    <button onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1">{t.getStarted}</button>
-                    <button onClick={handleGuestLogin} className="px-8 py-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2 backdrop-blur-sm">
+                    <motion.button 
+                        whileHover={{ scale: 1.05, y: -4 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} 
+                        className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-bold text-lg transition-shadow shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50"
+                    >
+                        {t.getStarted}
+                    </motion.button>
+                    <motion.button 
+                        whileHover={{ scale: 1.05, y: -4 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleGuestLogin} 
+                        className="px-8 py-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2 backdrop-blur-sm"
+                    >
                         <Icons.Zap className="w-5 h-5 text-yellow-500" />
                         {t.guestLogin}
-                    </button>
+                    </motion.button>
                   </>
               )}
             </div>
@@ -1267,18 +1346,26 @@ export default function App() {
                      const IconComponent = Icons[iconKey] || Icons.TrendingUp;
                      
                      return (
-                        <div key={industry.id} className="glass-card rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-2 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30">
+                        <motion.div 
+                            key={industry.id} 
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            className="glass-card rounded-3xl p-6 relative overflow-hidden group transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30"
+                        >
                              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent to-white/5 rounded-bl-full pointer-events-none group-hover:to-indigo-500/10 transition-colors"></div>
-                             <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${industry.color} flex items-center justify-center text-white mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                             <motion.div 
+                                 whileHover={{ scale: 1.1, rotate: 3 }}
+                                 className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${industry.color} flex items-center justify-center text-white mb-6 shadow-lg transition-all duration-300`}
+                             >
                                  <IconComponent className="w-7 h-7" />
-                             </div>
+                             </motion.div>
                              <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">
                                  {lang === Language.EN ? industry.name_en : industry.name_vi}
                              </h3>
                              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                                  {lang === Language.EN ? industry.desc_en : industry.desc_vi}
                              </p>
-                        </div>
+                        </motion.div>
                      );
                  })}
              </div>
@@ -1291,7 +1378,11 @@ export default function App() {
              </div>
 
              <div className="bento-grid">
-                 <div className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-red-500/50 transition-colors md:col-span-2">
+                 <motion.div 
+                     whileHover={{ scale: 1.02 }}
+                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                     className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-red-500/50 transition-colors md:col-span-2"
+                 >
                      <div className="relative z-10">
                          <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
                              <Icons.Microphone className="w-5 h-5 md:w-6 md:h-6" />
@@ -1300,9 +1391,13 @@ export default function App() {
                          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureVoiceDesc}</p>
                      </div>
                      <div className="absolute right-0 bottom-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-tl from-red-500/10 to-transparent rounded-full translate-x-10 translate-y-10 md:translate-x-20 md:translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
-                 </div>
+                 </motion.div>
 
-                 <div className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors">
+                 <motion.div 
+                     whileHover={{ scale: 1.02 }}
+                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                     className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors"
+                 >
                      <div className="relative z-10">
                         <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
                              <Icons.Stars className="w-5 h-5 md:w-6 md:h-6" />
@@ -1311,9 +1406,13 @@ export default function App() {
                          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.feature247Desc}</p>
                      </div>
                      <div className="absolute right-0 top-0 w-24 md:w-32 h-24 md:h-32 bg-blue-500/5 rounded-bl-full group-hover:bg-blue-500/10 transition-colors"></div>
-                 </div>
+                 </motion.div>
 
-                 <div className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+                 <motion.div 
+                     whileHover={{ scale: 1.02 }}
+                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                     className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-purple-500/50 transition-colors"
+                 >
                      <div className="relative z-10">
                         <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
                              <Icons.FileText className="w-5 h-5 md:w-6 md:h-6" />
@@ -1322,9 +1421,13 @@ export default function App() {
                          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureScanDesc}</p>
                      </div>
                      <div className="absolute left-0 bottom-0 w-24 md:w-32 h-24 md:h-32 bg-purple-500/5 rounded-tr-full group-hover:bg-purple-500/10 transition-colors"></div>
-                 </div>
+                 </motion.div>
 
-                 <div className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-green-500/50 transition-colors md:col-span-2">
+                 <motion.div 
+                     whileHover={{ scale: 1.02 }}
+                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                     className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-green-500/50 transition-colors md:col-span-2"
+                 >
                      <div className="relative z-10">
                          <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-red-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
                              <Icons.Compass className="w-5 h-5 md:w-6 md:h-6" />
@@ -1333,7 +1436,7 @@ export default function App() {
                          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureRoadmapDesc}</p>
                      </div>
                       <div className="absolute right-0 bottom-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-tl from-green-500/10 to-transparent rounded-full translate-x-10 translate-y-10 md:translate-x-20 md:translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
-                 </div>
+                 </motion.div>
              </div>
         </section>
 
@@ -1371,7 +1474,12 @@ export default function App() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[120px] animate-blob"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-fuchsia-500/20 rounded-full blur-[120px] animate-blob animation-delay-2000"></div>
       
-      <div className="glass-card bg-white/60 dark:bg-[#111]/80 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-white/10 relative z-10 p-8 transform transition-all duration-300 hover:scale-[1.01] hover:shadow-indigo-500/20">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className="glass-card bg-white/60 dark:bg-[#111]/80 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-white/10 relative z-10 p-8 transform transition-all duration-300 hover:shadow-indigo-500/20"
+      >
             <div className="flex justify-center mb-6">
                 <CompassLogo className="w-16 h-16" />
             </div>
@@ -1410,13 +1518,15 @@ export default function App() {
                         />
                     </div>
 
-                    <button 
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         type="submit" 
                         disabled={isVerifyingCode || resetCodeInput.length !== 8} 
                         className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isVerifyingCode ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Verify Code'}
-                    </button>
+                    </motion.button>
 
                     <button type="button" onClick={() => { setIsResetSent(false); setResetCodeInput(''); setAuthError(''); }} className="text-xs text-gray-400 hover:text-indigo-500 underline">Resend Code / Change Email</button>
                 </form>
@@ -1456,21 +1566,40 @@ export default function App() {
 
                     {authType === 'login' && (<div className="flex justify-end"><button type="button" onClick={() => { setAuthType('forgot-password'); setIsResetSent(false); setAuthError(''); }} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">{t.forgotPassword}</button></div>)}
                     
-                    <button type="submit" disabled={isResetSending} className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 mt-2 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95">
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="submit" 
+                        disabled={isResetSending} 
+                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 mt-2 flex items-center justify-center gap-2"
+                    >
                         {isResetSending && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                         {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? 'Update Password' : "Send Verification Code"}
-                    </button>
+                    </motion.button>
                 </form>
             )}
 
             {authType !== 'forgot-password' && authType !== 'new-password' && (
                 <>
                     <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-white/10"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-[#111] text-gray-500">{t.or}</span></div></div>
-                    <button onClick={handleGoogleLogin} disabled={isGoogleLoading} className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-colors disabled:opacity-70 disabled:cursor-not-allowed">
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleGoogleLogin} 
+                        disabled={isGoogleLoading} 
+                        className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
                         {isGoogleLoading ? <div className="w-5 h-5 border-2 border-gray-300 border-t-indigo-600 rounded-full animate-spin"></div> : <Icons.Google className="w-5 h-5" />}
                         {isGoogleLoading ? 'Connecting...' : t.loginWithGoogle}
-                    </button>
-                    <button onClick={handleGuestLogin} className="w-full mt-3 flex items-center justify-center gap-3 bg-transparent border border-dashed border-gray-300 dark:border-white/20 text-gray-500 dark:text-gray-400 font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">{t.guestLogin}</button>
+                    </motion.button>
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleGuestLogin} 
+                        className="w-full mt-3 flex items-center justify-center gap-3 bg-transparent border border-dashed border-gray-300 dark:border-white/20 text-gray-500 dark:text-gray-400 font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                        {t.guestLogin}
+                    </motion.button>
                     <div className="mt-8 text-center text-sm"><span className="text-gray-500">{authType === 'login' ? t.dontHaveAccount : t.alreadyHaveAccount}{' '}</span><button onClick={() => { setAuthType(authType === 'login' ? 'register' : 'login'); setAuthError(''); }} className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">{authType === 'login' ? t.register : t.login}</button></div>
                 </>
             )}
@@ -1482,7 +1611,7 @@ export default function App() {
             )}
             
         <div className="mt-6 text-center"><button onClick={() => setMode(AppMode.LANDING)} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">← Back to Home</button></div>
-      </div>
+      </motion.div>
     </div>
   );
 
@@ -1546,24 +1675,37 @@ export default function App() {
             </div>
             
             <div className="px-4 mb-2">
-                <button onClick={() => { startNewChat(); setIsMobileSidebarOpen(false); }} className="w-full flex items-center justify-center gap-3 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold shadow-lg">
+                <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => { startNewChat(); setIsMobileSidebarOpen(false); }} 
+                    className="w-full flex items-center justify-center gap-3 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold shadow-lg"
+                >
                     <span className="text-xl leading-none">+</span> {t.newChat}
-                </button>
+                </motion.button>
             </div>
             
             <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-                <button onClick={() => { setTab(DashboardTab.CHAT); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.MessageSquare className="w-5 h-5" />{t.chatMode}</button>
-                <button onClick={() => { setTab(DashboardTab.VOICE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Microphone className="w-5 h-5" />{t.voiceMode}</button>
-                <button onClick={() => { setTab(DashboardTab.QUIZ); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Zap className="w-5 h-5" />{t.careerQuizTitle}</button>
-                <button onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />{t.progress}</button>
-                <button onClick={() => { setTab(DashboardTab.PORTFOLIO); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Briefcase className="w-5 h-5" />{t.portfolio}</button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.CHAT); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.MessageSquare className="w-5 h-5" />{t.chatMode}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.VOICE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Microphone className="w-5 h-5" />{t.voiceMode}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.QUIZ); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Zap className="w-5 h-5" />{t.careerQuizTitle}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />{t.progress}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.PORTFOLIO); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Briefcase className="w-5 h-5" />{t.portfolio}</motion.button>
                 
                 {chatHistory.length > 0 && (
                     <div className="mt-8">
                         <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div>
                         <div className="space-y-1">
                             {chatHistory.slice(0, 10).map((session) => (
-                                <button key={session.id} onClick={() => { loadSession(session); setIsMobileSidebarOpen(false); }} className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors">{session.title}</button>
+                                <motion.button 
+                                    key={session.id} 
+                                    whileHover={{ scale: 1.02, x: 4 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => { loadSession(session); setIsMobileSidebarOpen(false); }} 
+                                    className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors"
+                                >
+                                    {session.title}
+                                </motion.button>
                             ))}
                         </div>
                     </div>
@@ -1572,8 +1714,22 @@ export default function App() {
             
             <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 space-y-3">
                 <div className="flex gap-2">
-                    <button onClick={toggleLang} className="flex-1 flex items-center justify-center py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"><span className="uppercase">{lang}</span></button>
-                    <button onClick={toggleTheme} className="flex-1 flex items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button>
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={toggleLang} 
+                        className="flex-1 flex items-center justify-center py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"
+                    >
+                        <span className="uppercase">{lang}</span>
+                    </motion.button>
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={toggleTheme} 
+                        className="flex-1 flex items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"
+                    >
+                        {theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}
+                    </motion.button>
                 </div>
                 <div className="flex items-center justify-between">
                     <div onClick={() => { setIsProfileModalOpen(true); setIsMobileSidebarOpen(false); }} className="flex items-center gap-3 cursor-pointer p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex-1 overflow-hidden">
@@ -1608,19 +1764,24 @@ export default function App() {
         </div>
         
         <div className="px-4 mb-2">
-            <button onClick={startNewChat} className={`w-full flex items-center justify-center gap-3 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl hover:scale-[1.02] active:scale-95 transition-all font-bold shadow-lg ${isSidebarOpen ? 'px-4' : 'px-0'}`}>
+            <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={startNewChat} 
+                className={`w-full flex items-center justify-center gap-3 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl transition-all font-bold shadow-lg ${isSidebarOpen ? 'px-4' : 'px-0'}`}
+            >
                 <span className="text-xl leading-none">+</span> {isSidebarOpen && t.newChat}
-            </button>
+            </motion.button>
         </div>
         
-        <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto overflow-x-hidden">
-            <button onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.chatMode}><Icons.MessageSquare className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.chatMode}</span>}</button>
-            <button onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</button>
-            <button onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</button>
-            <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.progress}><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.progress}</span>}</button>
-            <button onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.Briefcase className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</button>
-            
-            {chatHistory.length > 0 && isSidebarOpen && (
+            <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto overflow-x-hidden">
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.CHAT)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.chatMode}><Icons.MessageSquare className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.chatMode}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.VOICE)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.progress}><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.progress}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.Briefcase className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</motion.button>
+                
+                {chatHistory.length > 0 && isSidebarOpen && (
                 <div className="mt-8 animate-fade-in">
                     <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div>
@@ -1631,7 +1792,15 @@ export default function App() {
                     </div>
                     <div className="space-y-1">
                         {filteredHistory.map((session) => (
-                            <button key={session.id} onClick={() => loadSession(session)} className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors">{session.title}</button>
+                            <motion.button 
+                                key={session.id} 
+                                whileHover={{ scale: 1.02, x: 4 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => loadSession(session)} 
+                                className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors"
+                            >
+                                {session.title}
+                            </motion.button>
                         ))}
                         {filteredHistory.length === 0 && <div className="text-xs text-center py-2 text-gray-400">No results found</div>}
                     </div>
@@ -1642,7 +1811,12 @@ export default function App() {
         <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm flex flex-col gap-2">
             {isSidebarOpen ? (
                 <>
-                    <div className="flex items-center justify-between mb-2 px-2 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group cursor-pointer" onClick={() => setIsProfileModalOpen(true)}>
+                    <motion.div 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex items-center justify-between mb-2 px-2 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group cursor-pointer" 
+                        onClick={() => setIsProfileModalOpen(true)}
+                    >
                         <div title={t.profile} className="flex items-center gap-3 overflow-hidden flex-1">
                             <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=random'; }} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"/>
                             <div className="overflow-hidden flex-1">
@@ -1656,41 +1830,110 @@ export default function App() {
                                 <span className={`text-xs font-bold ${getStreakColor(auth.user.streak)}`}>{auth.user.streak}</span>
                             </div>
                         )}
-                    </div>
+                    </motion.div>
                     <div className="flex gap-2 mb-2">
-                        <button onClick={toggleLang} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"><span className="uppercase">{lang}</span></button>
-                        <button onClick={toggleTheme} className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button>
+                        <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={toggleLang} 
+                            className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"
+                        >
+                            <span className="uppercase">{lang}</span>
+                        </motion.button>
+                        <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={toggleTheme} 
+                            className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all"
+                        >
+                            {theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}
+                        </motion.button>
                     </div>
-                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"><Icons.LogOut className="w-4 h-4" />{t.logout}</button>
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleLogout} 
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                    >
+                        <Icons.LogOut className="w-4 h-4" />{t.logout}
+                    </motion.button>
                 </>
             ) : (
                 <>
-                    <img src={auth.user?.avatar || AVATARS[0]} alt="Avatar" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=random'; }} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm mx-auto mb-2 cursor-pointer" onClick={() => setIsProfileModalOpen(true)} title={t.profile} />
-                    <button onClick={toggleLang} className="w-full flex items-center justify-center py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all mb-2"><span className="uppercase">{lang}</span></button>
-                    <button onClick={toggleTheme} className="w-full flex items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all mb-2">{theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}</button>
-                    <button onClick={handleLogout} className="w-full flex items-center justify-center py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title={t.logout}><Icons.LogOut className="w-4 h-4" /></button>
+                    <motion.img 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        src={auth.user?.avatar || AVATARS[0]} 
+                        alt="Avatar" 
+                        referrerPolicy="no-referrer" 
+                        onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=random'; }} 
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm mx-auto mb-2 cursor-pointer" 
+                        onClick={() => setIsProfileModalOpen(true)} 
+                        title={t.profile} 
+                    />
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={toggleLang} 
+                        className="w-full flex items-center justify-center py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all mb-2"
+                    >
+                        <span className="uppercase">{lang}</span>
+                    </motion.button>
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={toggleTheme} 
+                        className="w-full flex items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-all mb-2"
+                    >
+                        {theme === Theme.LIGHT ? <Icons.Moon className="w-4 h-4"/> : <Icons.Sun className="w-4 h-4"/>}
+                    </motion.button>
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleLogout} 
+                        className="w-full flex items-center justify-center py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" 
+                        title={t.logout}
+                    >
+                        <Icons.LogOut className="w-4 h-4" />
+                    </motion.button>
                 </>
             )}
         </div>
       </aside>
       <main className="flex-1 flex flex-col h-full relative w-full bg-white dark:bg-[#050505] z-10">
         <div className="absolute top-4 left-4 z-30 hidden md:block">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white shadow-sm hover:shadow-md transition-all" title={isSidebarOpen ? t.collapseSidebar : t.expandSidebar}>
+            <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                className="p-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white shadow-sm hover:shadow-md transition-all" 
+                title={isSidebarOpen ? t.collapseSidebar : t.expandSidebar}
+            >
                 {isSidebarOpen ? <Icons.PanelLeftClose className="w-5 h-5" /> : <Icons.PanelLeftOpen className="w-5 h-5" />}
-            </button>
+            </motion.button>
         </div>
         {/* Mobile Header */}
         <header className="md:hidden h-14 flex items-center justify-between px-4 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/5 z-50 sticky top-0">
-            <button onClick={() => setIsMobileSidebarOpen(true)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
+            <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsMobileSidebarOpen(true)} 
+                className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+            >
                 <Icons.Menu className="w-5 h-5" />
-            </button>
+            </motion.button>
             <div className="flex items-center gap-1.5">
                 <CompassLogo className="w-5 h-5" />
                 <span className="font-bold text-xs tracking-tight text-gray-900 dark:text-white uppercase">Career Compass</span>
             </div>
-            <button onClick={startNewChat} className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-colors">
+            <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={startNewChat} 
+                className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-colors"
+            >
                 <Icons.Plus className="w-5 h-5" />
-            </button>
+            </motion.button>
         </header>
         
         <AnimatePresence mode="wait">
@@ -1706,13 +1949,15 @@ export default function App() {
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6 scroll-smooth">
                         <div className="flex flex-col items-center gap-2 mb-12">
-                            <button 
+                            <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => setTab(DashboardTab.PROGRESS)} 
-                                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-xl shadow-indigo-500/20 transition-all active:scale-95 hover:-translate-y-1"
+                                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-xl shadow-indigo-500/20 transition-all"
                             >
                                 <Icons.Sparkles className="w-5 h-5" />
                                 {lang === Language.EN ? "Generate Career Roadmap" : "Tạo lộ trình nghề nghiệp"}
-                            </button>
+                            </motion.button>
                             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
                                 {lang === Language.EN ? "Based on your conversation history" : "Dựa trên lịch sử trò chuyện của bạn"}
                             </p>
@@ -1987,14 +2232,16 @@ export default function App() {
                         {/* Bottom Toolbar */}
                         <div className="flex items-center justify-between mt-auto">
                             <div className="flex items-center gap-1 relative">
-                                <button 
+                                <motion.button 
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
                                     type="button" 
                                     onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
                                     className={`p-2.5 md:p-2 rounded-full transition-colors ${showAttachmentMenu ? 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
                                     title="Attach"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 md:w-5 md:h-5 ${showAttachmentMenu ? 'rotate-45' : ''}`}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                </button>
+                                </motion.button>
 
                                 <AnimatePresence>
                                     {showAttachmentMenu && (
@@ -2027,12 +2274,12 @@ export default function App() {
                             </div>
 
                             <div className="flex items-center gap-1 md:gap-2">
-                                <button type="button" onClick={switchToVoice} className="p-2.5 md:p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-colors" title={t.switchToVoice}>
+                                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} type="button" onClick={switchToVoice} className="p-2.5 md:p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-colors" title={t.switchToVoice}>
                                     <Icons.Microphone className="w-5 h-5 md:w-5 md:h-5" />
-                                </button>
-                                <button type="submit" disabled={(!inputMsg.trim() && !selectedFile && pastedTexts.length === 0) || isChatLoading} className="p-2.5 md:p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-30 disabled:hover:bg-indigo-600 transition-all shadow-lg active:scale-95">
+                                </motion.button>
+                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="submit" disabled={(!inputMsg.trim() && !selectedFile && pastedTexts.length === 0) || isChatLoading} className="p-2.5 md:p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-30 disabled:hover:bg-indigo-600 transition-all shadow-lg">
                                     {isChatLoading ? <div className="w-5 h-5 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5 md:w-5 md:h-5" />}
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
 
@@ -2066,7 +2313,14 @@ export default function App() {
                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500"><Icons.ChevronDown className="w-4 h-4" /></div>
                                 </div>
                              </div>
-                             <button onClick={handleVoiceToggle} className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-xl active:scale-[0.98] ${isVoiceActive ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white'}`}>{isVoiceActive ? t.endVoice : t.startVoice}</button>
+                             <motion.button 
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleVoiceToggle} 
+                                className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-xl ${isVoiceActive ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white'}`}
+                             >
+                                {isVoiceActive ? t.endVoice : t.startVoice}
+                             </motion.button>
                         </div>
                     </div>
                     <div className="flex-1 flex flex-col rounded-[2rem] bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/5 overflow-hidden shadow-sm">
@@ -2093,7 +2347,7 @@ export default function App() {
                         
                         // Update user profile with career profile
                         if (auth.user) {
-                            setAuth(prev => ({ ...prev, user: { ...prev.user!, careerProfile: result } }));
+                            updateUserProfile({ careerProfile: result });
                         }
                         
                         setTab(DashboardTab.CHAT);
@@ -2129,30 +2383,26 @@ export default function App() {
         
         {/* Mobile Bottom Navigation */}
         <div className="md:hidden shrink-0 h-16 bg-white dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-white/5 flex items-center justify-around px-2 z-20 pb-safe">
-            <button onClick={() => setTab(DashboardTab.CHAT)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.CHAT ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.CHAT)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.CHAT ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.MessageSquare className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.chatMode}</span>
-            </button>
-            <button onClick={() => setTab(DashboardTab.VOICE)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.VOICE ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.VOICE)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.VOICE ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Microphone className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.voiceMode}</span>
-            </button>
-            <button onClick={() => setTab(DashboardTab.QUIZ)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.QUIZ ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.QUIZ)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.QUIZ ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Zap className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.careerQuizTitle}</span>
-            </button>
-            <button onClick={() => setTab(DashboardTab.PROGRESS)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROGRESS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.PROGRESS)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROGRESS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Target className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.progress}</span>
-            </button>
-            <button onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PORTFOLIO ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PORTFOLIO ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Briefcase className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.portfolio}</span>
-            </button>
-            <button onClick={() => setIsProfileModalOpen(true)} className={`flex flex-col items-center justify-center w-16 h-full ${isProfileModalOpen ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
-                <Icons.User className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.profile}</span>
-            </button>
+            </motion.button>
         </div>
       </main>
 
@@ -2249,7 +2499,9 @@ export default function App() {
                             <h4 className="text-sm font-bold text-gray-900 dark:text-white">{t.storageManagement}</h4>
                             <p className="text-[10px] text-gray-500">{t.manageChatData}</p>
                         </div>
-                        <button 
+                        <motion.button 
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => {
                                 if (window.confirm(t.clearHistoryConfirm)) {
                                     clearChatHistory();
@@ -2259,7 +2511,7 @@ export default function App() {
                             className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors w-full sm:w-auto"
                         >
                             {t.clearAllHistory}
-                        </button>
+                        </motion.button>
                     </div>
                 </motion.div>
             </motion.div>
@@ -2301,9 +2553,14 @@ export default function App() {
               <p><strong>{t.terms4}</strong> {t.terms4Desc}</p>
               <p><strong>{t.terms5}</strong> {t.terms5Desc}</p>
             </div>
-            <button onClick={acceptTerms} className="mt-8 w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg active:scale-95">
+            <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={acceptTerms} 
+                className="mt-8 w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg"
+            >
               {t.termsAccept}
-            </button>
+            </motion.button>
           </div>
         </div>
       )}

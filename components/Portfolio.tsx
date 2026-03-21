@@ -203,22 +203,36 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
         </AnimatePresence>
 
         <div className="grid grid-cols-1 gap-4">
-          {(!user?.portfolio || user.portfolio.length === 0) ? (
-            <div className="bg-white dark:bg-[#111] rounded-3xl border border-dashed border-gray-300 dark:border-white/10 p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Icons.FolderOpen className="w-8 h-8" />
-              </div>
-              <p className="text-gray-500 dark:text-gray-400">{t.noPortfolioItems}</p>
-            </div>
-          ) : (
-            user.portfolio.map((item, index) => (
+          <AnimatePresence mode="popLayout">
+            {(!user?.portfolio || user.portfolio.length === 0) ? (
               <motion.div 
-                key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white dark:bg-[#111] rounded-2xl border border-gray-200 dark:border-white/10 p-5 flex items-start gap-4 group hover:border-indigo-500/30 transition-all"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white dark:bg-[#111] rounded-3xl border border-dashed border-gray-300 dark:border-white/10 p-12 text-center"
               >
+                <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icons.FolderOpen className="w-8 h-8" />
+                </div>
+                <p className="text-gray-500 dark:text-gray-400">{t.noPortfolioItems}</p>
+              </motion.div>
+            ) : (
+              user.portfolio.map((item, index) => (
+                <motion.div 
+                  layout
+                  key={item.id}
+                  initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  transition={{ 
+                    duration: 0.3,
+                    delay: index * 0.05,
+                    layout: { type: "spring", stiffness: 300, damping: 30 }
+                  }}
+                  className="bg-white dark:bg-[#111] rounded-2xl border border-gray-200 dark:border-white/10 p-5 flex items-start gap-4 group hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all"
+                >
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl">
                   {getItemIcon(item.type)}
                 </div>
@@ -251,6 +265,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
               </motion.div>
             ))
           )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
