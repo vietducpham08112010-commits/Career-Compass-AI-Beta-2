@@ -159,25 +159,25 @@ const cleanText = (text: string) => {
 // --- HELPER FOR THINKING TEXT ---
 const getThinkingMessage = (input: string, lang: Language) => {
     const lower = input.toLowerCase();
-    const isVi = lang === Language.VI;
+    const t = TRANSLATIONS[lang];
     
     if (lower.includes('đam mê') || lower.includes('passion') || lower.includes('thích') || lower.includes('like')) {
-        return isVi ? 'Đang khám phá đam mê của bạn...' : 'Exploring your passions...';
+        return t.thinkingPassions;
     }
     if (lower.includes('việc') || lower.includes('job') || lower.includes('career') || lower.includes('nghề')) {
-        return isVi ? 'Đang phân tích cơ hội nghề nghiệp...' : 'Analyzing career opportunities...';
+        return t.thinkingOpportunities;
     }
     if (lower.includes('lương') || lower.includes('salary') || lower.includes('money') || lower.includes('thu nhập')) {
-        return isVi ? 'Đang nghiên cứu thị trường lao động...' : 'Researching market compensation...';
+        return t.thinkingMarket;
     }
     if (lower.includes('cv') || lower.includes('hồ sơ') || lower.includes('resume')) {
-        return isVi ? 'Đang đánh giá hồ sơ của bạn...' : 'Reviewing your profile...';
+        return t.thinkingProfile;
     }
     if (lower.includes('học') || lower.includes('learn') || lower.includes('study') || lower.includes('trường')) {
-        return isVi ? 'Đang tìm kiếm lộ trình học tập...' : 'Mapping learning paths...';
+        return t.thinkingPaths;
     }
     
-    return isVi ? 'Đang suy nghĩ...' : 'Thinking...';
+    return t.thinking;
 };
 
 const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplete: (result: string) => void }) => {
@@ -186,18 +186,18 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
   const [result, setResult] = useState<string | null>(null);
 
   const questions = [
-    { text: lang === Language.EN ? "I like to work with animals, tools, or machines." : "Mình thích làm việc với động vật, công cụ hoặc máy móc.", type: 'R' },
-    { text: lang === Language.EN ? "I like to solve math and science problems." : "Mình thích giải các bài toán và vấn đề khoa học.", type: 'I' },
-    { text: lang === Language.EN ? "I like to do creative activities like art, drama, or music." : "Mình thích các hoạt động sáng tạo như nghệ thuật, kịch hoặc âm nhạc.", type: 'A' },
-    { text: lang === Language.EN ? "I like to help, teach, or provide service to others." : "Mình thích giúp đỡ, dạy bảo hoặc cung cấp dịch vụ cho người khác.", type: 'S' },
-    { text: lang === Language.EN ? "I like to lead and persuade people." : "Mình thích lãnh đạo và thuyết phục mọi người.", type: 'E' },
-    { text: lang === Language.EN ? "I like to work with numbers, records, or machines in an orderly way." : "Mình thích làm việc với con số, hồ sơ hoặc máy móc một cách ngăn nắp.", type: 'C' },
-    { text: lang === Language.EN ? "I enjoy repairing things." : "Mình thích sửa chữa đồ đạc.", type: 'R' },
-    { text: lang === Language.EN ? "I enjoy conducting experiments." : "Mình thích thực hiện các thí nghiệm.", type: 'I' },
-    { text: lang === Language.EN ? "I enjoy writing stories or poems." : "Mình thích viết truyện hoặc làm thơ.", type: 'A' },
-    { text: lang === Language.EN ? "I enjoy volunteering for social causes." : "Mình thích tình nguyện cho các hoạt động xã hội.", type: 'S' },
-    { text: lang === Language.EN ? "I enjoy starting my own business." : "Mình thích bắt đầu công việc kinh doanh riêng.", type: 'E' },
-    { text: lang === Language.EN ? "I enjoy organizing data and files." : "Mình thích sắp xếp dữ liệu và hồ sơ.", type: 'C' },
+    { text: t.quizQ1, type: 'R' },
+    { text: t.quizQ2, type: 'I' },
+    { text: t.quizQ3, type: 'A' },
+    { text: t.quizQ4, type: 'S' },
+    { text: t.quizQ5, type: 'E' },
+    { text: t.quizQ6, type: 'C' },
+    { text: t.quizQ7, type: 'R' },
+    { text: t.quizQ8, type: 'I' },
+    { text: t.quizQ9, type: 'A' },
+    { text: t.quizQ10, type: 'S' },
+    { text: t.quizQ11, type: 'E' },
+    { text: t.quizQ12, type: 'C' },
   ];
 
   const handleAnswer = (value: number) => {
@@ -216,12 +216,12 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
     const sorted = Object.entries(finalScores).sort((a, b) => b[1] - a[1]);
     const topType = sorted[0][0];
     const descriptions: any = {
-      R: lang === Language.EN ? "Realistic: You are practical and hands-on." : "Thực tế (Realistic): Bạn là người thực tế, thích làm việc với đôi tay và công cụ.",
-      I: lang === Language.EN ? "Investigative: You are analytical and curious." : "Nghiên cứu (Investigative): Bạn có tư duy phân tích, tò mò và thích giải quyết vấn đề.",
-      A: lang === Language.EN ? "Artistic: You are creative and expressive." : "Nghệ thuật (Artistic): Bạn sáng tạo, giàu trí tưởng tượng và thích thể hiện bản thân.",
-      S: lang === Language.EN ? "Social: You are helpful and empathetic." : "Xã hội (Social): Bạn thích giúp đỡ, giảng dạy và làm việc với con người.",
-      E: lang === Language.EN ? "Enterprising: You are ambitious and persuasive." : "Quản lý (Enterprising): Bạn đầy tham vọng, có khả năng lãnh đạo và thuyết phục.",
-      C: lang === Language.EN ? "Conventional: You are organized and detail-oriented." : "Nghiệp vụ (Conventional): Bạn ngăn nắp, tỉ mỉ và thích làm việc với dữ liệu.",
+      R: t.quizRealistic,
+      I: t.quizInvestigative,
+      A: t.quizArtistic,
+      S: t.quizSocial,
+      E: t.quizEnterprising,
+      C: t.quizConventional,
     };
     setResult(descriptions[topType]);
   };
@@ -241,7 +241,7 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
         >
           <Icons.Check className="w-10 h-10" />
         </motion.div>
-        <h3 className="text-2xl font-bold mb-4">{lang === Language.EN ? "Your Career Profile" : "Kết Quả Trắc Nghiệm Của Bạn"}</h3>
+        <h3 className="text-2xl font-bold mb-4">{t.quizResultTitle}</h3>
         <p className="text-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xl max-w-md">
           {result}
         </p>
@@ -252,7 +252,7 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
                 onClick={() => { setStep(0); setScores({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }); setResult(null); }} 
                 className="px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
             >
-            {lang === Language.EN ? "Retake Quiz" : "Làm lại trắc nghiệm"}
+            {t.retakeQuiz}
             </motion.button>
             <motion.button 
                 whileHover={{ scale: 1.05 }}
@@ -275,7 +275,7 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
     >
       <div className="mb-8">
         <div className="flex justify-between text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
-          <span>{lang === Language.EN ? `Question ${step + 1} of ${questions.length}` : `Câu hỏi ${step + 1} / ${questions.length}`}</span>
+          <span>{t.question} {step + 1} {t.of} {questions.length}</span>
           <span>{Math.round(((step + 1) / questions.length) * 100)}%</span>
         </div>
         <div className="w-full h-2 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden">
@@ -303,9 +303,9 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: lang === Language.EN ? "No" : "Không thích", value: 0, color: 'bg-red-50 dark:bg-red-500/10 text-red-600 border-red-200 dark:border-red-500/20' },
-          { label: lang === Language.EN ? "Maybe" : "Tạm được", value: 1, color: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 border-yellow-200 dark:border-yellow-500/20' },
-          { label: lang === Language.EN ? "Yes" : "Rất thích", value: 2, color: 'bg-green-50 dark:bg-green-500/10 text-green-600 border-green-200 dark:border-green-500/20' },
+          { label: t.quizNo, value: 0, color: 'bg-red-50 dark:bg-red-500/10 text-red-600 border-red-200 dark:border-red-500/20' },
+          { label: t.quizMaybe, value: 1, color: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 border-yellow-200 dark:border-yellow-500/20' },
+          { label: t.quizYes, value: 2, color: 'bg-green-50 dark:bg-green-500/10 text-green-600 border-green-200 dark:border-green-500/20' },
         ].map((opt) => (
           <motion.button 
             key={opt.value} 
@@ -323,12 +323,10 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
 };
 
 // --- Main Component ---
-const WELCOME_PHRASES = [
-    "Hãy chia sẻ ý tưởng của bạn nhé!"
-];
 
 export default function App() {
   const [lang, setLang] = useState<Language>(Language.VI);
+  const t = TRANSLATIONS[lang];
   // Default to LIGHT theme to avoid "black screen" feeling
   const [theme, setTheme] = useState<Theme>(Theme.LIGHT);
   const [mode, setMode] = useState<AppMode>(AppMode.LANDING);
@@ -360,14 +358,20 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [welcomePhrase, setWelcomePhrase] = useState(WELCOME_PHRASES[0]);
+  const [welcomePhrase, setWelcomePhrase] = useState('');
   const isSendingRef = useRef(false);
 
   useEffect(() => {
-    if (messages.length === 0) {
-        setWelcomePhrase(WELCOME_PHRASES[Math.floor(Math.random() * WELCOME_PHRASES.length)]);
+    if (t.welcomePhrases && t.welcomePhrases.length > 0) {
+      setWelcomePhrase(t.welcomePhrases[Math.floor(Math.random() * t.welcomePhrases.length)]);
     }
-  }, [messages.length]);
+  }, [lang, t.welcomePhrases]);
+
+  useEffect(() => {
+    if (messages.length === 0 && t.welcomePhrases && t.welcomePhrases.length > 0) {
+        setWelcomePhrase(t.welcomePhrases[Math.floor(Math.random() * t.welcomePhrases.length)]);
+    }
+  }, [messages.length, t.welcomePhrases]);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
 
   // Load chat history and current messages from IndexedDB on mount
@@ -448,6 +452,7 @@ export default function App() {
   const liveSessionRef = useRef<LiveSessionManager | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
+  const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('hasAcceptedTerms') === 'true';
@@ -528,7 +533,7 @@ export default function App() {
     }));
     setMilestones(processed);
     setTab(DashboardTab.PROGRESS);
-    showToast(lang === Language.EN ? "Roadmap updated successfully!" : "Đã cập nhật lộ trình thành công!", 'success');
+    showToast(t.roadmapUpdated, 'success');
   };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -548,7 +553,7 @@ export default function App() {
             }
         }, 100);
     } catch (err) {
-        showToast(lang === Language.EN ? "Camera access denied or not available." : "Không thể truy cập máy ảnh.", 'error');
+        showToast(t.cameraDenied, 'error');
     }
   };
 
@@ -588,12 +593,12 @@ export default function App() {
       const file = e.target.files?.[0];
       if (file) {
           if (!file.type.startsWith('image/')) {
-              showToast(lang === Language.EN ? "Please select a valid image file." : "Vui lòng chọn một tệp hình ảnh hợp lệ.", 'error');
+              showToast(t.invalidImage, 'error');
               if (e.target) e.target.value = '';
               return;
           }
           if (file.size > 5 * 1024 * 1024) { // 5MB limit
-              showToast(lang === Language.EN ? "Image size should be less than 5MB." : "Kích thước ảnh phải nhỏ hơn 5MB.", 'error');
+              showToast(t.imageTooLarge, 'error');
               if (e.target) e.target.value = '';
               return;
           }
@@ -633,14 +638,14 @@ export default function App() {
                   updateUserProfile({ avatar: dataUrl });
               };
               img.onerror = () => {
-                  showToast(lang === Language.EN ? "Failed to load image." : "Không thể tải hình ảnh.", 'error');
+                  showToast(t.failedToLoadImage, 'error');
               };
               if (typeof event.target?.result === 'string') {
                   img.src = event.target.result;
               }
           };
           reader.onerror = () => {
-              showToast(lang === Language.EN ? "Failed to read file." : "Không thể đọc tệp.", 'error');
+              showToast(t.failedToReadFile, 'error');
           };
           reader.readAsDataURL(file);
       }
@@ -661,8 +666,6 @@ export default function App() {
   const [customEndpoint, setCustomEndpoint] = useState('http://localhost:11434/v1/chat/completions');
   const [customModelName, setCustomModelName] = useState('llama3');
   
-  const t = TRANSLATIONS[lang];
-
   useEffect(() => {
     if (theme === Theme.DARK) { document.documentElement.classList.add('dark'); } 
     else { document.documentElement.classList.remove('dark'); }
@@ -800,7 +803,7 @@ export default function App() {
           }
       } catch (e) {
           console.error("Failed to save user profile to localStorage", e);
-          showToast(lang === Language.EN ? "Failed to save profile. The image might be too large." : "Không thể lưu hồ sơ. Ảnh có thể quá lớn.", 'error');
+          showToast(t.failedToSaveProfile, 'error');
       }
   };
 
@@ -811,11 +814,11 @@ export default function App() {
     const email = emailRef.current?.value;
     const password = passwordRef.current?.value;
 
-    if (!name || !email || !password) return setAuthError('Please fill all fields');
+    if (!name || !email || !password) return setAuthError(t.fillAllFields);
 
     const users = getUsers();
     if (users.find(u => u.email === email)) {
-        setAuthError('Email already registered');
+        setAuthError(t.emailRegistered);
         return;
     }
 
@@ -824,7 +827,7 @@ export default function App() {
         email, 
         // @ts-ignore
         password, 
-        careerGoal: 'Undecided', 
+        careerGoal: t.undecided, 
         avatar: getRandomAvatar(),
         aiProvider: AIProvider.GEMINI,
         customEndpoint: 'http://localhost:11434/v1/chat/completions',
@@ -845,7 +848,7 @@ export default function App() {
     const email = emailRef.current?.value;
     const password = passwordRef.current?.value;
 
-    if (!email || !password) return setAuthError('Please fill all fields');
+    if (!email || !password) return setAuthError(t.fillAllFields);
 
     const users = getUsers();
     const user = users.find(u => u.email === email && u.password === password);
@@ -856,14 +859,14 @@ export default function App() {
         setAuth({ isAuthenticated: true, user });
         setMode(AppMode.DASHBOARD);
     } else {
-        setAuthError('Invalid email or password');
+        setAuthError(t.invalidLogin);
     }
   };
   
   const handleGoogleLogin = async () => {
     setAuthError('');
     if (!firebaseAuth || !googleProvider) {
-        setAuthError("Firebase not configured. Please check console.");
+        setAuthError(t.firebaseNotConfigured);
         return;
     }
 
@@ -872,7 +875,7 @@ export default function App() {
         await signInWithPopup(firebaseAuth, googleProvider);
     } catch (error: any) {
         console.error("Google Auth Error", error);
-        setAuthError(`Login Failed: ${error.message}`);
+        setAuthError(`${t.loginFailed} ${error.message}`);
     } finally {
         setIsGoogleLoading(false);
     }
@@ -883,22 +886,22 @@ export default function App() {
       setAuthError('');
       setEmailStatus(null);
       const email = emailRef.current?.value;
-      if (!email) return setAuthError('Please enter your email');
+      if (!email) return setAuthError(t.enterEmail);
 
       const users = getUsers();
       let user = users.find(u => u.email === email);
       
       if (user && user.provider === 'google') {
-          return setAuthError('This account uses Google Login. Please login with Google instead.');
+          return setAuthError(t.googleLoginRequired);
       }
       
       if (!user && (email === 'demo@example.com' || email.includes('test'))) {
-           user = { name: 'Demo User', email: email, password: 'password123', careerGoal: 'Undecided', avatar: getRandomAvatar() };
+           user = { name: 'Demo User', email: email, password: 'password123', careerGoal: t.undecided, avatar: getRandomAvatar() };
            users.push(user);
            localStorage.setItem('users', JSON.stringify(users));
       }
       
-      if (!user) return setAuthError('Email not found. Please Register an account first.');
+      if (!user) return setAuthError(t.emailNotFound);
       
       setResetTokenEmail(user.email);
       setIsResetSending(true);
@@ -917,7 +920,7 @@ export default function App() {
           setEmailStatus('success');
       } catch (error) {
           console.error("EmailJS Error:", error);
-          setAuthError("Failed to send email. Please check your internet connection or try again later.");
+          setAuthError(t.failedToSendEmail);
       } finally {
           setIsResetSending(false);
       }
@@ -931,7 +934,7 @@ export default function App() {
               setAuthType('new-password');
               setResetCodeInput(''); 
           } else {
-              setAuthError('Invalid verification code.');
+              setAuthError(t.invalidCode);
           }
           setIsVerifyingCode(false);
       }, 800);
@@ -943,10 +946,10 @@ export default function App() {
       const confirmPass = confirmPasswordRef.current?.value;
       
       if (!pass || !confirmPass) {
-          setAuthError("Please fill all fields"); return;
+          setAuthError(t.fillAllFields); return;
       }
       if (pass !== confirmPass) {
-          setAuthError("Passwords do not match"); return;
+          setAuthError(t.passwordsDoNotMatch); return;
       }
       
       const users = getUsers();
@@ -955,19 +958,19 @@ export default function App() {
       if (userIndex > -1) {
           users[userIndex].password = pass;
           localStorage.setItem('users', JSON.stringify(users));
-          showToast(lang === Language.EN ? "Password updated successfully! Please login." : "Cập nhật mật khẩu thành công! Vui lòng đăng nhập.", 'success');
+          showToast(t.passwordUpdated, 'success');
           setAuthType('login');
           setAuthError('');
           setIsResetSent(false); 
           setResetCodeInput('');
           setGeneratedResetCode(null); 
       } else {
-          setAuthError("User not found.");
+          setAuthError(t.userNotFound);
       }
   };
 
   const handleGuestLogin = () => {
-    const guestUser = { name: 'Guest', email: '', careerGoal: 'Exploring', isGuest: true, avatar: getRandomAvatar(), aiProvider: AIProvider.GEMINI };
+    const guestUser = { name: t.guest, email: '', careerGoal: t.exploring, isGuest: true, avatar: getRandomAvatar(), aiProvider: AIProvider.GEMINI };
     localStorage.setItem('currentUser', JSON.stringify(guestUser));
     setAuth({ isAuthenticated: true, user: guestUser });
     setMode(AppMode.DASHBOARD);
@@ -982,7 +985,7 @@ export default function App() {
     const userKey = auth.user.email || 'guest';
     await storage.delete(`chatHistory_${userKey}`);
     setChatHistory([]);
-    showToast(lang === Language.EN ? "Chat history cleared" : "Đã xóa lịch sử trò chuyện", 'info');
+    showToast(t.chatCleared, 'info');
   };
 
   const clearCurrentSession = async () => {
@@ -990,7 +993,7 @@ export default function App() {
     const userKey = auth.user.email || 'guest';
     await storage.delete(`currentMessages_${userKey}`);
     setMessages([]);
-    showToast(lang === Language.EN ? "Current session cleared" : "Đã xóa phiên trò chuyện hiện tại", 'info');
+    showToast(t.sessionCleared, 'info');
   };
 
   const handleLogout = async () => {
@@ -1167,7 +1170,7 @@ export default function App() {
           customModelName,
           aiProvider: auth.user?.aiProvider || AIProvider.GEMINI 
       });
-      showToast(lang === Language.EN ? "Settings Saved!" : "Đã lưu cài đặt!", 'success');
+      showToast(t.profileSaved, 'success');
   };
 
   const renderLanding = () => {
@@ -1178,7 +1181,7 @@ export default function App() {
             <div className="group-hover:rotate-180 transition-transform duration-700">
                 <CompassLogo className="w-8 h-8" />
             </div>
-            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-fuchsia-500">Career Compass</span>
+            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-fuchsia-500">{t.appName}</span>
           </div>
           <div className="flex items-center gap-4">
              <button onClick={toggleLang} className="flex items-center gap-1 text-sm font-medium hover:text-indigo-500 transition-colors text-gray-600 dark:text-gray-300">
@@ -1197,7 +1200,7 @@ export default function App() {
                     className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold transition-shadow hover:shadow-lg hover:shadow-indigo-500/20 flex items-center gap-2"
                  >
                     <Icons.Briefcase className="w-4 h-4" />
-                    Dashboard
+                    {t.dashboard}
                  </motion.button>
              ) : (
                  <>
@@ -1308,8 +1311,8 @@ export default function App() {
                             {t.vnLaborMarketDesc}
                         </p>
                         <div className="flex flex-wrap justify-center md:justify-start gap-2 md:gap-4">
-                            {['AI Engineer', 'Logistics Manager', 'Semiconductor Tech', 'Green Energy'].map(tag => (
-                                <span key={tag} className="px-3 py-1.5 md:px-4 md:py-2 bg-white dark:bg-white/10 rounded-full text-[10px] md:text-sm font-bold border border-indigo-500/20">{tag}</span>
+                            {t.laborMarketTags.map((tag: any) => (
+                                <span key={tag.en} className="px-3 py-1.5 md:px-4 md:py-2 bg-white dark:bg-white/10 rounded-full text-[10px] md:text-sm font-bold border border-indigo-500/20">{lang === Language.EN ? tag.en : tag.vi}</span>
                             ))}
                         </div>
                     </div>
@@ -1317,7 +1320,7 @@ export default function App() {
                         <div className="text-center">
                             <Icons.TrendingUp className="w-12 h-12 md:w-20 md:h-20 text-indigo-500 mx-auto mb-2 md:mb-4 animate-bounce" />
                             <div className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">+25%</div>
-                            <div className="text-[10px] md:text-sm text-gray-500 uppercase font-bold tracking-widest">Growth Rate</div>
+                            <div className="text-[10px] md:text-sm text-gray-500 uppercase font-bold tracking-widest">{t.growthRate}</div>
                         </div>
                     </div>
                 </div>
@@ -1460,9 +1463,9 @@ export default function App() {
         <footer className="py-12 px-6 border-t border-gray-200 dark:border-white/5 text-center">
              <div className="flex items-center justify-center gap-2 mb-6 opacity-50 hover:opacity-100 transition-opacity duration-300">
                  <CompassLogo className="w-6 h-6" />
-                 <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-gray-600 to-gray-900 dark:from-gray-400 dark:to-white">Career Compass</span>
+                 <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-gray-600 to-gray-900 dark:from-gray-400 dark:to-white">{t.appName}</span>
              </div>
-             <p className="text-gray-500 text-sm">© 2025 Career Compass AI. Empowering Futures.</p>
+             <p className="text-gray-500 text-sm">© 2025 {t.appName}. {t.empoweringFutures}.</p>
         </footer>
       </div>
     );
@@ -1484,10 +1487,10 @@ export default function App() {
                 <CompassLogo className="w-16 h-16" />
             </div>
             <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2 tracking-tight">
-                {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? 'Reset Password' : t.resetPasswordTitle}
+                {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? t.resetPasswordTitle : t.resetPasswordTitle}
             </h2>
             <p className="text-center text-gray-500 dark:text-gray-400 mb-8 text-sm">
-                {authType === 'forgot-password' ? (isResetSent ? 'Enter the 8-digit code sent to your email.' : t.resetPasswordDesc) : authType === 'new-password' ? 'Enter your new password below.' : t.tagline}
+                {authType === 'forgot-password' ? (isResetSent ? t.enterResetCode : t.resetPasswordDesc) : authType === 'new-password' ? t.enterNewPassword : t.tagline}
             </p>
             
             {authError && (
@@ -1502,18 +1505,18 @@ export default function App() {
                          <div className="bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 p-2 rounded-full">
                             <Icons.Zap className="w-5 h-5" />
                          </div>
-                         <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Code sent!</span>
+                         <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{t.codeSent}</span>
                     </div>
 
                     <div className="space-y-4">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">Verification Code</label>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">{t.verificationCode}</label>
                         <input 
                             type="text" 
                             maxLength={8}
                             value={resetCodeInput}
                             onChange={(e) => setResetCodeInput(e.target.value.replace(/[^0-9]/g, ''))}
                             className="w-full text-center text-3xl tracking-[0.5em] font-mono font-bold px-4 py-4 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-300" 
-                            placeholder="00000000"
+                            placeholder={t.placeholderCode}
                             autoFocus
                         />
                     </div>
@@ -1525,40 +1528,40 @@ export default function App() {
                         disabled={isVerifyingCode || resetCodeInput.length !== 8} 
                         className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isVerifyingCode ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Verify Code'}
+                        {isVerifyingCode ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : t.verifyCode}
                     </motion.button>
 
-                    <button type="button" onClick={() => { setIsResetSent(false); setResetCodeInput(''); setAuthError(''); }} className="text-xs text-gray-400 hover:text-indigo-500 underline">Resend Code / Change Email</button>
+                    <button type="button" onClick={() => { setIsResetSent(false); setResetCodeInput(''); setAuthError(''); }} className="text-xs text-gray-400 hover:text-indigo-500 underline">{t.resendCode}</button>
                 </form>
             ) : (
                 <form onSubmit={authType === 'forgot-password' ? handleSendResetCode : authType === 'new-password' ? handleNewPasswordSubmit : authType === 'login' ? handleLogin : handleRegister} className="space-y-4">
-                    {authType === 'register' && (<div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Full Name</label><input ref={nameRef} type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="John Doe" /></div>)}
+                    {authType === 'register' && (<div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.fullName}</label><input ref={nameRef} type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderName} /></div>)}
                     
                     {authType === 'new-password' ? (
                         <>
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">New Password</label>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.newPassword}</label>
                                 <div className="relative">
-                                    <input ref={passwordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="••••••••" />
+                                    <input ref={passwordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderPassword} />
                                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500">{showPassword ? <Icons.EyeOff className="w-5 h-5" /> : <Icons.Eye className="w-5 h-5" />}</button>
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Confirm Password</label>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.confirmPassword}</label>
                                 <div className="relative">
-                                    <input ref={confirmPasswordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="••••••••" />
+                                    <input ref={confirmPasswordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderPassword} />
                                 </div>
                             </div>
                         </>
                     ) : (
-                        <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.email}</label><input ref={emailRef} type="email" required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="you@example.com" /></div>
+                        <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.email}</label><input ref={emailRef} type="email" required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderEmail} /></div>
                     )}
                     
                     {authType !== 'forgot-password' && authType !== 'new-password' && (
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.password}</label>
                             <div className="relative">
-                                <input ref={passwordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder="••••••••" />
+                                <input ref={passwordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderPassword} />
                                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500">{showPassword ? <Icons.EyeOff className="w-5 h-5" /> : <Icons.Eye className="w-5 h-5" />}</button>
                             </div>
                         </div>
@@ -1574,7 +1577,7 @@ export default function App() {
                         className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 mt-2 flex items-center justify-center gap-2"
                     >
                         {isResetSending && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                        {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? 'Update Password' : "Send Verification Code"}
+                        {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? t.updatePassword : t.sendVerificationCode}
                     </motion.button>
                 </form>
             )}
@@ -1590,7 +1593,7 @@ export default function App() {
                         className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white font-medium py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isGoogleLoading ? <div className="w-5 h-5 border-2 border-gray-300 border-t-indigo-600 rounded-full animate-spin"></div> : <Icons.Google className="w-5 h-5" />}
-                        {isGoogleLoading ? 'Connecting...' : t.loginWithGoogle}
+                        {isGoogleLoading ? t.connecting : t.loginWithGoogle}
                     </motion.button>
                     <motion.button 
                         whileHover={{ scale: 1.02 }}
@@ -1610,7 +1613,7 @@ export default function App() {
                  </div>
             )}
             
-        <div className="mt-6 text-center"><button onClick={() => setMode(AppMode.LANDING)} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">← Back to Home</button></div>
+        <div className="mt-6 text-center"><button onClick={() => setMode(AppMode.LANDING)} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">← {t.backToHome}</button></div>
       </motion.div>
     </div>
   );
@@ -1667,7 +1670,7 @@ export default function App() {
             <div className="p-4 flex items-center justify-between">
                 <button onClick={() => { setMode(AppMode.LANDING); setIsMobileSidebarOpen(false); }} className="flex items-center gap-3 text-left">
                     <CompassLogo className="w-8 h-8" />
-                    <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">Career Compass</span>
+                    <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">{t.appName}</span>
                 </button>
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl">
                     <Icons.PanelLeftClose className="w-5 h-5" />
@@ -1753,7 +1756,7 @@ export default function App() {
             {isSidebarOpen && (
                 <button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-3 text-left hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors rounded-xl p-2">
                     <CompassLogo className="w-8 h-8" />
-                    <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">Career Compass</span>
+                    <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">{t.appName}</span>
                 </button>
             )}
             {!isSidebarOpen && (
@@ -1802,7 +1805,7 @@ export default function App() {
                                 {session.title}
                             </motion.button>
                         ))}
-                        {filteredHistory.length === 0 && <div className="text-xs text-center py-2 text-gray-400">No results found</div>}
+                        {filteredHistory.length === 0 && <div className="text-xs text-center py-2 text-gray-400">{t.noResultsFound}</div>}
                     </div>
                 </div>
             )}
@@ -1924,7 +1927,7 @@ export default function App() {
             </motion.button>
             <div className="flex items-center gap-1.5">
                 <CompassLogo className="w-5 h-5" />
-                <span className="font-bold text-xs tracking-tight text-gray-900 dark:text-white uppercase">Career Compass</span>
+                <span className="font-bold text-xs tracking-tight text-gray-900 dark:text-white uppercase">{t.appName}</span>
             </div>
             <motion.button 
                 whileHover={{ scale: 1.1 }}
@@ -1956,10 +1959,10 @@ export default function App() {
                                 className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-xl shadow-indigo-500/20 transition-all"
                             >
                                 <Icons.Sparkles className="w-5 h-5" />
-                                {lang === Language.EN ? "Generate Career Roadmap" : "Tạo lộ trình nghề nghiệp"}
+                                {t.generateRoadmap}
                             </motion.button>
                             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-                                {lang === Language.EN ? "Based on your conversation history" : "Dựa trên lịch sử trò chuyện của bạn"}
+                                {t.basedOnHistory}
                             </p>
                         </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-16 max-w-5xl mx-auto px-4">
@@ -2000,7 +2003,7 @@ export default function App() {
                                         ✨
                                     </motion.span>
                                     <h1 className="text-[24px] md:text-[56px] leading-tight font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 tracking-tight">
-                                        {t.welcomeBack} {auth.user?.name || 'Guest'}!
+                                        {t.welcomeBack} {auth.user?.name || t.guest}!
                                     </h1>
                                 </div>
                                 <motion.h2 
@@ -2055,7 +2058,7 @@ export default function App() {
                                                 <div key={idx} className="h-14 w-20 md:h-24 md:w-32 flex flex-col bg-white/10 rounded-lg md:rounded-2xl border border-white/20 shadow-sm p-1.5 md:p-3 overflow-hidden">
                                                     <p className="text-[7px] md:text-[10px] text-white/80 line-clamp-2 md:line-clamp-3 mb-auto leading-relaxed">{text}</p>
                                                     <div className="mt-1 md:mt-2 text-[6px] md:text-[9px] font-bold uppercase tracking-wider text-white/60 border border-white/20 rounded-md px-1 md:px-1.5 py-0.5 self-start bg-white/5">
-                                                        PASTED
+                                                        {t.pasted}
                                                     </div>
                                                 </div>
                                             ))}
@@ -2091,7 +2094,7 @@ export default function App() {
                                             className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95"
                                         >
                                             <Icons.RefreshCw className="w-3.5 h-3.5" />
-                                            {lang === Language.EN ? "Sync to " + t.progress : "Đồng bộ vào " + t.progress}
+                                            {t.syncToProgress}
                                         </motion.button>
                                     )}
                                 </div>
@@ -2133,8 +2136,8 @@ export default function App() {
                         </div>
                     )}
                     <div className="w-full max-w-4xl flex justify-end mb-2 px-4">
-                        <div className="flex items-center gap-2" title="Không lưu vào lịch sử trò chuyện">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Trò chuyện tạm thời</span>
+                        <div className="flex items-center gap-2" title={t.tempChatTooltip}>
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t.temporaryChat}</span>
                             <button 
                                 type="button"
                                 onClick={() => {
@@ -2188,7 +2191,7 @@ export default function App() {
                                         <div className="h-16 w-24 md:h-24 md:w-32 flex flex-col bg-white dark:bg-white/5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-2 md:p-3 overflow-hidden">
                                             <p className="text-[8px] md:text-[10px] text-gray-600 dark:text-gray-300 line-clamp-2 md:line-clamp-3 mb-auto leading-relaxed">{text}</p>
                                             <div className="mt-1 md:mt-2 text-[7px] md:text-[9px] font-bold uppercase tracking-wider text-gray-400 border border-gray-200 dark:border-white/10 rounded-md px-1 md:px-1.5 py-0.5 self-start bg-gray-50 dark:bg-white/5">
-                                                PASTED
+                                                {t.pasted}
                                             </div>
                                         </div>
                                         <button type="button" onClick={() => setPastedTexts(prev => prev.filter((_, i) => i !== index))} className="absolute -top-1.5 -right-1.5 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-0.5 md:p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
@@ -2258,7 +2261,7 @@ export default function App() {
                                                 className="flex items-center gap-3 px-4 py-3 md:py-3 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
                                             >
                                                 <Icons.FileText className="w-[18px] h-[18px] md:w-[18px] md:h-[18px] text-indigo-500" />
-                                                Upload File
+                                                {t.uploadFile}
                                             </button>
                                             <button 
                                                 type="button" 
@@ -2266,7 +2269,7 @@ export default function App() {
                                                 className="flex items-center gap-3 px-4 py-3 md:py-3 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
                                             >
                                                 <Icons.Camera className="w-[18px] h-[18px] md:w-[18px] md:h-[18px] text-fuchsia-500" />
-                                                Take Photo
+                                                {t.takePhoto}
                                             </button>
                                         </motion.div>
                                     )}
@@ -2292,7 +2295,7 @@ export default function App() {
              <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505]">
                  <div className="w-full p-6 flex justify-between items-center z-20">
                     <div className="flex flex-col"><h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.voiceMode}</h2><span className="text-sm text-gray-500 font-medium">{voiceStatus || t.readyToConnect}</span></div>
-                     <div className="px-4 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black rounded-full flex items-center gap-2 animate-pulse"><div className="w-2 h-2 bg-red-500 rounded-full"></div>LIVE</div>
+                     <div className="px-4 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black rounded-full flex items-center gap-2 animate-pulse"><div className="w-2 h-2 bg-red-500 rounded-full"></div>{t.live}</div>
                  </div>
                  <div className="flex-1 flex flex-col md:flex-row p-6 gap-6 overflow-hidden">
                     <div className="flex-1 flex flex-col items-center justify-center relative rounded-[2rem] bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/5 p-6">
@@ -2308,7 +2311,7 @@ export default function App() {
                                 <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{t.selectMic}</label>
                                 <div className="relative">
                                     <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)} disabled={isVoiceActive} className="w-full appearance-none bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white py-3.5 px-4 pr-8 rounded-xl leading-tight focus:outline-none focus:border-indigo-500 font-medium transition-colors">
-                                        {inputDevices.map((device) => (<option key={device.deviceId} value={device.deviceId}>{device.label || `Microphone ${device.deviceId.slice(0, 5)}...`}</option>))}
+                                        {inputDevices.map((device) => (<option key={device.deviceId} value={device.deviceId}>{device.label || `${t.microphone} ${device.deviceId.slice(0, 5)}...`}</option>))}
                                     </select>
                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500"><Icons.ChevronDown className="w-4 h-4" /></div>
                                 </div>
@@ -2326,7 +2329,7 @@ export default function App() {
                     <div className="flex-1 flex flex-col rounded-[2rem] bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/5 overflow-hidden shadow-sm">
                         <div className="p-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5"><h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{t.transcript}</h3></div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                            {transcripts.length === 0 ? (<div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-600 text-sm font-medium italic">{isVoiceActive ? t.listening : "Ready to start..."}</div>) : (transcripts.map((t, i) => (<div key={i} className={`flex ${t.isUser ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium ${t.isUser ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 rounded-tr-none' : 'bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-gray-200 rounded-tl-none'}`}>{t.text}</div></div>)))}
+                            {transcripts.length === 0 ? (<div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-600 text-sm font-medium italic">{isVoiceActive ? t.listening : t.readyToStart}</div>) : (transcripts.map((tr, i) => (<div key={i} className={`flex ${tr.isUser ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium ${tr.isUser ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 rounded-tr-none' : 'bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-gray-200 rounded-tl-none'}`}>{tr.text}</div></div>)))}
                             <div ref={transcriptEndRef} />
                         </div>
                     </div>
@@ -2341,9 +2344,7 @@ export default function App() {
                 </div>
                 <div className="flex-1 flex items-center justify-center p-6">
                     <CareerQuiz lang={lang} t={t} onComplete={(result) => {
-                        const prompt = lang === Language.EN 
-                            ? `I just took the career quiz and my result is: ${result}. Can you give me some career advice based on this?`
-                            : `Mình vừa làm bài trắc nghiệm nghề nghiệp và kết quả của mình là: ${result}. Bạn có thể tư vấn nghề nghiệp cho mình dựa trên kết quả này không?`;
+                        const prompt = t.quizAdvicePrompt.replace('{{result}}', result || '');
                         
                         // Update user profile with career profile
                         if (auth.user) {
@@ -2482,14 +2483,14 @@ export default function App() {
                     <div className="space-y-4">
                         <div>
                             <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{t.careerGoal}</label>
-                            <input disabled={auth.user?.isGuest} value={auth.user?.careerGoal || ''} onChange={(e) => updateUserProfile({ careerGoal: e.target.value })} className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-xl text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
-                            {auth.user?.isGuest && <p className="text-[10px] text-gray-500 mt-1">{lang === Language.EN ? 'Please login to set your career goal.' : 'Vui lòng đăng nhập để thiết lập mục tiêu sự nghiệp.'}</p>}
+                            <input disabled={auth.user?.isGuest} value={auth.user?.careerGoal || ''} onChange={(e) => updateUserProfile({ careerGoal: e.target.value })} placeholder={t.placeholderCareerGoal} className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-xl text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
+                            {auth.user?.isGuest && <p className="text-[10px] text-gray-500 mt-1">{t.loginToSetGoal}</p>}
                         </div>
                         <div>
                             <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{t.prefLang}</label>
                             <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-xl text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer">
-                                <option value={Language.EN}>English</option>
-                                <option value={Language.VI}>Tiếng Việt</option>
+                                <option value={Language.EN}>{t.langEn}</option>
+                                <option value={Language.VI}>{t.langVi}</option>
                             </select>
                         </div>
                     </div>
@@ -2502,17 +2503,43 @@ export default function App() {
                         <motion.button 
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => {
-                                if (window.confirm(t.clearHistoryConfirm)) {
-                                    clearChatHistory();
-                                    setIsProfileModalOpen(false);
-                                }
-                            }}
+                            onClick={() => setShowClearHistoryConfirm(true)}
                             className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors w-full sm:w-auto"
                         >
                             {t.clearAllHistory}
                         </motion.button>
                     </div>
+
+                    <AnimatePresence>
+                        {showClearHistoryConfirm && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-500/20 rounded-2xl"
+                            >
+                                <p className="text-xs text-red-600 dark:text-red-400 font-medium mb-3">{t.clearHistoryConfirm}</p>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => {
+                                            clearChatHistory();
+                                            setShowClearHistoryConfirm(false);
+                                            setIsProfileModalOpen(false);
+                                        }}
+                                        className="flex-1 py-2 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        {t.delete}
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowClearHistoryConfirm(false)}
+                                        className="flex-1 py-2 bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-300 text-[10px] font-bold rounded-lg hover:bg-gray-300 dark:hover:bg-white/20 transition-colors"
+                                    >
+                                        {t.cancel}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </motion.div>
             </motion.div>
         )}
@@ -2542,7 +2569,7 @@ export default function App() {
                     onClick={() => setLang(lang === Language.EN ? Language.VI : Language.EN)}
                     className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/10 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
                 >
-                    {lang === Language.EN ? 'VI' : 'EN'}
+                    {lang === Language.EN ? 'Tiếng Việt' : 'English'}
                 </button>
             </div>
 
