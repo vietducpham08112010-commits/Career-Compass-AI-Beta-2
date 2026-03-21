@@ -325,7 +325,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
             </p>
           </div>
 
-          <motion.div layout className="relative border-l-2 border-indigo-100 dark:border-indigo-900/30 ml-4 md:ml-8 space-y-8">
+          <motion.div layout className="relative ml-4 md:ml-8 space-y-0">
             {milestones.map((milestone, index) => (
               <motion.div 
                 layout
@@ -337,17 +337,40 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                   delay: index * 0.1,
                   layout: { type: "spring", stiffness: 300, damping: 30 }
                 }}
-                className="relative pl-8 md:pl-12"
+                className="relative pl-8 md:pl-12 pb-8"
               >
+                {/* Line connecting to next */}
+                {index < milestones.length - 1 && (
+                  <div className="absolute left-[9px] top-6 bottom-[-6px] w-[2px] bg-indigo-100 dark:bg-indigo-900/30 overflow-hidden">
+                    {/* Animated fill */}
+                    <motion.div 
+                      className="absolute top-0 left-0 w-full bg-emerald-500 dark:bg-emerald-400"
+                      initial={{ height: '0%' }}
+                      animate={{ height: milestone.status === 'done' ? '100%' : '0%' }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                    />
+                    {/* Flowing stream effect */}
+                    {(milestone.status === 'done' || milestone.status === 'in-progress') && (
+                      <motion.div
+                        className="absolute left-[-2px] w-[6px] h-1/2 bg-gradient-to-b from-transparent via-indigo-400 dark:via-indigo-300 to-transparent opacity-80 blur-[2px]"
+                        animate={{ top: ['-50%', '150%'] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                      />
+                    )}
+                  </div>
+                )}
+
                 {/* Timeline dot */}
                 <motion.div 
                   layout
-                  className={`absolute -left-[11px] top-1.5 w-5 h-5 rounded-full border-4 border-white dark:border-[#111] ${milestone.status === 'done' ? 'bg-emerald-500' : milestone.status === 'in-progress' ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`} 
+                  className={`absolute left-0 top-1.5 w-5 h-5 rounded-full border-4 border-white dark:border-[#111] z-10 transition-all duration-500 ${milestone.status === 'done' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] scale-110' : milestone.status === 'in-progress' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] scale-110' : 'bg-gray-300 dark:bg-gray-600'}`} 
                 />
                 
                 <motion.div 
                   layout
-                  className={`group p-5 rounded-2xl border transition-all duration-200 hover:shadow-md ${milestone.status === 'done' ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30' : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-500/30'}`}
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  whileTap={{ scale: 0.99 }}
+                  className={`group p-5 rounded-2xl border transition-all duration-300 hover:shadow-lg ${milestone.status === 'done' ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30' : milestone.status === 'in-progress' ? 'bg-amber-50/30 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30 ring-1 ring-amber-400/20' : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-500/30'}`}
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1 cursor-pointer" onClick={() => toggleStatus(milestone.id)}>
