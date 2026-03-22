@@ -220,16 +220,13 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
             ) : (
               user.portfolio.map((item, index) => (
                 <motion.div 
-                  layout
                   key={item.id}
                   initial={{ opacity: 0, x: -20, scale: 0.95 }}
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                  whileHover={{ scale: 1.01, y: -2 }}
                   transition={{ 
                     duration: 0.3,
-                    delay: index * 0.05,
-                    layout: { type: "spring", stiffness: 300, damping: 30 }
+                    delay: index * 0.05
                   }}
                   className="bg-white dark:bg-[#111] rounded-2xl border border-gray-200 dark:border-white/10 p-5 flex items-start gap-4 group hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all"
                 >

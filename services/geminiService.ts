@@ -74,7 +74,7 @@ export const generateRoadmap = async (
     } catch (e: any) {
         if (e.message.includes('503')) throw e;
         console.error("Failed to parse roadmap JSON:", text);
-        throw new Error("Failed to generate roadmap format.");
+        throw new Error(t.failedRoadmapFormat);
     }
   };
 
@@ -83,9 +83,7 @@ export const generateRoadmap = async (
   } catch (error: any) {
       console.error("Roadmap generation error:", error);
       if (error.message?.includes('503') || error.message?.includes('high demand')) {
-          throw new Error(language === Language.EN 
-            ? "The AI is currently busy due to high demand. Please wait a moment and try again." 
-            : "Hệ thống AI đang bận do lượng yêu cầu cao. Vui lòng đợi giây lát và thử lại.");
+          throw new Error(t.aiBusy);
       }
       throw error;
   }
@@ -109,13 +107,13 @@ export const sendChatMessage = async (
 
   // Check Provider - ONLY use external APIs if user explicitly configured them
   if (userProfile?.aiProvider === AIProvider.N8N && userProfile.customEndpoint) {
-      return await sendN8NMessage(userProfile.customEndpoint, history, newMessage, systemInstruction, userProfile);
+      return await sendN8NMessage(userProfile.customEndpoint, history, newMessage, systemInstruction, language, userProfile);
   }
 
   if (userProfile?.aiProvider === AIProvider.CUSTOM && userProfile.customEndpoint) {
     const endpoint = userProfile.customEndpoint;
     const modelName = userProfile.customModelName || "llama3";
-    return await sendExternalApiMessage(endpoint, modelName, history, newMessage, systemInstruction);
+    return await sendExternalApiMessage(endpoint, modelName, history, newMessage, systemInstruction, language);
   }
 
   // --- DEFAULT: GOOGLE GEMINI (VIA FRONTEND) ---
@@ -162,7 +160,7 @@ export const sendChatMessage = async (
         config: { systemInstruction: systemInstruction }
     });
 
-    return response.text;
+    return response.text || t.noAiResponse;
   };
 
   try {
@@ -170,11 +168,9 @@ export const sendChatMessage = async (
   } catch (error: any) {
     console.error("Chat API Error:", error);
     if (error.message?.includes('503') || error.message?.includes('high demand')) {
-        throw new Error(language === Language.EN 
-          ? "The AI is currently busy due to high demand. Please wait a moment and try again." 
-          : "Hệ thống AI đang bận do lượng yêu cầu cao. Vui lòng đợi giây lát và thử lại.");
+        throw new Error(t.aiBusy);
     }
-    throw new Error(error.message || "Failed to communicate with the server.");
+    throw new Error(error.message || t.failedToCommunicate);
   }
 };
 
@@ -184,8 +180,10 @@ const sendExternalApiMessage = async (
   modelName: string,
   history: { role: string; text: string }[],
   newMessage: string,
-  systemInstruction: string
+  systemInstruction: string,
+  language: Language
 ) => {
+  const t = TRANSLATIONS[language];
   try {
     const messages = [
       { role: "system", content: systemInstruction },
@@ -216,7 +214,7 @@ const sendExternalApiMessage = async (
         throw new Error(data.error?.message || data.error || `External API Error: ${response.statusText}`);
     }
     
-    return data.choices?.[0]?.message?.content || data.message?.content || "No response from external model.";
+    return data.choices?.[0]?.message?.content || data.message?.content || t.noExternalResponse;
   } catch (error) {
     console.error("External Model Error:", error);
     throw error;
@@ -229,8 +227,10 @@ const sendN8NMessage = async (
   history: { role: string; text: string }[],
   newMessage: string,
   systemInstruction: string,
+  language: Language,
   userProfile?: UserProfile | null
 ) => {
+  const t = TRANSLATIONS[language];
   try {
     const payload = {
         message: newMessage,
@@ -326,7 +326,7 @@ export class LiveSessionManager {
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          throw new Error("MediaDevices API not supported. Please use HTTPS.");
+          throw new Error(t.mediaNotSupported);
       }
       this.inputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       this.outputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -394,7 +394,7 @@ export class LiveSessionManager {
                 onclose: () => {
                   console.log("Gemini Live Session Closed");
                   if (!this.isConnected && this.onError) {
-                      this.onError("Connection failed. Please check your network or try again.");
+                      this.onError(t.connectionFailed);
                   }
                   this.cleanup(); 
                   if (this.onDisconnect) this.onDisconnect(); 

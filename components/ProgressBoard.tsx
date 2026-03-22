@@ -333,17 +333,15 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
             </p>
           </div>
 
-          <motion.div layout className="relative ml-4 md:ml-8 space-y-0">
+          <div className="relative ml-4 md:ml-8 space-y-0">
             {milestones.map((milestone, index) => (
               <motion.div 
-                layout
                 key={milestone.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ 
                   duration: 0.4, 
                   delay: index * 0.1,
-                  layout: { type: "spring", stiffness: 300, damping: 30 }
                 }}
                 className="relative pl-8 md:pl-12 pb-8"
               >
@@ -369,15 +367,11 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                 )}
 
                 {/* Timeline dot */}
-                <motion.div 
-                  layout
+                <div 
                   className={`absolute left-0 top-1.5 w-5 h-5 rounded-full border-4 border-white dark:border-[#111] z-10 transition-all duration-500 ${milestone.status === 'done' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] scale-110' : milestone.status === 'in-progress' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] scale-110' : 'bg-gray-300 dark:bg-gray-600'}`} 
                 />
                 
-                <motion.div 
-                  layout
-                  whileHover={{ scale: 1.01, y: -2 }}
-                  whileTap={{ scale: 0.99 }}
+                <div 
                   className={`group p-5 rounded-2xl border transition-all duration-300 hover:shadow-lg ${milestone.status === 'done' ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30' : milestone.status === 'in-progress' ? 'bg-amber-50/30 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30 ring-1 ring-amber-400/20' : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-500/30'}`}
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -419,7 +413,6 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                   <AnimatePresence>
                     {(activeCommentId === milestone.id || (milestone.comments && milestone.comments?.length > 0)) && (
                       <motion.div 
-                        layout
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
@@ -462,10 +455,10 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </div>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
           
           {/* Footer for exported image/pdf */}
           <div className="mt-12 pt-6 border-t border-gray-100 dark:border-white/10 flex justify-between items-center text-xs text-gray-400">
