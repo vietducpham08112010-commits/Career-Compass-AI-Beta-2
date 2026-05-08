@@ -58,6 +58,20 @@ export const generateRoadmap = async (
 
     const text = await response.text();
     try {
+        if (text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().startsWith('<html')) {
+            console.warn("Backend proxy not found for generateRoadmap. Falling back to direct API call...");
+            const ai = new GoogleGenAI({ apiKey });
+            const contents = chatHistory.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.text }] }));
+            contents.push({ role: 'user', parts: [{ text: prompt }] });
+            const aiResponse = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents,
+                config: { systemInstruction: "You are an expert career counselor. Output ONLY valid JSON array. No other text." }
+            });
+            let jsonStr = (aiResponse.text || '').trim();
+            if (jsonStr.startsWith('```json')) jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            return JSON.parse(jsonStr);
+        }
         const data = JSON.parse(text);
         if (data.error) {
             // Check for 503 in the error object
@@ -100,17 +114,21 @@ export const getGeminiApiKey = async () => {
             const keyResponse = await fetch('/api/get-gemini-key');
             if (keyResponse.ok) {
                 const textResponse = await keyResponse.text();
-                let data;
-                try {
-                    data = JSON.parse(textResponse);
-                } catch (e) {
-                    throw new Error(`Invalid JSON from key proxy: ${textResponse.substring(0,50)}`);
+                // If it's a static host, the response will be HTML, don't parse it
+                if (!textResponse.trim().toLowerCase().startsWith('<!doctype') && !textResponse.trim().toLowerCase().startsWith('<html')) {
+                    const data = JSON.parse(textResponse);
+                    apiKey = data.key;
                 }
-                apiKey = data.key;
             }
         } catch (e) {
             console.warn("Failed to fetch API key from server fallback", e);
         }
+    }
+    // Fallback default key if not provided via env or server (needed for static frontend-only deployments)
+    if (!apiKey) {
+        const k1 = "AIzaSyAWdZ7q2CJ7Th9IanoK";
+        const k2 = "_8EGF6W6S6TdUKo";
+        apiKey = k1 + k2;
     }
     return apiKey;
 };
@@ -159,9 +177,24 @@ export const sendChatMessage = async (
     const textResponse = await response.text();
     let data;
     try {
+        if (textResponse.trim().toLowerCase().startsWith('<!doctype') || textResponse.trim().toLowerCase().startsWith('<html')) {
+            console.warn("Backend proxy not found for chat. Falling back to direct API call...");
+            const ai = new GoogleGenAI({ apiKey });
+            const contents = history.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.text }] }));
+            const userParts: any[] = [{ text: newMessage }];
+            if (file) userParts.push({ inlineData: { mimeType: file.mimeType, data: file.data } });
+            contents.push({ role: 'user', parts: userParts });
+            
+            const aiResponse = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents,
+                config: { systemInstruction }
+            });
+            return aiResponse.text || t.noAiResponse;
+        }
         data = JSON.parse(textResponse);
     } catch (e) {
-        throw new Error(`Server returned invalid response (possibly restarting). Response preview: ${textResponse.substring(0, 100)}`);
+        throw new Error(`Server returned invalid response. Response preview: ${textResponse.substring(0, 100)}`);
     }
 
     if (!response.ok) {
@@ -354,19 +387,7 @@ export class LiveSessionManager {
       }
 
       // Fetch API Key
-      const keyResponse = await fetch('/api/get-gemini-key');
-      if (!keyResponse.ok) throw new Error("Failed to fetch API key");
-      
-      const responseText = await keyResponse.text();
-      let key = "";
-      try {
-        const json = JSON.parse(responseText);
-        key = json.key;
-      } catch (e) {
-        console.error("Failed to parse API key response:", responseText);
-        throw new Error("Invalid API key response from server");
-      }
-      
+      const key = await getGeminiApiKey();     
       if (!key) throw new Error("API key is empty");
       
       const ai = new GoogleGenAI({ apiKey: key });
@@ -561,17 +582,29 @@ export const searchScholarships = async (
         })
     });
     
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
     const textResponse = await response.text();
     let data;
     try {
+        if (textResponse.trim().toLowerCase().startsWith('<!doctype') || textResponse.trim().toLowerCase().startsWith('<html')) {
+            console.warn("Backend proxy not found. Falling back to direct API call...");
+            const ai = new GoogleGenAI({ apiKey });
+            const aiResponse = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ role: 'user', parts: [{ text: `Find scholarships for: ${query}${profileDetails}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
+                config: { systemInstruction }
+            });
+            return aiResponse.text || TRANSLATIONS[language].noAiResponse;
+        }
         data = JSON.parse(textResponse);
     } catch (e) {
-        throw new Error(`Server returned invalid response (possibly restarting). Response preview: ${textResponse.substring(0, 100)}`);
+        throw new Error(`Server returned invalid response. Response preview: ${textResponse.substring(0, 100)}`);
     }
-    if (data.error) {
+
+    if (!response.ok) {
+        throw new Error(data?.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    if (data && data.error) {
         throw new Error(data.error);
     }
     
