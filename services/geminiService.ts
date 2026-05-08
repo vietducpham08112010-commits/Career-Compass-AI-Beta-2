@@ -56,11 +56,12 @@ export const generateRoadmap = async (
         })
     });
 
-    const text = await response.text();
-    try {
-        if (text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().startsWith('<html')) {
-            console.warn("Backend proxy not found for generateRoadmap. Falling back to direct API call...");
-            const ai = new GoogleGenAI({ apiKey });
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+
+    if (!isJson) {
+        console.warn("Backend proxy not found for generateRoadmap. Falling back to direct API call...");
+        const ai = new GoogleGenAI({ apiKey });
             const contents = chatHistory.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.text }] }));
             contents.push({ role: 'user', parts: [{ text: prompt }] });
             const aiResponse = await ai.models.generateContent({
@@ -71,7 +72,10 @@ export const generateRoadmap = async (
             let jsonStr = (aiResponse.text || '').trim();
             if (jsonStr.startsWith('```json')) jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
             return JSON.parse(jsonStr);
-        }
+    }
+    
+    const text = await response.text();
+    try {
         const data = JSON.parse(text);
         if (data.error) {
             // Check for 503 in the error object
@@ -113,9 +117,11 @@ export const getGeminiApiKey = async () => {
         try {
             const keyResponse = await fetch('/api/get-gemini-key');
             if (keyResponse.ok) {
-                const textResponse = await keyResponse.text();
-                // If it's a static host, the response will be HTML, don't parse it
-                if (!textResponse.trim().toLowerCase().startsWith('<!doctype') && !textResponse.trim().toLowerCase().startsWith('<html')) {
+                const contentType = keyResponse.headers.get('content-type');
+                const isJson = contentType && contentType.includes('application/json');
+                
+                if (isJson) {
+                    const textResponse = await keyResponse.text();
                     const data = JSON.parse(textResponse);
                     apiKey = data.key;
                 }
@@ -174,24 +180,28 @@ export const sendChatMessage = async (
         })
     });
 
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+
+    if (!isJson) {
+        console.warn("Backend proxy not found for chat. Falling back to direct API call...");
+        const ai = new GoogleGenAI({ apiKey });
+        const contents = history.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.text }] }));
+        const userParts: any[] = [{ text: newMessage }];
+        if (file) userParts.push({ inlineData: { mimeType: file.mimeType, data: file.data } });
+        contents.push({ role: 'user', parts: userParts });
+        
+        const aiResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents,
+            config: { systemInstruction }
+        });
+        return aiResponse.text || t.noAiResponse;
+    }
+
     const textResponse = await response.text();
     let data;
     try {
-        if (textResponse.trim().toLowerCase().startsWith('<!doctype') || textResponse.trim().toLowerCase().startsWith('<html')) {
-            console.warn("Backend proxy not found for chat. Falling back to direct API call...");
-            const ai = new GoogleGenAI({ apiKey });
-            const contents = history.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.text }] }));
-            const userParts: any[] = [{ text: newMessage }];
-            if (file) userParts.push({ inlineData: { mimeType: file.mimeType, data: file.data } });
-            contents.push({ role: 'user', parts: userParts });
-            
-            const aiResponse = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents,
-                config: { systemInstruction }
-            });
-            return aiResponse.text || t.noAiResponse;
-        }
         data = JSON.parse(textResponse);
     } catch (e) {
         throw new Error(`Server returned invalid response. Response preview: ${textResponse.substring(0, 100)}`);
@@ -582,19 +592,23 @@ export const searchScholarships = async (
         })
     });
     
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+
+    if (!isJson) {
+        console.warn("Backend proxy not found. Falling back to direct API call...");
+        const ai = new GoogleGenAI({ apiKey });
+        const aiResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [{ role: 'user', parts: [{ text: `Find scholarships for: ${query}${profileDetails}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
+            config: { systemInstruction }
+        });
+        return aiResponse.text || TRANSLATIONS[language].noAiResponse;
+    }
+
     const textResponse = await response.text();
     let data;
     try {
-        if (textResponse.trim().toLowerCase().startsWith('<!doctype') || textResponse.trim().toLowerCase().startsWith('<html')) {
-            console.warn("Backend proxy not found. Falling back to direct API call...");
-            const ai = new GoogleGenAI({ apiKey });
-            const aiResponse = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [{ role: 'user', parts: [{ text: `Find scholarships for: ${query}${profileDetails}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
-                config: { systemInstruction }
-            });
-            return aiResponse.text || TRANSLATIONS[language].noAiResponse;
-        }
         data = JSON.parse(textResponse);
     } catch (e) {
         throw new Error(`Server returned invalid response. Response preview: ${textResponse.substring(0, 100)}`);
