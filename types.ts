@@ -19,7 +19,8 @@ export enum DashboardTab {
   VOICE = 'VOICE',
   QUIZ = 'QUIZ',
   PROGRESS = 'PROGRESS',
-  PORTFOLIO = 'PORTFOLIO'
+  PORTFOLIO = 'PORTFOLIO',
+  SCHOLARSHIPS = 'SCHOLARSHIPS'
 }
 
 export enum AIProvider {

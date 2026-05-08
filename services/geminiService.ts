@@ -44,6 +44,7 @@ export const generateRoadmap = async (
     : `Dựa trên lịch sử trò chuyện và hồ sơ của tôi, hãy tạo một kế hoạch hành động (lộ trình) cá nhân hóa trong 3 tháng tới cho việc định hướng nghề nghiệp của tôi (tôi là học sinh THPT). Hãy chia nhỏ thành các bước cụ thể và có thể thực hiện được. CHỈ trả về một mảng JSON chứa các đối tượng, mỗi đối tượng có 'id' (chuỗi), 'title' (chuỗi), 'description' (chuỗi), và 'status' (phải chính xác là 'todo'). Không bao gồm bất kỳ định dạng markdown nào như \`\`\`json.`;
 
   const callApi = async () => {
+    const apiKey = await getGeminiApiKey();
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -51,6 +52,7 @@ export const generateRoadmap = async (
             history: chatHistory,
             message: prompt,
             systemInstruction: "You are an expert career counselor. Output ONLY valid JSON array. No other text.",
+            apiKey
         })
     });
 
@@ -91,6 +93,28 @@ export const generateRoadmap = async (
 
 // --- API CLIENT (Backend Proxy) ---
 
+export const getGeminiApiKey = async () => {
+    let apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+        try {
+            const keyResponse = await fetch('/api/get-gemini-key');
+            if (keyResponse.ok) {
+                const textResponse = await keyResponse.text();
+                let data;
+                try {
+                    data = JSON.parse(textResponse);
+                } catch (e) {
+                    throw new Error(`Invalid JSON from key proxy: ${textResponse.substring(0,50)}`);
+                }
+                apiKey = data.key;
+            }
+        } catch (e) {
+            console.warn("Failed to fetch API key from server fallback", e);
+        }
+    }
+    return apiKey;
+};
+
 export const sendChatMessage = async (
   history: { role: string; text: string }[], 
   newMessage: string, 
@@ -118,49 +142,37 @@ export const sendChatMessage = async (
 
   // --- DEFAULT: GOOGLE GEMINI (VIA FRONTEND) ---
   const callGemini = async () => {
-    let apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    
-    if (!apiKey) {
-        // Fallback to fetching from server
-        try {
-            const keyResponse = await fetch('/api/get-gemini-key');
-            if (keyResponse.ok) {
-                const data = await keyResponse.json();
-                apiKey = data.key;
-            }
-        } catch (e) {
-            console.warn("Failed to fetch API key from server fallback", e);
-        }
-    }
+    const apiKey = await getGeminiApiKey();
 
-    if (!apiKey) {
-        throw new Error("GEMINI_API_KEY is missing.");
-    }
-    const ai = new GoogleGenAI({ apiKey: apiKey });
-    
-    const contents = history.map(h => ({
-        role: h.role === 'model' ? 'model' : 'user',
-        parts: [{ text: h.text }]
-    }));
-    
-    const userParts: any[] = [{ text: newMessage }];
-    if (file) {
-        userParts.push({
-            inlineData: {
-                mimeType: file.mimeType,
-                data: file.data
-            }
-        });
-    }
-    contents.push({ role: 'user', parts: userParts });
-
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: contents,
-        config: { systemInstruction: systemInstruction }
+    const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            history,
+            message: newMessage,
+            systemInstruction,
+            file,
+            apiKey
+        })
     });
 
-    return response.text || t.noAiResponse;
+    const textResponse = await response.text();
+    let data;
+    try {
+        data = JSON.parse(textResponse);
+    } catch (e) {
+        throw new Error(`Server returned invalid response (possibly restarting). Response preview: ${textResponse.substring(0, 100)}`);
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    if (data.error) {
+        throw new Error(data.error);
+    }
+
+    return data.text || t.noAiResponse;
   };
 
   try {
@@ -524,3 +536,53 @@ export class LiveSessionManager {
       this.isConnected = false;
   }
 }
+
+export const searchScholarships = async (
+  query: string,
+  language: Language,
+  userProfile?: UserProfile | null
+) => {
+  const profileDetails = userProfile 
+    ? `\n\nUser Profile:\nName: ${userProfile.name}\nGoal: ${userProfile.careerGoal || 'Exploring'}\nProfile (RIASEC): ${userProfile.careerProfile ? userProfile.careerProfile : 'Not taken'}`
+    : '';
+
+  const systemInstruction = "You are a scholarship and study abroad advisor. Search the web for real, current scholarships matching the user's query and profile. Provide a well-formatted summary of 3-5 scholarships including name, amount, deadline, requirements, and links if available. Keep formatting clean using markdown. If you cannot find real scholarships, advise the user on where to look.";
+  
+  const callApi = async () => {
+    const apiKey = await getGeminiApiKey();
+    const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            history: [],
+            message: `Find scholarships for: ${query}${profileDetails}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.`,
+            systemInstruction,
+            apiKey
+        })
+    });
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const textResponse = await response.text();
+    let data;
+    try {
+        data = JSON.parse(textResponse);
+    } catch (e) {
+        throw new Error(`Server returned invalid response (possibly restarting). Response preview: ${textResponse.substring(0, 100)}`);
+    }
+    if (data.error) {
+        throw new Error(data.error);
+    }
+    
+    if (!data.text) throw new Error(TRANSLATIONS[language].noAiResponse);
+    return data.text;
+  };
+
+  try {
+    return await retryWithBackoff(callApi);
+  } catch (error: any) {
+      console.error("Scholarship search error:", error);
+      throw error;
+  }
+};

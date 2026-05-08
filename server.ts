@@ -23,7 +23,7 @@ wss.on('error', (err) => {
 const PORT = 3000;
 const k1 = "AIzaSyAWdZ7q2CJ7Th9IanoK";
 const k2 = "_8EGF6W6S6TdUKo";
-const API_KEY = process.env.GEMINI_API_KEY || (k1 + k2);
+const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || (k1 + k2);
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 app.use(express.json({ limit: '50mb' }));
@@ -62,12 +62,15 @@ app.get("/api/get-gemini-key", (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { history, message, systemInstruction, file, image } = req.body;
+    const { history, message, systemInstruction, file, image, apiKey } = req.body;
     const attachment = file || image;
 
     if (!message && !attachment) {
       return res.status(400).json({ error: "Message or file is required" });
     }
+
+    const finalApiKey = apiKey || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || (k1 + k2);
+    const aiInstance = new GoogleGenAI({ apiKey: finalApiKey });
 
     const contents = formatHistoryForGemini(history || [], message || "");
 
@@ -85,8 +88,8 @@ app.post("/api/chat", async (req, res) => {
     }
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+        const response = await aiInstance.models.generateContent({
+            model: 'gemini-2.5-flash',
             contents: contents,
             config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
         });
@@ -94,9 +97,9 @@ app.post("/api/chat", async (req, res) => {
     } catch (error: any) {
         console.error("Model generation failed with primary model:", error);
         try {
-            console.log("Attempting fallback to gemini-2.5-flash...");
-            const fallbackResponse = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+            console.log("Attempting fallback to gemini-2.0-flash...");
+            const fallbackResponse = await aiInstance.models.generateContent({
+                model: 'gemini-2.0-flash',
                 contents: contents,
                 config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
             });
@@ -120,6 +123,52 @@ app.post("/api/chat", async (req, res) => {
         // Not a JSON string, ignore
     }
     res.status(500).json({ error: errorMessage });
+  }
+});
+
+app.post("/api/search", async (req, res) => {
+  try {
+    const { history, message, systemInstruction, apiKey } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const finalApiKey = apiKey || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || (k1 + k2);
+    const aiInstance = new GoogleGenAI({ apiKey: finalApiKey });
+
+    const contents = formatHistoryForGemini(history || [], message || "");
+
+    try {
+        const response = await aiInstance.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: contents,
+            config: { 
+              systemInstruction: systemInstruction || "You are a helpful assistant.",
+              tools: [{ googleSearch: {} }] as any
+            }
+        });
+        return res.json({ text: response.text });
+    } catch (error: any) {
+        console.error("Model generation failed with primary model:", error);
+        try {
+            console.log("Attempting fallback to gemini-2.0-flash...");
+            const fallbackResponse = await aiInstance.models.generateContent({
+                model: 'gemini-2.0-flash',
+                contents: contents,
+                config: { 
+                  systemInstruction: systemInstruction || "You are a helpful assistant.",
+                  tools: [{ googleSearch: {} }] as any
+                }
+            });
+            return res.json({ text: fallbackResponse.text });
+        } catch (fallbackError: any) {
+            console.error("Model generation failed with fallback model:", fallbackError);
+            throw fallbackError;
+        }
+    }
+  } catch (error: any) {
+    console.error("Search API Error:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
   }
 });
 
@@ -233,7 +282,7 @@ async function startServer() {
     app.use(express.static("dist"));
     
     // SPA fallback
-    app.get("*", (req, res) => {
+    app.get("*all", (req, res) => {
       res.sendFile(path.resolve("dist/index.html"));
     });
   }

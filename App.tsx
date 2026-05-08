@@ -10,6 +10,7 @@ import { decode, encode, decodeAudioData, createPcmBlob } from './utils/audio';
 import { Visualizer } from './components/Visualizer';
 import { ProgressBoard } from './components/ProgressBoard';
 import { Portfolio } from './components/Portfolio';
+import { Scholarships } from './components/Scholarships';
 import { ClarificationCard } from './components/ClarificationCard';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
@@ -98,46 +99,113 @@ const Icons = {
   FolderOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>,
 };
 
-// --- IMPRESSIVE FUTURISTIC COMPASS LOGO ---
-const CompassLogo = ({ className = "w-24 h-24", isThinking = false }) => (
+// --- CAREER GUIDE AI LOGO ---
+const CareerGuideLogo = ({ className = "w-24 h-24", isThinking = false }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="compass-ring-gradient" x1="0" y1="0" x2="100" y2="100">
-        <stop offset="0%" stopColor="#4f46e5" /> {/* Indigo-600 */}
-        <stop offset="100%" stopColor="#06b6d4" /> {/* Cyan-500 */}
+      <linearGradient id="stair-gradient" x1="0" y1="100" x2="100" y2="0">
+        <stop offset="0%" stopColor="#4c1d95" /> {/* deep purple */}
+        <stop offset="30%" stopColor="#7e22ce" /> {/* purple */}
+        <stop offset="70%" stopColor="#d946ef" /> {/* fuchsia */}
+        <stop offset="100%" stopColor="#f472b6" /> {/* pink */}
       </linearGradient>
-      <linearGradient id="compass-needle-gradient" x1="50" y1="10" x2="50" y2="90">
-        <stop offset="0%" stopColor="#f43f5e" /> {/* Rose-500 */}
-        <stop offset="100%" stopColor="#c084fc" /> {/* Purple-400 */}
+      <linearGradient id="star-gradient" x1="0" y1="100" x2="100" y2="0">
+        <stop offset="0%" stopColor="#c084fc" />
+        <stop offset="100%" stopColor="#f472b6" />
       </linearGradient>
-      <filter id="drop-shadow-compass" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
-        <feOffset dx="1" dy="2" result="offsetblur"/>
-        <feComponentTransfer>
-          <feFuncA type="linear" slope="0.3"/>
-        </feComponentTransfer>
-        <feMerge> 
-          <feMergeNode/>
-          <feMergeNode in="SourceGraphic"/> 
+      <filter id="glow-star" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1" />
+        <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur2" />
+        <feMerge>
+          <feMergeNode in="blur2" />
+          <feMergeNode in="blur1" />
+          <feMergeNode in="SourceGraphic" />
         </feMerge>
       </filter>
     </defs>
     
-    {/* Rotating Outer Tech Ring */}
-    <circle cx="50" cy="50" r="46" stroke="url(#compass-ring-gradient)" strokeWidth="2" strokeDasharray="20 10" strokeLinecap="round" className="animate-spin-slow origin-center" opacity="0.8" />
+    {/* Stairs */}
+    <path 
+      d="M 25 80 L 40 80 L 50 55 L 65 55 L 75 30 L 90 30" 
+      stroke="url(#stair-gradient)" 
+      strokeWidth="12" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+    />
     
-    {/* Inner Static Ring */}
-    <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
-    
-    {/* Cardinal Marks */}
-    <path d="M50 8 V16 M92 50 H84 M50 92 V84 M8 50 H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.5" />
-    
-    {/* Needle */}
-    <g className={isThinking ? "animate-compass-search origin-center" : "origin-center transition-transform duration-1000 ease-out"}>
-        <path d="M50 15 L60 50 L50 85 L40 50 Z" fill="url(#compass-needle-gradient)" filter="url(#drop-shadow-compass)" stroke="white" strokeWidth="1" />
-        <circle cx="50" cy="50" r="3" fill="white" />
-    </g>
+    {/* Crystal/Star */}
+    <motion.path 
+       d="M 0 -12 Q 0 0 12 0 Q 0 0 0 12 Q 0 0 -12 0 Q 0 0 0 -12 Z"
+       fill="url(#star-gradient)"
+       filter="url(#glow-star)"
+       initial="initial"
+       variants={{
+         initial: { x: 57.5, y: 35, opacity: 1, scale: 1 },
+         hover: { 
+           x: [57.5, 65, 73.75, 82.5, 82.5, 57.5], 
+           y: [35, 20, -5, 5, 5, 35], 
+           opacity: [1, 1, 1, 1, 0, 1],
+           transition: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+         }
+       }}
+       animate={isThinking ? {
+           x: [32.5, 41.25, 50, 57.5, 65, 73.75, 82.5, 82.5, 32.5],
+           y: [60, 35, 40, 15, 20, -5, 5, 5, 60],
+           opacity: [0, 1, 1, 1, 1, 1, 1, 0, 0],
+           scale: [0.5, 1, 1, 1, 1, 1, 1, 0.5, 0]
+       } : undefined}
+       transition={isThinking ? {
+           duration: 2,
+           repeat: Infinity,
+           times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 0.95, 1],
+           ease: "easeInOut"
+       } : { duration: 0.5 }}
+    />
   </svg>
+);
+
+const AnimatedLogoButton = ({ onClick, text, isCollapsed = false, className = "" }: { onClick: () => void, text?: string, isCollapsed?: boolean, className?: string }) => (
+  <motion.button 
+    onClick={onClick}
+    className={`flex items-center gap-3 text-left group relative ${className}`}
+    whileHover="hover"
+    initial="initial"
+  >
+    <div className="relative flex items-center justify-center p-1">
+      {/* Glowing floating aura */}
+      <motion.div
+         variants={{
+           initial: { opacity: 0, scale: 0.8 },
+           hover: { opacity: 0.7, scale: 1.4, rotate: 180 }
+         }}
+         transition={{ duration: 3, ease: "linear", repeat: Infinity }}
+         className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-fuchsia-500 rounded-full blur-md"
+      />
+      {/* Core logo */}
+      <motion.div
+         variants={{
+           initial: { scale: 1, y: 0 },
+           hover: { scale: 1.05, y: -2 }
+         }}
+         className="relative z-10"
+      >
+        <CareerGuideLogo className="w-8 h-8" />
+      </motion.div>
+    </div>
+    {!isCollapsed && text && (
+      <motion.span 
+        variants={{
+          initial: { backgroundPosition: "0% 50%" },
+          hover: { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }
+        }}
+        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+        style={{ backgroundSize: "200% 200%" }}
+        className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-pink-500 dark:from-indigo-400 dark:via-fuchsia-400 dark:to-pink-400 whitespace-nowrap"
+      >
+        {text}
+      </motion.span>
+    )}
+  </motion.button>
 );
 
 const ShimmerText = ({ text }: { text: string }) => (
@@ -1177,12 +1245,10 @@ export default function App() {
     return (
       <div className="min-h-screen bg-white dark:bg-[#050505] text-slate-900 dark:text-white transition-colors duration-500 overflow-x-hidden">
         <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-sm bg-white/70 dark:bg-[#050505]/70 border-b border-gray-200 dark:border-white/5">
-          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => { setMode(AppMode.LANDING); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-            <div className="group-hover:rotate-180 transition-transform duration-700">
-                <CompassLogo className="w-8 h-8" />
-            </div>
-            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-fuchsia-500">{t.appName}</span>
-          </div>
+          <AnimatedLogoButton 
+            onClick={() => { setMode(AppMode.LANDING); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+            text={t.appName} 
+          />
           <div className="flex items-center gap-4">
              <button onClick={toggleLang} className="flex items-center gap-1 text-sm font-medium hover:text-indigo-500 transition-colors text-gray-600 dark:text-gray-300">
                 <Icons.Globe className="w-4 h-4" />
@@ -1462,7 +1528,7 @@ export default function App() {
 
         <footer className="py-12 px-6 border-t border-gray-200 dark:border-white/5 text-center">
              <div className="flex items-center justify-center gap-2 mb-6 opacity-50 hover:opacity-100 transition-opacity duration-300">
-                 <CompassLogo className="w-6 h-6" />
+                 <CareerGuideLogo className="w-6 h-6" />
                  <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-gray-600 to-gray-900 dark:from-gray-400 dark:to-white">{t.appName}</span>
              </div>
              <p className="text-gray-500 text-sm">© 2025 {t.appName}. {t.empoweringFutures}.</p>
@@ -1484,7 +1550,7 @@ export default function App() {
         className="glass-card bg-white/60 dark:bg-[#111]/80 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-white/10 relative z-10 p-8 transform transition-all duration-300 hover:shadow-indigo-500/20"
       >
             <div className="flex justify-center mb-6">
-                <CompassLogo className="w-16 h-16" />
+                <CareerGuideLogo className="w-16 h-16" />
             </div>
             <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2 tracking-tight">
                 {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? t.resetPasswordTitle : t.resetPasswordTitle}
@@ -1516,7 +1582,7 @@ export default function App() {
                             value={resetCodeInput}
                             onChange={(e) => setResetCodeInput(e.target.value.replace(/[^0-9]/g, ''))}
                             className="w-full text-center text-3xl tracking-[0.5em] font-mono font-bold px-4 py-4 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-300" 
-                            placeholder={t.placeholderCode}
+                            placeholder="00000000"
                             autoFocus
                         />
                     </div>
@@ -1668,10 +1734,10 @@ export default function App() {
             className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0a0a0a] z-[70] md:hidden flex flex-col border-r border-gray-200 dark:border-white/5 shadow-2xl"
           >
             <div className="p-4 flex items-center justify-between">
-                <button onClick={() => { setMode(AppMode.LANDING); setIsMobileSidebarOpen(false); }} className="flex items-center gap-3 text-left">
-                    <CompassLogo className="w-8 h-8" />
-                    <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">{t.appName}</span>
-                </button>
+                <AnimatedLogoButton 
+                    onClick={() => { setMode(AppMode.LANDING); setIsMobileSidebarOpen(false); }} 
+                    text={t.appName} 
+                />
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl">
                     <Icons.PanelLeftClose className="w-5 h-5" />
                 </button>
@@ -1694,6 +1760,7 @@ export default function App() {
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.QUIZ); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Zap className="w-5 h-5" />{t.careerQuizTitle}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />{t.progress}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.PORTFOLIO); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Briefcase className="w-5 h-5" />{t.portfolio}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.SCHOLARSHIPS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.SCHOLARSHIPS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Search className="w-5 h-5" />{t.scholarships}</motion.button>
                 
                 {chatHistory.length > 0 && (
                     <div className="mt-8">
@@ -1753,17 +1820,11 @@ export default function App() {
 
       <aside className={`hidden md:flex flex-col transition-all duration-300 h-full border-r border-gray-200 dark:border-white/5 z-10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-lg ${isSidebarOpen ? 'w-72' : 'w-20'}`}>
         <div className="p-4 flex items-center justify-between">
-            {isSidebarOpen && (
-                <button onClick={() => setMode(AppMode.LANDING)} className="flex items-center gap-3 text-left hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors rounded-xl p-2">
-                    <CompassLogo className="w-8 h-8" />
-                    <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600 dark:from-white dark:to-gray-300">{t.appName}</span>
-                </button>
-            )}
-            {!isSidebarOpen && (
-                <button onClick={() => setMode(AppMode.LANDING)} className="mx-auto p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
-                    <CompassLogo className="w-8 h-8" />
-                </button>
-            )}
+            <AnimatedLogoButton 
+                    onClick={() => setMode(AppMode.LANDING)} 
+                    text={t.appName}
+                    isCollapsed={!isSidebarOpen}
+                />
         </div>
         
         <div className="px-4 mb-2">
@@ -1783,6 +1844,7 @@ export default function App() {
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.QUIZ)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PROGRESS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.progress}><Icons.Target className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.progress}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.Briefcase className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.SCHOLARSHIPS)} className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.SCHOLARSHIPS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.scholarships}><Icons.Search className="w-5 h-5 flex-shrink-0" />{isSidebarOpen && <span className="truncate">{t.scholarships}</span>}</motion.button>
                 
                 {chatHistory.length > 0 && isSidebarOpen && (
                 <div className="mt-8 animate-fade-in">
@@ -1926,7 +1988,7 @@ export default function App() {
                 <Icons.Menu className="w-5 h-5" />
             </motion.button>
             <div className="flex items-center gap-1.5">
-                <CompassLogo className="w-5 h-5" />
+                <CareerGuideLogo className="w-5 h-5" />
                 <span className="font-bold text-xs tracking-tight text-gray-900 dark:text-white uppercase">{t.appName}</span>
             </div>
             <motion.button 
@@ -2049,7 +2111,7 @@ export default function App() {
                             transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                             className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CompassLogo className="w-5 h-5 text-white" /></div>)}
+                            {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CareerGuideLogo className="w-5 h-5 text-white" /></div>)}
                             <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[95%] md:max-w-[70%]`}>
                                  <div className={`px-4 md:px-6 py-2.5 md:py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
                                     {m.pastedTexts && m.pastedTexts.length > 0 && (
@@ -2110,7 +2172,7 @@ export default function App() {
                             className="flex w-full justify-start items-center"
                         >
                             <div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center mt-1">
-                                <CompassLogo className="w-5 h-5 text-white" isThinking={true} />
+                                <CareerGuideLogo className="w-5 h-5 text-white" isThinking={true} />
                             </div>
                             <div className="px-6 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5">
                                 <ShimmerText text={thinkingText} />
@@ -2379,6 +2441,9 @@ export default function App() {
                 showToast={showToast}
             />
         )}
+        {tab === DashboardTab.SCHOLARSHIPS && (
+            <Scholarships language={lang} userProfile={auth.user} />
+        )}
         </motion.div>
         </AnimatePresence>
         
@@ -2403,6 +2468,10 @@ export default function App() {
             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PORTFOLIO ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Briefcase className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.portfolio}</span>
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.SCHOLARSHIPS)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.SCHOLARSHIPS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+                <Icons.Search className="w-5 h-5 mb-1" />
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.scholarships}</span>
             </motion.button>
         </div>
       </main>
