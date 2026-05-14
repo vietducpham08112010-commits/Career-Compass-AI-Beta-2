@@ -93,16 +93,29 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
   };
 
   const getItemIcon = (type: string) => {
+    const iconClass = "w-5 h-5";
     switch (type) {
-      case 'Certificate': return <Icons.Award className="w-5 h-5" />;
-      case 'Grade/Score': return <Icons.GraduationCap className="w-5 h-5" />;
-      case 'Personal Project': return <Icons.Code className="w-5 h-5" />;
-      default: return <Icons.FileText className="w-5 h-5" />;
+      case 'Certificate': return (
+        <motion.div whileHover={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 0.5 }}>
+          <Icons.Award className={iconClass} />
+        </motion.div>
+      );
+      case 'Grade/Score': return (
+        <motion.div whileHover={{ y: [0, -3, 0] }} transition={{ duration: 0.5 }}>
+          <Icons.GraduationCap className={iconClass} />
+        </motion.div>
+      );
+      case 'Personal Project': return (
+        <motion.div whileHover={{ scale: 1.2 }} transition={{ duration: 0.3 }}>
+          <Icons.Code className={iconClass} />
+        </motion.div>
+      );
+      default: return <Icons.FileText className={iconClass} />;
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gray-50 dark:bg-[#050505] overflow-y-auto">
+    <div className="flex-1 flex flex-col h-full bg-transparent overflow-y-auto w-full z-10 relative">
       <div className="w-full p-4 md:p-8 max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -114,13 +127,15 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setIsAddingItem(true)}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[20px] font-extrabold text-[12px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 group"
             >
-              <Icons.Plus className="w-5 h-5" />
+              <Icons.Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
               <span>{t.addPortfolioItem}</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -130,7 +145,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white dark:bg-[#111] rounded-3xl border border-gray-200 dark:border-white/10 p-6 mb-8 shadow-xl"
+              className="bg-white/40 dark:bg-black/30 backdrop-blur-3xl rounded-[32px] border border-white/60 dark:border-white/10 p-6 mb-8 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
             >
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t.addPortfolioItem}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -210,11 +225,18 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white dark:bg-[#111] rounded-3xl border border-dashed border-gray-300 dark:border-white/10 p-12 text-center"
+                className="bg-white/40 dark:bg-black/30 backdrop-blur-3xl rounded-[32px] border border-dashed border-white/60 dark:border-white/10 p-12 text-center"
               >
-                <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                <motion.div 
+                  animate={{ 
+                    y: [0, -8, 0],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-white/5 dark:to-white/10 text-gray-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/20"
+                >
                   <Icons.FolderOpen className="w-8 h-8" />
-                </div>
+                </motion.div>
                 <p className="text-gray-500 dark:text-gray-400">{t.noPortfolioItems}</p>
               </motion.div>
             ) : (
@@ -228,7 +250,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
                     duration: 0.3,
                     delay: index * 0.05
                   }}
-                  className="bg-white dark:bg-[#111] rounded-2xl border border-gray-200 dark:border-white/10 p-5 flex items-start gap-4 group hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all"
+                  className="bg-white/50 dark:bg-black/20 backdrop-blur-xl rounded-[24px] border border-white/80 dark:border-white/10 p-5 flex items-start gap-4 group hover:shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:bg-white/70 dark:hover:bg-black/40 transition-all"
                 >
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl">
                   {getItemIcon(item.type)}

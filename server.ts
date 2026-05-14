@@ -2,11 +2,15 @@ import express from "express";
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
+import { ElevenLabsClient } from "elevenlabs";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import path from "path";
 
 dotenv.config();
+
+const ELEVENLABS_API_KEY = "sk_38d8453e85d454cac840f9aa9653a417d088b93489dcd983";
+const tenLabs = new ElevenLabsClient({ apiKey: ELEVENLABS_API_KEY });
 
 const app = express();
 const server = createServer(app);
@@ -91,7 +95,10 @@ app.post("/api/chat", async (req, res) => {
         const response = await aiInstance.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: contents,
-            config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
+            config: { 
+              systemInstruction: systemInstruction || "You are a helpful assistant.",
+              tools: [{ googleSearch: {} }] as any
+            }
         });
         return res.json({ text: response.text });
     } catch (error: any) {
@@ -101,7 +108,10 @@ app.post("/api/chat", async (req, res) => {
             const fallbackResponse = await aiInstance.models.generateContent({
                 model: 'gemini-2.0-flash',
                 contents: contents,
-                config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
+                config: { 
+                  systemInstruction: systemInstruction || "You are a helpful assistant.",
+                  tools: [{ googleSearch: {} }] as any
+                }
             });
             return res.json({ text: fallbackResponse.text });
         } catch (fallbackError: any) {
@@ -123,6 +133,35 @@ app.post("/api/chat", async (req, res) => {
         // Not a JSON string, ignore
     }
     res.status(500).json({ error: errorMessage });
+  }
+});
+
+app.post("/api/tts", async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: "Text is required" });
+    }
+    
+    // Convert text to speech using elevenlabs SDK
+    const audioStream = await tenLabs.textToSpeech.convert("21m00Tcm4TlvDq8ikWAM", {
+      text,
+      model_id: "eleven_multilingual_v2",
+      output_format: "mp3_44100_128",
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75
+      }
+    });
+
+    // Pipe the stream to response
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Transfer-Encoding", "chunked");
+    res.setHeader("Connection", "keep-alive");
+    audioStream.pipe(res);
+  } catch (error: any) {
+    console.error("TTS API Error:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
   }
 });
 

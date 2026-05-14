@@ -13,7 +13,7 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({ clarificat
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mt-4 p-4 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl shadow-sm"
+      className="mt-4 p-4 bg-white/40 dark:bg-black/30 backdrop-blur-2xl border border-white/60 dark:border-white/10 rounded-[24px] shadow-[0_4px_24px_rgba(31,38,135,0.05)]"
     >
       <p className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
         {clarification.question}

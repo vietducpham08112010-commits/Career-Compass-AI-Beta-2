@@ -203,18 +203,34 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'done': return <Icons.CheckCircle2 className="w-5 h-5" />;
-      case 'in-progress': return <Icons.Clock className="w-5 h-5" />;
-      default: return <Icons.Circle className="w-5 h-5" />;
+      case 'done': return (
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 15 }}>
+          <Icons.CheckCircle2 className="w-5 h-5 text-emerald-500" />
+        </motion.div>
+      );
+      case 'in-progress': return (
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}>
+          <Icons.Loader2 className="w-5 h-5 text-amber-500" />
+        </motion.div>
+      );
+      default: return <Icons.Circle className="w-5 h-5 text-gray-300 dark:text-gray-600" />;
     }
   };
 
   if (milestones.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center h-full bg-gray-50 dark:bg-[#050505] p-8 text-center animate-fade-in">
-        <div className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-500 rounded-full flex items-center justify-center mb-6 shadow-xl">
-          <Icons.Map className="w-12 h-12" />
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center h-full bg-transparent p-8 text-center animate-fade-in relative z-10 w-full">
+          <motion.div 
+            animate={{ 
+              y: [0, -10, 0],
+              scale: [1, 1.05, 1],
+              rotate: [0, 5, -5, 0]
+            }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            className="w-24 h-24 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-500 rounded-full flex items-center justify-center mb-6 shadow-2xl backdrop-blur-xl border border-white/30"
+          >
+            <Icons.Map className="w-12 h-12" />
+          </motion.div>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
           {language === Language.EN ? "Your Roadmap is Empty" : "Bảng Tiến Độ Đang Trống"}
         </h2>
@@ -257,7 +273,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gray-50 dark:bg-[#050505] overflow-y-auto">
+    <div className="flex-1 flex flex-col h-full bg-transparent overflow-y-auto w-full relative z-10">
       <div className="w-full p-4 md:p-8 max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -265,28 +281,28 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
               {language === Language.EN ? "Career Roadmap" : "Bảng Tiến Độ"}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {language === Language.EN ? "Track your progress and export to share." : "Theo dõi tiến độ và xuất file để chia sẻ với phụ huynh, giáo viên."}
+              {language === Language.EN ? "Track your progress and export to share." : "Theo dõi tiến độ và xuất file để chia sẻ."}
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
             <motion.button 
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, backgroundColor: theme === Theme.LIGHT ? "rgba(255, 255, 255, 0.9)" : "rgba(255, 255, 255, 0.05)" }}
               whileTap={{ scale: 0.95 }}
               onClick={exportToImage}
               disabled={isExporting}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white/40 dark:bg-black/20 backdrop-blur-xl border border-white/60 dark:border-white/10 rounded-[20px] text-[13px] font-bold text-gray-700 dark:text-gray-200 uppercase tracking-widest transition-all shadow-sm group"
             >
-              <Icons.Image className="w-4 h-4" />
+              <Icons.Image className="w-4 h-4 group-hover:scale-110 transition-transform" />
               <span>{language === Language.EN ? "Save Image" : "Lưu Ảnh"}</span>
             </motion.button>
             <motion.button 
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, boxShadow: "0 10px 25px -5px rgba(79, 70, 229, 0.4)" }}
               whileTap={{ scale: 0.95 }}
               onClick={exportToPDF}
               disabled={isExporting}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 dark:bg-indigo-500 text-white rounded-[20px] text-[13px] font-bold uppercase tracking-widest transition-all shadow-lg group"
             >
-              <Icons.FileText className="w-4 h-4" />
+              <Icons.FileText className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
               <span>{language === Language.EN ? "Export PDF" : "Xuất PDF"}</span>
             </motion.button>
           </div>
@@ -295,7 +311,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
         <div 
           id="progress-board-container"
           ref={boardRef} 
-          className="progress-board-export bg-white dark:bg-[#111] rounded-3xl border border-gray-200 dark:border-white/10 p-6 md:p-10 shadow-sm"
+          className="progress-board-export bg-white/40 dark:bg-black/40 backdrop-blur-3xl rounded-[32px] border border-white/60 dark:border-white/10 p-6 md:p-10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
         >
           {/* User Info Header for Export */}
           <div className="mb-10 pb-8 border-b border-gray-100 dark:border-white/5 flex flex-col md:flex-row items-center gap-6">
@@ -372,7 +388,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
                 />
                 
                 <div 
-                  className={`group p-5 rounded-2xl border transition-all duration-300 hover:shadow-lg ${milestone.status === 'done' ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30' : milestone.status === 'in-progress' ? 'bg-amber-50/30 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30 ring-1 ring-amber-400/20' : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-500/30'}`}
+                  className={`group p-5 rounded-[24px] backdrop-blur-md border transition-all duration-300 hover:shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] ${milestone.status === 'done' ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/30' : milestone.status === 'in-progress' ? 'bg-amber-50/30 dark:bg-amber-900/10 border-amber-200/50 dark:border-amber-800/30 ring-1 ring-amber-400/20' : 'bg-white/40 dark:bg-black/30 border-white/60 dark:border-white/10 hover:border-white/80 dark:hover:border-white/20'}`}
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1 cursor-pointer" onClick={() => toggleStatus(milestone.id)}>
@@ -465,7 +481,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({ chatHistory, messa
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
           >
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-5 max-w-sm mx-4 text-center border border-gray-200 dark:border-gray-700">
+            <div className="bg-white/70 dark:bg-black/70 backdrop-blur-3xl border border-white/60 dark:border-white/10 p-8 rounded-[32px] shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] flex flex-col items-center gap-5 max-w-sm mx-4 text-center">
               <div className="relative">
                 <div className="w-16 h-16 border-4 border-indigo-100 dark:border-indigo-900/30 rounded-full"></div>
                 <div className="w-16 h-16 border-4 border-indigo-600 dark:border-indigo-500 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>

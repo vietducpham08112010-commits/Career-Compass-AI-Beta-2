@@ -47,6 +47,19 @@ try {
     console.warn("Firebase initialization failed:", error);
 }
 
+// Suppress known non-breaking environment errors
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason && (
+      event.reason.message?.includes('WebSocket closed without opened') || 
+      event.reason.message?.includes('failed to connect to websocket')
+    )) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
+}
+
 // --- Icons ---
 const Icons = {
   Home: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
@@ -103,66 +116,122 @@ const Icons = {
 const CareerGuideLogo = ({ className = "w-24 h-24", isThinking = false }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="stair-gradient" x1="0" y1="100" x2="100" y2="0">
-        <stop offset="0%" stopColor="#4c1d95" /> {/* deep purple */}
-        <stop offset="30%" stopColor="#7e22ce" /> {/* purple */}
-        <stop offset="70%" stopColor="#d946ef" /> {/* fuchsia */}
-        <stop offset="100%" stopColor="#f472b6" /> {/* pink */}
+      <linearGradient id="apple-glass-gradient" x1="0" y1="100" x2="100" y2="0">
+        <stop offset="0%" stopColor="#6366f1" />
+        <stop offset="50%" stopColor="#a855f7" />
+        <stop offset="100%" stopColor="#ec4899" />
       </linearGradient>
-      <linearGradient id="star-gradient" x1="0" y1="100" x2="100" y2="0">
-        <stop offset="0%" stopColor="#c084fc" />
-        <stop offset="100%" stopColor="#f472b6" />
-      </linearGradient>
-      <filter id="glow-star" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1" />
-        <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur2" />
+      
+      <filter id="morphic-glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
         <feMerge>
-          <feMergeNode in="blur2" />
-          <feMergeNode in="blur1" />
+          <feMergeNode in="blur" />
           <feMergeNode in="SourceGraphic" />
         </feMerge>
       </filter>
     </defs>
     
-    {/* Stairs */}
-    <path 
-      d="M 25 80 L 40 80 L 50 55 L 65 55 L 75 30 L 90 30" 
-      stroke="url(#stair-gradient)" 
-      strokeWidth="12" 
+    <motion.path 
+      d="M 20 80 L 35 80 L 45 55 L 60 55 L 70 30 L 85 30" 
+      stroke="url(#apple-glass-gradient)" 
+      strokeWidth="10" 
       strokeLinecap="round" 
       strokeLinejoin="round" 
+      filter="url(#morphic-glow)"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 1.5, ease: "easeInOut" }}
     />
     
-    {/* Crystal/Star */}
-    <motion.path 
-       d="M 0 -12 Q 0 0 12 0 Q 0 0 0 12 Q 0 0 -12 0 Q 0 0 0 -12 Z"
-       fill="url(#star-gradient)"
-       filter="url(#glow-star)"
+    <motion.circle 
+       cx="50" cy="15" r="5"
+       fill="url(#apple-glass-gradient)"
+       filter="url(#morphic-glow)"
        initial="initial"
+       animate={isThinking ? "thinking" : "initial"}
        variants={{
-         initial: { x: 57.5, y: 35, opacity: 1, scale: 1 },
-         hover: { 
-           x: [57.5, 65, 73.75, 82.5, 82.5, 57.5], 
-           y: [35, 20, -5, 5, 5, 35], 
-           opacity: [1, 1, 1, 1, 0, 1],
+         initial: { y: 0, scale: 1, opacity: 1 },
+         thinking: {
+           y: [0, -10, 0],
+           scale: [1, 1.3, 1],
+           opacity: [1, 0.7, 1],
            transition: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
          }
        }}
-       animate={isThinking ? {
-           x: [32.5, 41.25, 50, 57.5, 65, 73.75, 82.5, 82.5, 32.5],
-           y: [60, 35, 40, 15, 20, -5, 5, 5, 60],
-           opacity: [0, 1, 1, 1, 1, 1, 1, 0, 0],
-           scale: [0.5, 1, 1, 1, 1, 1, 1, 0.5, 0]
-       } : undefined}
-       transition={isThinking ? {
-           duration: 2,
-           repeat: Infinity,
-           times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 0.95, 1],
-           ease: "easeInOut"
-       } : { duration: 0.5 }}
     />
   </svg>
 );
+
+const ClaudeMicrophone = ({ isActive, isHovered, level = 0, onClick }: { isActive?: boolean, isHovered?: boolean, level?: number, onClick?: () => void }) => {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={`relative p-3 rounded-2xl flex items-center justify-center transition-all duration-700 overflow-hidden min-w-[56px] h-[48px] ${
+        isActive 
+          ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]' 
+          : 'bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10 text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm'
+      } glass-surface`}
+    >
+      <div className="relative z-10 flex items-center gap-[3px] h-5 justify-center">
+        <AnimatePresence mode="wait">
+          {(isHovered || isActive) ? (
+            <motion.div 
+              key="bars"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex items-center gap-[2.5px]"
+            >
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <motion.div
+                  key={i}
+                  animate={{ 
+                    height: isActive ? 
+                      [12, 28, 16, 24, 18, 22, 14][i % 7] + (level * 15) : 
+                      [8, 18, 10, 15, 9, 13, 8][i % 7],
+                    opacity: isActive ? 1 : 0.8,
+                    backgroundColor: isActive ? '#FFFFFF' : '#6366f1'
+                  }}
+                  transition={{ 
+                    duration: isActive ? 0.3 : 0.6, 
+                    repeat: Infinity, 
+                    repeatType: "mirror",
+                    delay: i * 0.08,
+                    ease: "easeInOut"
+                  }}
+                  className="w-[2.5px] rounded-full"
+                />
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="icon"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              className="flex items-center justify-center"
+            >
+              <Icons.Microphone className="w-5 h-5" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      
+      {/* Liquid glow effect on hover */}
+      {isHovered && !isActive && (
+        <motion.div 
+          className="absolute inset-0 bg-indigo-500/5 dark:bg-indigo-400/5 blur-xl pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        />
+      )}
+    </motion.button>
+  );
+};
+
 
 const AnimatedLogoButton = ({ onClick, text, isCollapsed = false, className = "" }: { onClick: () => void, text?: string, isCollapsed?: boolean, className?: string }) => (
   <motion.button 
@@ -310,7 +379,7 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
           <Icons.Check className="w-10 h-10" />
         </motion.div>
         <h3 className="text-2xl font-bold mb-4">{t.quizResultTitle}</h3>
-        <p className="text-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xl max-w-md">
+        <p className="text-lg text-gray-700 dark:text-gray-300 bg-white/40 dark:bg-black/40 backdrop-blur-3xl p-6 rounded-[28px] border border-white/60 dark:border-white/10 shadow-xl max-w-md">
           {result}
         </p>
         <div className="flex gap-4 mt-8">
@@ -427,6 +496,7 @@ export default function App() {
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [welcomePhrase, setWelcomePhrase] = useState('');
+  const [isMicHovered, setIsMicHovered] = useState(false);
   const isSendingRef = useRef(false);
 
   useEffect(() => {
@@ -1243,18 +1313,18 @@ export default function App() {
 
   const renderLanding = () => {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#050505] text-slate-900 dark:text-white transition-colors duration-500 overflow-x-hidden">
-        <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-sm bg-white/70 dark:bg-[#050505]/70 border-b border-gray-200 dark:border-white/5">
+      <div className="flex-1 flex flex-col items-stretch overflow-x-hidden relative text-slate-900 dark:text-white transition-colors duration-500 z-10 w-full mb-8">
+        <nav className="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-white/40 dark:bg-black/20 backdrop-blur-3xl border-b border-white/60 dark:border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.05)] transition-all">
           <AnimatedLogoButton 
             onClick={() => { setMode(AppMode.LANDING); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
             text={t.appName} 
           />
           <div className="flex items-center gap-4">
-             <button onClick={toggleLang} className="flex items-center gap-1 text-sm font-medium hover:text-indigo-500 transition-colors text-gray-600 dark:text-gray-300">
+             <button onClick={toggleLang} className="flex items-center gap-1 text-sm font-medium hover:text-indigo-500 transition-colors text-gray-700 dark:text-gray-200">
                 <Icons.Globe className="w-4 h-4" />
                 <span>{lang === Language.EN ? 'VI' : 'EN'}</span>
              </button>
-             <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+             <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-gray-700 dark:text-gray-200">
                 {theme === Theme.LIGHT ? <Icons.Moon className="w-5 h-5"/> : <Icons.Sun className="w-5 h-5"/>}
               </button>
              
@@ -1263,7 +1333,7 @@ export default function App() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setMode(AppMode.DASHBOARD)} 
-                    className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold transition-shadow hover:shadow-lg hover:shadow-indigo-500/20 flex items-center gap-2"
+                    className="bg-black/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-black px-6 py-2.5 rounded-full font-bold transition-shadow hover:shadow-xl hover:shadow-indigo-500/20 flex items-center gap-2 border border-white/10"
                  >
                     <Icons.Briefcase className="w-4 h-4" />
                     {t.dashboard}
@@ -1275,7 +1345,7 @@ export default function App() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} 
-                        className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full font-bold transition-shadow hover:shadow-lg hover:shadow-indigo-500/20"
+                        className="bg-black/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-black px-6 py-2.5 rounded-full font-bold transition-shadow hover:shadow-xl hover:shadow-indigo-500/20 border border-white/10"
                     >
                         {t.getStarted}
                     </motion.button>
@@ -1284,12 +1354,7 @@ export default function App() {
           </div>
         </nav>
 
-        <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center relative">
-          {/* Animated Background Blobs */}
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob dark:opacity-10"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000 dark:opacity-10"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000 dark:opacity-10"></div>
-          
+        <section className="pt-40 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center relative w-full">
           {/* Floating Orbs */}
           <div className="absolute top-32 left-10 w-24 h-24 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full blur-xl opacity-40 dark:opacity-30 animate-float" style={{ animationDelay: '0s' }}></div>
           <div className="absolute bottom-40 right-10 w-32 h-32 bg-gradient-to-br from-fuchsia-400 to-pink-500 rounded-full blur-2xl opacity-30 dark:opacity-20 animate-float" style={{ animationDelay: '1.5s' }}></div>
@@ -1341,7 +1406,7 @@ export default function App() {
                         whileHover={{ scale: 1.05, y: -4 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleGuestLogin} 
-                        className="px-8 py-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2 backdrop-blur-sm"
+                        className="px-8 py-4 bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-2xl font-bold text-lg hover:bg-white/60 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2 backdrop-blur-xl shadow-lg"
                     >
                         <Icons.Zap className="w-5 h-5 text-yellow-500" />
                         {t.guestLogin}
@@ -1382,7 +1447,7 @@ export default function App() {
                             ))}
                         </div>
                     </div>
-                    <div className="w-full max-w-[240px] md:w-1/3 aspect-square bg-white dark:bg-white/5 rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl flex items-center justify-center p-6 md:p-8">
+                    <div className="w-full max-w-[240px] md:w-1/3 aspect-square bg-white/40 dark:bg-white/5 rounded-[32px] md:rounded-[48px] border border-white/60 dark:border-white/10 shadow-2xl flex items-center justify-center p-6 md:p-8 backdrop-blur-3xl">
                         <div className="text-center">
                             <Icons.TrendingUp className="w-12 h-12 md:w-20 md:h-20 text-indigo-500 mx-auto mb-2 md:mb-4 animate-bounce" />
                             <div className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">+25%</div>
@@ -1526,31 +1591,29 @@ export default function App() {
              </div>
         </section>
 
-        <footer className="py-12 px-6 border-t border-gray-200 dark:border-white/5 text-center">
-             <div className="flex items-center justify-center gap-2 mb-6 opacity-50 hover:opacity-100 transition-opacity duration-300">
-                 <CareerGuideLogo className="w-6 h-6" />
-                 <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-gray-600 to-gray-900 dark:from-gray-400 dark:to-white">{t.appName}</span>
+        <footer className="py-12 px-6 border-t border-white/20 dark:border-white/5 text-center relative overflow-hidden">
+             <div className="absolute inset-0 bg-white/5 dark:bg-black/5 backdrop-blur-3xl -z-10"></div>
+             <div className="flex items-center justify-center gap-2 mb-6 opacity-60 hover:opacity-100 transition-all duration-300 transform hover:scale-105 cursor-pointer">
+                 <CareerGuideLogo className="w-8 h-8" />
+                 <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">{t.appName}</span>
              </div>
-             <p className="text-gray-500 text-sm">© 2025 {t.appName}. {t.empoweringFutures}.</p>
+             <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">© 2025 {t.appName}. {t.empoweringFutures}.</p>
         </footer>
       </div>
     );
   }
 
   const renderAuth = () => (
-    <div className="min-h-screen bg-white dark:bg-[#050505] flex items-center justify-center p-4 transition-colors duration-300 relative overflow-hidden">
-      {/* Auth Background Effects */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[120px] animate-blob"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-fuchsia-500/20 rounded-full blur-[120px] animate-blob animation-delay-2000"></div>
-      
+    <div className="flex-1 w-full flex items-center justify-center p-4 transition-colors duration-300 relative overflow-hidden z-10">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="glass-card bg-white/60 dark:bg-[#111]/80 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-white/10 relative z-10 p-8 transform transition-all duration-300 hover:shadow-indigo-500/20"
+        className="glass-card bg-white/40 dark:bg-black/40 backdrop-blur-3xl rounded-[32px] shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] w-full max-w-md overflow-hidden flex flex-col border border-white/60 dark:border-white/10 relative z-10 p-8 transform transition-all duration-300"
       >
-            <div className="flex justify-center mb-6">
-                <CareerGuideLogo className="w-16 h-16" />
+            <div className="flex justify-center mb-6 relative">
+                <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full"></div>
+                <CareerGuideLogo className="w-20 h-20 relative z-10" />
             </div>
             <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2 tracking-tight">
                 {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? t.resetPasswordTitle : t.resetPasswordTitle}
@@ -1709,7 +1772,7 @@ export default function App() {
   const renderDashboard = () => {
     const filteredHistory = chatHistory.filter(session => session.title.toLowerCase().includes(searchQuery.toLowerCase()));
     return (
-    <div className="flex h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden transition-colors duration-300 relative font-sans">
+    <div className="flex flex-1 overflow-hidden transition-colors duration-300 relative font-sans z-10 w-full">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isMobileSidebarOpen && (
@@ -1731,7 +1794,7 @@ export default function App() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0a0a0a] z-[70] md:hidden flex flex-col border-r border-gray-200 dark:border-white/5 shadow-2xl"
+            className="fixed inset-y-0 left-0 w-72 bg-white/60 dark:bg-black/40 backdrop-blur-3xl z-[70] md:hidden flex flex-col border-r border-white/60 dark:border-white/10 shadow-[4px_0_32px_rgba(0,0,0,0.1)]"
           >
             <div className="p-4 flex items-center justify-between">
                 <AnimatedLogoButton 
@@ -1818,7 +1881,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <aside className={`hidden md:flex flex-col transition-all duration-300 h-full border-r border-gray-200 dark:border-white/5 z-10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-lg ${isSidebarOpen ? 'w-72' : 'w-20'}`}>
+      <aside className={`hidden md:flex flex-col transition-all duration-500 h-full border-r border-white/60 dark:border-white/10 z-[100] bg-white/40 dark:bg-black/20 backdrop-blur-3xl shadow-[4px_0_24px_rgba(0,0,0,0.02)] ${isSidebarOpen ? 'w-72' : 'w-20'}`}>
         <div className="p-4 flex items-center justify-between">
             <AnimatedLogoButton 
                     onClick={() => setMode(AppMode.LANDING)} 
@@ -1965,13 +2028,13 @@ export default function App() {
             )}
         </div>
       </aside>
-      <main className="flex-1 flex flex-col h-full relative w-full bg-white dark:bg-[#050505] z-10">
+      <main className="flex-1 flex flex-col h-full relative w-full bg-transparent z-10">
         <div className="absolute top-4 left-4 z-30 hidden md:block">
             <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-                className="p-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white shadow-sm hover:shadow-md transition-all" 
+                className="p-2 bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/60 dark:border-white/10 rounded-xl text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm hover:shadow-md transition-all" 
                 title={isSidebarOpen ? t.collapseSidebar : t.expandSidebar}
             >
                 {isSidebarOpen ? <Icons.PanelLeftClose className="w-5 h-5" /> : <Icons.PanelLeftOpen className="w-5 h-5" />}
@@ -1987,9 +2050,11 @@ export default function App() {
             >
                 <Icons.Menu className="w-5 h-5" />
             </motion.button>
-            <div className="flex items-center gap-1.5">
-                <CareerGuideLogo className="w-5 h-5" />
-                <span className="font-bold text-xs tracking-tight text-gray-900 dark:text-white uppercase">{t.appName}</span>
+            <div className="flex items-center gap-2.5 group cursor-pointer">
+                <motion.div whileHover={{ rotate: 15, scale: 1.1 }} transition={{ type: "spring", stiffness: 300 }}>
+                    <CareerGuideLogo className="w-6 h-6" />
+                </motion.div>
+                <span className="font-black text-[13px] tracking-[0.1em] text-gray-900 dark:text-white uppercase transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{t.appName}</span>
             </div>
             <motion.button 
                 whileHover={{ scale: 1.1 }}
@@ -2013,34 +2078,6 @@ export default function App() {
             {tab === DashboardTab.CHAT && (
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6 scroll-smooth">
-                        <div className="flex flex-col items-center gap-2 mb-12">
-                            <motion.button 
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setTab(DashboardTab.PROGRESS)} 
-                                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-xl shadow-indigo-500/20 transition-all"
-                            >
-                                <Icons.Sparkles className="w-5 h-5" />
-                                {t.generateRoadmap}
-                            </motion.button>
-                            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-                                {t.basedOnHistory}
-                            </p>
-                        </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-16 max-w-5xl mx-auto px-4">
-                        <div className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
-                            <div className="text-2xl md:text-3xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">{t.accuracyValue}</div>
-                            <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-1 md:mt-2">{t.accuracyRate}</div>
-                        </div>
-                        <div className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
-                            <div className="text-2xl md:text-3xl font-bold text-fuchsia-600 dark:text-fuchsia-400 tabular-nums">{t.userValue}</div>
-                            <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-1 md:mt-2">{t.userCount}</div>
-                        </div>
-                        <div className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm">
-                            <div className="text-2xl md:text-3xl font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">{t.sessionValue}</div>
-                            <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-1 md:mt-2">{t.activeSessions}</div>
-                        </div>
-                    </div>
                     {messages.length === 0 && (
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }}
@@ -2048,58 +2085,17 @@ export default function App() {
                             transition={{ duration: 0.6, ease: "easeOut" }}
                             className="w-full max-w-4xl mx-auto flex flex-col px-4 pb-12 md:pb-20"
                         >
-                            <div className="flex flex-col items-start gap-1 md:gap-4 mb-6 md:mb-8">
-                                <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                                    <motion.span 
-                                        className="text-2xl md:text-5xl"
-                                        animate={{ 
-                                            rotate: [0, 15, -15, 0],
-                                            scale: [1, 1.2, 1]
-                                        }}
-                                        transition={{ 
-                                            duration: 2.5,
-                                            repeat: Infinity,
-                                            ease: "easeInOut"
-                                        }}
-                                    >
-                                        ✨
-                                    </motion.span>
-                                    <h1 className="text-[24px] md:text-[56px] leading-tight font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 tracking-tight">
-                                        {t.welcomeBack} {auth.user?.name || t.guest}!
-                                    </h1>
-                                </div>
+                            <div className="flex flex-col items-center justify-center space-y-4 mb-8 mt-12 md:mt-24">
+                                <CareerGuideLogo className="w-20 h-20 mb-4" />
                                 <motion.h2 
                                     key={welcomePhrase}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5, delay: 0.2 }}
-                                    className="text-[24px] md:text-[56px] leading-tight font-bold text-gray-900 dark:text-white tracking-tight"
+                                    transition={{ duration: 0.6, ease: "easeOut" }}
+                                    className="text-[32px] md:text-[40px] leading-tight text-[#2D2D2D] dark:text-[#E8E8E8] tracking-tight font-serif flex items-center justify-center gap-3 text-center"
                                 >
                                     {welcomePhrase}
                                 </motion.h2>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 mt-2 md:mt-8">
-                                {SUGGESTION_PROMPTS[lang] && SUGGESTION_PROMPTS[lang].map((suggestion, idx) => {
-                                    const IconComponent = (Icons as any)[suggestion.icon] || Icons.MessageSquare;
-                                    return (
-                                        <motion.button
-                                            key={idx}
-                                            whileHover={{ scale: 1.02, backgroundColor: theme === Theme.LIGHT ? 'rgba(79, 70, 229, 0.05)' : 'rgba(255, 255, 255, 0.05)' }}
-                                            whileTap={{ scale: 0.98 }}
-                                            onClick={() => handleSendMessage(undefined, suggestion.prompt)}
-                                            className="p-4 md:p-6 rounded-[1.2rem] md:rounded-[2rem] border border-gray-100 dark:border-white/10 text-left transition-all hover:border-indigo-500/50 group bg-white dark:bg-white/5 shadow-sm hover:shadow-md"
-                                        >
-                                            <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-4">
-                                                <div className="p-2 md:p-3 rounded-lg md:rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                                    <IconComponent className="w-4 h-4 md:w-6 md:h-6" />
-                                                </div>
-                                                <span className="font-bold text-sm md:text-lg text-gray-900 dark:text-white">{suggestion.title}</span>
-                                            </div>
-                                            <p className="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">{suggestion.prompt}</p>
-                                        </motion.button>
-                                    );
-                                })}
                             </div>
                         </motion.div>
                     )}
@@ -2111,9 +2107,9 @@ export default function App() {
                             transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                             className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            {m.role === 'model' && (<div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center text-white shadow-sm mt-1"><CareerGuideLogo className="w-5 h-5 text-white" /></div>)}
+                            {m.role === 'model' && (<div className="hidden md:flex w-10 h-10 mr-4 flex-shrink-0 bg-white/50 dark:bg-black/30 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.1)] rounded-full items-center justify-center mt-1"><CareerGuideLogo className="w-6 h-6" /></div>)}
                             <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[95%] md:max-w-[70%]`}>
-                                 <div className={`px-4 md:px-6 py-2.5 md:py-3.5 rounded-2xl shadow-sm relative transition-all duration-300 ${m.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/5 rounded-tl-none shadow-sm'}`}>
+                                 <div className={`px-4 md:px-6 py-3 md:py-4 rounded-[28px] backdrop-blur-3xl border relative transition-all duration-500 ${m.role === 'user' ? 'bg-indigo-600/90 dark:bg-indigo-500/80 text-white rounded-br-sm border-indigo-400/30 shadow-[0_10px_25px_-5px_rgba(79,70,229,0.3)]' : 'bg-white/30 dark:bg-black/40 text-gray-900 dark:text-gray-100 border-white/60 dark:border-white/10 rounded-bl-sm shadow-[0_4px_24px_rgba(31,38,135,0.04)] focus-within:bg-white/50 hover:bg-white/40 dark:hover:bg-black/50'}`}>
                                     {m.pastedTexts && m.pastedTexts.length > 0 && (
                                         <div className="flex flex-wrap gap-1.5 md:gap-2 mb-2 md:mb-3">
                                             {m.pastedTexts.map((text, idx) => (
@@ -2139,7 +2135,14 @@ export default function App() {
                                         </div>
                                     )}
                                     <div className="leading-normal text-[14px] md:text-[15px] markdown-body">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanText(m.text)}</ReactMarkdown>
+                                        <ReactMarkdown 
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                a: ({ node, ...props }) => <a {...props} className="font-bold text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-500" target="_blank" rel="noopener noreferrer" />
+                                            }}
+                                        >
+                                            {cleanText(m.text)}
+                                        </ReactMarkdown>
                                     </div>
                                     {m.role === 'model' && extractClarificationJson(m.text) && (
                                         <ClarificationCard 
@@ -2171,17 +2174,17 @@ export default function App() {
                             transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                             className="flex w-full justify-start items-center"
                         >
-                            <div className="hidden md:flex w-8 h-8 mr-4 flex-shrink-0 bg-indigo-600 rounded-full items-center justify-center mt-1">
-                                <CareerGuideLogo className="w-5 h-5 text-white" isThinking={true} />
+                            <div className="hidden md:flex w-10 h-10 mr-4 flex-shrink-0 bg-white/50 dark:bg-black/30 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.1)] rounded-full items-center justify-center mt-1">
+                                <CareerGuideLogo className="w-6 h-6" isThinking={true} />
                             </div>
-                            <div className="px-6 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5">
+                            <div className="px-6 py-4 bg-white/40 dark:bg-black/20 backdrop-blur-xl rounded-[24px] rounded-tl-[4px] border border-white/60 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.05)]">
                                 <ShimmerText text={thinkingText} />
                             </div>
                         </motion.div>
                     )}
                     <div ref={messagesEndRef} className="h-4" />
                 </div>
-                <div className="p-4 bg-white dark:bg-[#050505] w-full flex flex-col items-center border-t border-gray-200 dark:border-white/5 relative">
+                <div className={`px-4 pb-4 w-full flex flex-col items-center relative ${messages.length > 0 ? 'bg-white/40 dark:bg-black/30 backdrop-blur-2xl border-t border-white/60 dark:border-white/10 pt-4 shadow-[0_-4px_24px_rgba(0,0,0,0.02)]' : 'flex-1 justify-center -mt-32 bg-transparent'}`}>
                     {showCamera && (
                         <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4">
                             <div className="relative w-full max-w-md bg-black rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
@@ -2214,7 +2217,7 @@ export default function App() {
                             </button>
                         </div>
                     </div>
-                    <form onSubmit={handleSendMessage} className="relative w-full max-w-4xl flex flex-col bg-gray-100 dark:bg-[#1e1e1e] rounded-[24px] md:rounded-[32px] p-3 md:p-4 transition-all shadow-sm">
+                    <form onSubmit={handleSendMessage} className={`relative w-full max-w-4xl flex flex-col bg-white/12 dark:bg-black/35 backdrop-blur-[60px] border border-white/30 dark:border-white/10 p-5 transition-all duration-500 shadow-[0_12px_40px_rgba(0,0,0,0.1)] hover:shadow-[0_12px_50px_rgba(79,70,229,0.15)] ring-1 ring-white/20 specular-highlight ${messages.length === 0 ? 'rounded-[40px] min-h-[220px]' : 'rounded-[32px]'}`}>
                         <input type="file" id="chat-file-upload" className="hidden" accept="image/*,application/pdf,text/plain,text/csv" onChange={(e) => { handleFileUpload(e); setShowAttachmentMenu(false); }} />
                         
                         {/* File Preview Area */}
@@ -2225,19 +2228,18 @@ export default function App() {
                                         initial={{ opacity: 0, scale: 0.8, y: 10 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                                        transition={{ duration: 0.2, ease: "easeOut" }}
-                                        className="relative inline-block self-start"
+                                        className="relative inline-block self-start p-1 bg-white/10 rounded-2xl border border-white/20"
                                     >
                                         {selectedFile.mimeType.startsWith('image/') ? (
-                                            <img src={`data:${selectedFile.mimeType};base64,${selectedFile.data}`} alt="Preview" className="h-12 w-12 md:h-16 md:w-16 object-cover rounded-xl md:rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm" referrerPolicy="no-referrer" />
+                                            <img src={`data:${selectedFile.mimeType};base64,${selectedFile.data}`} alt="Preview" className="h-14 w-14 md:h-20 md:w-20 object-cover rounded-xl" referrerPolicy="no-referrer" />
                                         ) : (
-                                            <div className="h-12 w-12 md:h-16 md:w-16 flex flex-col items-center justify-center bg-white dark:bg-white/5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-1.5 md:p-2 text-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500 mb-0.5 md:mb-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                                <span className="text-[7px] md:text-[8px] font-medium text-gray-600 dark:text-gray-300 truncate w-full">{selectedFile.name}</span>
+                                            <div className="h-14 w-14 md:h-20 md:w-20 flex flex-col items-center justify-center text-center">
+                                                <Icons.FileText className="w-6 h-6 text-indigo-500 mb-1" />
+                                                <span className="text-[8px] font-bold truncate w-full px-1">{selectedFile.name}</span>
                                             </div>
                                         )}
-                                        <button type="button" onClick={() => setSelectedFile(null)} className="absolute -top-1.5 -right-1.5 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-0.5 md:p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        <button type="button" onClick={() => setSelectedFile(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:scale-110 transition-transform">
+                                            <Icons.X className="w-3 h-3" />
                                         </button>
                                     </motion.div>
                                 )}
@@ -2247,17 +2249,11 @@ export default function App() {
                                         initial={{ opacity: 0, scale: 0.8, y: 10 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                                        transition={{ duration: 0.2, ease: "easeOut" }}
-                                        className="relative inline-block self-start"
+                                        className="relative inline-block self-start p-2 bg-white/10 rounded-2xl border border-white/20 h-20 w-32 overflow-hidden"
                                     >
-                                        <div className="h-16 w-24 md:h-24 md:w-32 flex flex-col bg-white dark:bg-white/5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-2 md:p-3 overflow-hidden">
-                                            <p className="text-[8px] md:text-[10px] text-gray-600 dark:text-gray-300 line-clamp-2 md:line-clamp-3 mb-auto leading-relaxed">{text}</p>
-                                            <div className="mt-1 md:mt-2 text-[7px] md:text-[9px] font-bold uppercase tracking-wider text-gray-400 border border-gray-200 dark:border-white/10 rounded-md px-1 md:px-1.5 py-0.5 self-start bg-gray-50 dark:bg-white/5">
-                                                {t.pasted}
-                                            </div>
-                                        </div>
-                                        <button type="button" onClick={() => setPastedTexts(prev => prev.filter((_, i) => i !== index))} className="absolute -top-1.5 -right-1.5 bg-gray-800 dark:bg-gray-600 text-white rounded-full p-0.5 md:p-1 shadow-md hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        <p className="text-[10px] text-gray-500 line-clamp-2">{text}</p>
+                                        <button type="button" onClick={() => setPastedTexts(prev => prev.filter((_, i) => i !== index))} className="absolute top-1 right-1 text-gray-400 hover:text-red-500">
+                                            <Icons.X className="w-3 h-3" />
                                         </button>
                                     </motion.div>
                                 ))}
@@ -2275,123 +2271,205 @@ export default function App() {
                             }} 
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 768) {
-                                    if (e.nativeEvent.isComposing) return; // Prevent Enter during IME composition
+                                    if (e.nativeEvent.isComposing) return;
                                     e.preventDefault();
                                     if ((inputMsg.trim() || selectedFile || pastedTexts.length > 0) && !isChatLoading) {
                                         handleSendMessage();
                                     }
                                 }
                             }}
-                            onPaste={(e) => {
-                                const text = e.clipboardData.getData('text');
-                                if (text && (text.length > 200 || text.split('\n').length > 3)) {
-                                    e.preventDefault();
-                                    setPastedTexts(prev => [...prev, text]);
-                                }
-                            }}
                             placeholder={t.chatPlaceholder} 
-                            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-[13px] md:text-base resize-none min-h-[36px] md:min-h-[44px] max-h-[200px] overflow-y-auto mb-1 md:mb-2"
+                            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-[15px] md:text-lg font-medium resize-none min-h-[44px] max-h-[200px] overflow-y-auto mb-4"
                             rows={1}
                         />
 
                         {/* Bottom Toolbar */}
                         <div className="flex items-center justify-between mt-auto">
-                            <div className="flex items-center gap-1 relative">
+                            <div className="flex items-center gap-2">
                                 <motion.button 
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
+                                    whileHover={{ scale: 1.1, rotate: showAttachmentMenu ? 45 : 90, backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+                                    whileTap={{ scale: 0.95 }}
                                     type="button" 
                                     onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
-                                    className={`p-2.5 md:p-2 rounded-full transition-colors ${showAttachmentMenu ? 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
-                                    title="Attach"
+                                    className={`p-3 rounded-full transition-all duration-500 backdrop-blur-xl border ${showAttachmentMenu ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg' : 'bg-white/10 dark:bg-black/20 border-white/20 text-gray-500 dark:text-gray-400'}`}
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 md:w-5 md:h-5 ${showAttachmentMenu ? 'rotate-45' : ''}`}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <Icons.Plus className="w-5 h-5" />
                                 </motion.button>
-
+                                
                                 <AnimatePresence>
                                     {showAttachmentMenu && (
                                         <motion.div 
-                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            transition={{ duration: 0.15, ease: "easeOut" }}
-                                            className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col py-1 md:py-2 min-w-[140px] md:min-w-[160px] z-50 origin-bottom-left"
+                                            initial={{ opacity: 0, y: 20, scale: 0.8, filter: "blur(10px)" }}
+                                            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                                            exit={{ opacity: 0, y: 15, scale: 0.9, filter: "blur(10px)" }}
+                                            className="absolute bottom-full left-0 mb-4 bg-white/70 dark:bg-black/60 backdrop-blur-3xl border border-white/30 dark:border-white/10 rounded-[28px] p-2 shadow-2xl flex flex-col gap-1 min-w-[200px] z-50 ring-1 ring-white/20"
                                         >
-                                            <button 
-                                                type="button" 
-                                                onClick={() => { document.getElementById('chat-file-upload')?.click(); setShowAttachmentMenu(false); }} 
-                                                className="flex items-center gap-3 px-4 py-3 md:py-3 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
-                                            >
-                                                <Icons.FileText className="w-[18px] h-[18px] md:w-[18px] md:h-[18px] text-indigo-500" />
-                                                {t.uploadFile}
-                                            </button>
-                                            <button 
-                                                type="button" 
-                                                onClick={() => { startCamera(); setShowAttachmentMenu(false); }} 
-                                                className="flex items-center gap-3 px-4 py-3 md:py-3 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
-                                            >
-                                                <Icons.Camera className="w-[18px] h-[18px] md:w-[18px] md:h-[18px] text-fuchsia-500" />
-                                                {t.takePhoto}
-                                            </button>
+                                            {[
+                                                { icon: Icons.FileText, label: t.uploadFile, action: () => document.getElementById('chat-file-upload')?.click(), color: 'bg-indigo-500/10 text-indigo-500' },
+                                                { icon: Icons.Camera, label: t.takePhoto, action: startCamera, color: 'bg-fuchsia-500/10 text-fuchsia-500' },
+                                            ].map((item, idx) => (
+                                                <button 
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => { item.action(); setShowAttachmentMenu(false); }}
+                                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-white/40 dark:hover:bg-white/10 transition-all font-bold text-sm text-left uppercase tracking-widest text-gray-700 dark:text-gray-200"
+                                                >
+                                                    <div className={`p-2 rounded-xl ${item.color}`}><item.icon className="w-5 h-5" /></div>
+                                                    <span>{item.label}</span>
+                                                </button>
+                                            ))}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
                             </div>
 
-                            <div className="flex items-center gap-1 md:gap-2">
-                                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} type="button" onClick={switchToVoice} className="p-2.5 md:p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-colors" title={t.switchToVoice}>
-                                    <Icons.Microphone className="w-5 h-5 md:w-5 md:h-5" />
-                                </motion.button>
-                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="submit" disabled={(!inputMsg.trim() && !selectedFile && pastedTexts.length === 0) || isChatLoading} className="p-2.5 md:p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-30 disabled:hover:bg-indigo-600 transition-all shadow-lg">
-                                    {isChatLoading ? <div className="w-5 h-5 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send className="w-5 h-5 md:w-5 md:h-5" />}
+                            <div className="flex items-center gap-3 bg-white/10 dark:bg-black/20 px-3 py-2 rounded-3xl border border-white/20">
+                                <motion.div onMouseEnter={() => setIsMicHovered(true)} onMouseLeave={() => setIsMicHovered(false)}>
+                                    <ClaudeMicrophone 
+                                        isActive={isVoiceActive} 
+                                        isHovered={isMicHovered}
+                                        onClick={switchToVoice} 
+                                    />
+                                </motion.div>
+
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }} 
+                                    whileTap={{ scale: 0.95 }} 
+                                    type="submit" 
+                                    disabled={(!inputMsg.trim() && !selectedFile && pastedTexts.length === 0) || isChatLoading} 
+                                    className="p-3 md:px-8 h-12 bg-indigo-600 dark:bg-indigo-500 text-white rounded-full shadow-lg disabled:opacity-30 transition-all flex items-center gap-2 group relative overflow-hidden"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                                    {isChatLoading ? (
+                                        <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            <span className="hidden md:block font-black text-[11px] uppercase tracking-[0.3em] font-sans">{lang === Language.EN ? 'Send' : 'Gửi'}</span>
+                                            <Icons.Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                        </>
+                                    )}
                                 </motion.button>
                             </div>
                         </div>
-
                     </form>
+
+                    {messages.length === 0 && (
+                        <div className="flex flex-wrap justify-center gap-2 mt-6 max-w-3xl w-full">
+                            {SUGGESTION_PROMPTS[lang] && SUGGESTION_PROMPTS[lang].map((suggestion, idx) => {
+                                const IconComponent = (Icons as any)[suggestion.icon] || Icons.MessageSquare;
+                                return (
+                                    <motion.button
+                                        key={idx}
+                                        whileHover={{ 
+                                            scale: 1.02, 
+                                            backgroundColor: theme === Theme.LIGHT ? "rgba(243, 244, 246, 0.8)" : "rgba(31, 41, 55, 0.6)",
+                                            borderColor: theme === Theme.LIGHT ? "rgba(99, 102, 241, 0.3)" : "rgba(99, 102, 241, 0.4)"
+                                        }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleSendMessage(undefined, suggestion.prompt)}
+                                        className="flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border border-white/60 dark:border-white/10 text-[13px] font-semibold text-gray-700 dark:text-gray-200 transition-all bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-sm hover:shadow-md"
+                                    >
+                                        <div className="p-1.5 bg-indigo-500/10 rounded-lg">
+                                            <IconComponent className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                        </div>
+                                        <span>{suggestion.title}</span>
+                                    </motion.button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
-                 <div className="text-center pb-2 text-[10px] text-gray-400 uppercase tracking-widest font-bold opacity-60">{t.footerDisclaimer}</div>
+                 <div className="text-center pb-2 text-[10px] text-gray-400 uppercase tracking-widest font-bold opacity-60 z-20">{t.footerDisclaimer}</div>
             </div>
         )}
         {tab === DashboardTab.VOICE && (
-             <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505]">
-                 <div className="w-full p-6 flex justify-between items-center z-20">
+             <div className="flex-1 flex flex-col h-full bg-transparent relative overflow-hidden z-10 w-full">
+                 {/* Liquid background blur */}
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-rose-500/20 rounded-full blur-[100px] opacity-50 pointer-events-none transition-all duration-1000" style={{ transform: `translate(-50%, -50%) scale(${isVoiceActive ? 1.2 : 1})` }}></div>
+                 
+                 <div className="w-full p-6 flex justify-between items-center z-20 relative">
                     <div className="flex flex-col"><h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.voiceMode}</h2><span className="text-sm text-gray-500 font-medium">{voiceStatus || t.readyToConnect}</span></div>
-                     <div className="px-4 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black rounded-full flex items-center gap-2 animate-pulse"><div className="w-2 h-2 bg-red-500 rounded-full"></div>{t.live}</div>
+                     <div className={`px-4 py-1.5 text-xs font-black rounded-full flex items-center gap-2 transition-colors ${isVoiceActive ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 animate-pulse' : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
+                         <div className={`w-2 h-2 rounded-full ${isVoiceActive ? 'bg-red-500' : 'bg-gray-400'}`}></div>{isVoiceActive ? t.live : t.readyToConnect}
+                     </div>
                  </div>
-                 <div className="flex-1 flex flex-col md:flex-row p-6 gap-6 overflow-hidden">
-                    <div className="flex-1 flex flex-col items-center justify-center relative rounded-[2rem] bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/5 p-6">
-                        <div className={`relative w-56 h-56 transition-all duration-700 cursor-pointer group mb-10`} onClick={handleVoiceToggle}>
-                             <div className={`absolute inset-0 rounded-full blur-3xl transition-opacity duration-1000 ${isVoiceActive ? 'bg-indigo-500 opacity-40' : 'bg-gray-200 dark:bg-indigo-900 opacity-10'}`}></div>
-                             <div className={`relative w-full h-full rounded-full flex items-center justify-center shadow-2xl border-[6px] transition-all duration-500 overflow-hidden ${isVoiceActive ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-400/50 scale-105' : 'bg-white dark:bg-[#111] border-gray-100 dark:border-white/5 group-hover:scale-105'}`}>
-                                 <Icons.Microphone className={`w-20 h-20 z-10 transition-colors duration-300 ${isVoiceActive ? 'text-white' : 'text-gray-300 dark:text-gray-700'}`} />
-                             </div>
+                 <div className="flex-1 flex flex-col md:flex-row p-6 gap-6 overflow-hidden relative z-10">
+                    <div className="flex-1 flex flex-col items-center justify-center relative rounded-[32px] bg-white/40 dark:bg-black/40 backdrop-blur-3xl border border-white/60 dark:border-white/10 p-6 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
+                        <div className="relative flex-1 flex flex-col items-center justify-center w-full">
+                            {/* Glass liquid orb */}
+                            <motion.div 
+                                className="relative w-64 h-64 cursor-pointer group flex items-center justify-center mb-12"
+                                onClick={handleVoiceToggle}
+                                animate={{
+                                    scale: isVoiceActive ? [1, 1.05 + audioLevel * 0.1, 1] : 1,
+                                }}
+                                transition={{
+                                    duration: 2,
+                                    repeat: Infinity,
+                                    ease: "easeInOut"
+                                }}
+                            >
+                                <div className={`absolute inset-0 rounded-full transition-all duration-700 ${isVoiceActive ? 'bg-gradient-to-tr from-cyan-400 via-indigo-500 to-fuchsia-500 blur-2xl opacity-70 scale-[1.15] mix-blend-screen' : 'bg-gradient-to-tr from-gray-300 to-gray-200 dark:from-white/10 dark:to-white/5 blur-xl opacity-40 group-hover:opacity-60'}`}></div>
+                                {isVoiceActive && (
+                                    <motion.div 
+                                        className="absolute inset-0 rounded-full bg-gradient-to-bl from-rose-400 via-yellow-400 to-transparent blur-xl mix-blend-overlay opacity-80"
+                                        animate={{ rotate: 360, scale: [1, 1.1, 1] }} 
+                                        transition={{ rotate: { duration: 8, repeat: Infinity, ease: 'linear' }, scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' } }}
+                                    ></motion.div>
+                                )}
+                                <div className={`absolute inset-2 outline-none rounded-full backdrop-blur-3xl border border-white/50 dark:border-white/20 shadow-[inset_0_4px_30px_rgba(255,255,255,0.6)] dark:shadow-[inset_0_4px_30px_rgba(255,255,255,0.1)] transition-all duration-700 ${isVoiceActive ? 'bg-white/10 dark:bg-black/10' : 'bg-white/30 dark:bg-black/30 group-hover:bg-white/40 dark:group-hover:bg-black/20'}`}></div>
+                                
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                     <Icons.Microphone className={`w-20 h-20 z-10 transition-colors duration-500 drop-shadow-md ${isVoiceActive ? 'text-white' : 'text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-white'}`} />
+                                </div>
+                                
+                                {/* Dynamic sound wave effect around orb */}
+                                {isVoiceActive && (
+                                    <svg className="absolute inset-[-30px] w-[calc(100%+60px)] h-[calc(100%+60px)] pointer-events-none opacity-60" viewBox="0 0 200 200">
+                                        <motion.circle cx="100" cy="100" r="90" fill="none" stroke="url(#siri-gradient)" strokeWidth="3" strokeDasharray="10 15"
+                                            animate={{ rotate: -360, scale: [1, 1.05 + audioLevel * 0.2, 1] }}
+                                            transition={{ rotate: { duration: 15, repeat: Infinity, ease: "linear" }, scale: { duration: 0.2 } }}
+                                            style={{ filter: 'blur(1px)' }}
+                                        />
+                                        <defs>
+                                            <linearGradient id="siri-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor="#22d3ee" />
+                                                <stop offset="50%" stopColor="#6366f1" />
+                                                <stop offset="100%" stopColor="#d946ef" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                )}
+                            </motion.div>
+                            
+                            <div className="w-full max-w-sm h-16 rounded-2xl overflow-hidden mb-8 bg-white/30 dark:bg-white/5 backdrop-blur-xl border border-white/40 dark:border-white/10 flex items-center justify-center p-4">
+                                <Visualizer isActive={isVoiceActive} level={audioLevel} />
+                            </div>
                         </div>
-                        <div className="w-full max-w-sm h-24 rounded-2xl overflow-hidden mb-8 bg-black/5 dark:bg-white/5 backdrop-blur-sm p-4 border border-white/10"><Visualizer isActive={isVoiceActive} level={audioLevel} /></div>
+
                         <div className="w-full max-w-sm space-y-4">
                              <div className="relative group">
-                                <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{t.selectMic}</label>
                                 <div className="relative">
-                                    <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)} disabled={isVoiceActive} className="w-full appearance-none bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white py-3.5 px-4 pr-8 rounded-xl leading-tight focus:outline-none focus:border-indigo-500 font-medium transition-colors">
-                                        {inputDevices.map((device) => (<option key={device.deviceId} value={device.deviceId}>{device.label || `${t.microphone} ${device.deviceId.slice(0, 5)}...`}</option>))}
+                                    <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)} disabled={isVoiceActive} className="w-full appearance-none bg-white/50 dark:bg-black/30 backdrop-blur-xl border border-white/50 dark:border-white/10 text-gray-900 dark:text-white py-4 px-5 pr-10 rounded-2xl leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-medium transition-all">
+                                        {inputDevices.map((device) => (<option key={device.deviceId} value={device.deviceId} className="bg-white dark:bg-black">{device.label || `${t.microphone} ${device.deviceId.slice(0, 5)}...`}</option>))}
                                     </select>
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500"><Icons.ChevronDown className="w-4 h-4" /></div>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500"><Icons.ChevronDown className="w-5 h-5" /></div>
                                 </div>
                              </div>
                              <motion.button 
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={handleVoiceToggle} 
-                                className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-xl ${isVoiceActive ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white'}`}
+                                className={`w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-lg backdrop-blur-xl border ${isVoiceActive ? 'bg-red-500/90 border-red-400 hover:bg-red-600/90 text-white shadow-red-500/20' : 'bg-gray-900/90 dark:bg-white/90 border-transparent hover:bg-black dark:hover:bg-white text-white dark:text-black shadow-black/10 dark:shadow-white/10'}`}
                              >
                                 {isVoiceActive ? t.endVoice : t.startVoice}
                              </motion.button>
                         </div>
                     </div>
-                    <div className="flex-1 flex flex-col rounded-[2rem] bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/5 overflow-hidden shadow-sm">
-                        <div className="p-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5"><h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{t.transcript}</h3></div>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                            {transcripts.length === 0 ? (<div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-600 text-sm font-medium italic">{isVoiceActive ? t.listening : t.readyToStart}</div>) : (transcripts.map((tr, i) => (<div key={i} className={`flex ${tr.isUser ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium ${tr.isUser ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 rounded-tr-none' : 'bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-gray-200 rounded-tl-none'}`}>{tr.text}</div></div>)))}
+                    <div className="flex-1 flex flex-col rounded-[32px] bg-white/40 dark:bg-black/40 backdrop-blur-3xl border border-white/60 dark:border-white/10 overflow-hidden shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
+                        <div className="p-6 border-b border-white/30 dark:border-white/10"><h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 tracking-wide">{t.transcript}</h3></div>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            {transcripts.length === 0 ? (<div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm font-medium">{isVoiceActive ? t.listening : t.readyToStart}</div>) : (transcripts.map((tr, i) => (<div key={i} className={`flex ${tr.isUser ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] px-5 py-4 rounded-3xl text-[15px] leading-relaxed backdrop-blur-xl border shadow-sm ${tr.isUser ? 'bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-950 dark:text-indigo-100 border-indigo-200/50 dark:border-indigo-400/20 rounded-br-sm' : 'bg-white/60 dark:bg-white/10 text-gray-900 dark:text-gray-100 border-white/80 dark:border-white/10 rounded-bl-sm'}`}>{tr.text}</div></div>)))}
                             <div ref={transcriptEndRef} />
                         </div>
                     </div>
@@ -2399,8 +2477,8 @@ export default function App() {
              </div>
         )}
         {tab === DashboardTab.QUIZ && (
-            <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505] overflow-y-auto">
-                <div className="w-full p-6 border-b border-gray-200 dark:border-white/5">
+            <div className="flex-1 flex flex-col h-full bg-transparent overflow-y-auto">
+                <div className="w-full p-6 border-b border-white/60 dark:border-white/10 backdrop-blur-xl">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.careerQuizTitle}</h2>
                     <p className="text-sm text-gray-500 font-medium">{t.careerQuizDesc}</p>
                 </div>
@@ -2448,7 +2526,7 @@ export default function App() {
         </AnimatePresence>
         
         {/* Mobile Bottom Navigation */}
-        <div className="md:hidden shrink-0 h-16 bg-white dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-white/5 flex items-center justify-around px-2 z-20 pb-safe">
+        <div className="md:hidden shrink-0 h-16 bg-white/40 dark:bg-black/20 backdrop-blur-3xl border-t border-white/60 dark:border-white/10 flex items-center justify-around px-2 z-20 pb-safe shadow-[0_-4px_32px_rgba(0,0,0,0.1)]">
             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.CHAT)} className={`flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.CHAT ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.MessageSquare className="w-5 h-5 mb-1" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.chatMode}</span>
@@ -2491,7 +2569,7 @@ export default function App() {
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0, y: 20 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative"
+                    className="bg-white/70 dark:bg-black/60 backdrop-blur-3xl border border-white/80 dark:border-white/10 rounded-[40px] p-8 md:p-12 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-[0_20px_50px_rgba(0,0,0,0.15)] relative"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="profile-modal-title"
@@ -2626,10 +2704,17 @@ export default function App() {
   };
 
   return (
-    <>
+    <div className={`flex flex-col w-full min-h-[100dvh] font-sans antialiased overflow-hidden relative transition-colors ${theme === Theme.LIGHT ? 'bg-[#fcfdfd] text-gray-900' : 'bg-[#050507] text-white dark'}`}>
+        {/* Apple liquid glass background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+             <div className={`absolute top-[10%] left-[10%] w-[30vw] h-[30vw] rounded-full blur-[80px] animate-blob transition-opacity duration-1000 ${theme === Theme.LIGHT ? 'bg-blue-500/40 mix-blend-multiply' : 'bg-blue-600/40 mix-blend-screen'}`}></div>
+             <div className={`absolute top-[20%] right-[10%] w-[25vw] h-[40vw] rounded-[100px] blur-[80px] animate-blob animation-delay-2000 transition-opacity duration-1000 ${theme === Theme.LIGHT ? 'bg-emerald-500/40 mix-blend-multiply' : 'bg-emerald-600/40 mix-blend-screen'}`}></div>
+             <div className={`absolute bottom-[10%] left-[30%] w-[40vw] h-[25vw] rounded-[100px] blur-[80px] animate-blob animation-delay-4000 transition-opacity duration-1000 ${theme === Theme.LIGHT ? 'bg-pink-500/40 mix-blend-multiply' : 'bg-pink-600/40 mix-blend-screen'}`}></div>
+        </div>
+
       {!hasAcceptedTerms && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative overflow-hidden">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white/70 dark:bg-black/70 border border-white/60 dark:border-white/10 backdrop-blur-3xl rounded-[32px] p-8 max-w-lg w-full shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-fuchsia-500"></div>
             
             <div className="flex justify-between items-center mb-6">
@@ -2686,6 +2771,6 @@ export default function App() {
       </AnimatePresence>
 
       {renderContent()}
-    </>
+    </div>
   );
 }
