@@ -15,6 +15,7 @@ import { ClarificationCard } from './components/ClarificationCard';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { storage } from './utils/storage';
 
 // --- CONFIGURATION ---
@@ -2707,6 +2708,7 @@ export default function App() {
       </AnimatePresence>
 
       {renderContent()}
+      <SpeedInsights />
     </>
   );
 }
