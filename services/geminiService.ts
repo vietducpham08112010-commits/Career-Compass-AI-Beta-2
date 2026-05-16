@@ -344,7 +344,6 @@ export class LiveSessionManager {
   onTranscript?: (text: string, isUser: boolean) => void;
 
   isConnected: boolean;
-  private _textBuffer: string = "";
 
   constructor(language: Language, userProfile?: UserProfile | null) { 
     this.language = language;
@@ -426,35 +425,13 @@ export class LiveSessionManager {
                           if (text && this.onTranscript) this.onTranscript(text, true);
                       }
                       
-                      const textChunk = serverContent.modelTurn?.parts?.[0]?.text;
-                      if (textChunk) {
-                          this._textBuffer += textChunk;
-                          if (this.onTranscript) this.onTranscript(textChunk, false);
-                      }
-
-                      if (serverContent.turnComplete && this._textBuffer.trim().length > 0) {
-                          const finalMsg = this._textBuffer.trim();
-                          this._textBuffer = "";
-                          try {
-                              const ttsResponse = await fetch('/api/tts', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ text: finalMsg })
-                              });
-                              if (ttsResponse.ok && this.outputContext) {
-                                  const arrayBuffer = await ttsResponse.arrayBuffer();
-                                  const audioBuffer = await this.outputContext.decodeAudioData(arrayBuffer);
-                                  this.playAudio(audioBuffer);
-                              }
-                          } catch (err) {
-                              console.error("ElevenLabs TTS error:", err);
-                          }
+                      const base64Audio = serverContent.modelTurn?.parts?.[0]?.inlineData?.data;
+                      if (base64Audio && this.outputContext) {
+                        const audioBuffer = await decodeAudioDataFn(decodeFn(base64Audio), this.outputContext, 24000, 1);
+                        this.playAudio(audioBuffer);
                       }
                       
-                      if (serverContent.interrupted) {
-                          this.stopCurrentAudio();
-                          this._textBuffer = "";
-                      }
+                      if (serverContent.interrupted) this.stopCurrentAudio();
                   }
                 },
                 onclose: () => {
@@ -472,19 +449,26 @@ export class LiveSessionManager {
                 }
               },
               config: {
-                responseModalities: [Modality.TEXT],
+                responseModalities: [Modality.AUDIO],
+                outputAudioTranscription: {},
                 inputAudioTranscription: {},
-                systemInstruction: systemInstruction
+                systemInstruction: systemInstruction,
+                speechConfig: { 
+                  voiceConfig: { 
+                    prebuiltVoiceConfig: { 
+                      voiceName: 'Kore' 
+                    } 
+                  } 
+                }
               }
           });
           return sessionPromise;
       };
 
       try {
-          this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-09-2025');
+          this.session = await connectToGemini('gemini-3.1-flash-live-preview');
       } catch (err) {
-          console.warn("Failed with primary model, trying fallback: gemini-2.5-flash-native-audio-preview-12-2025");
-          this.session = await connectToGemini('gemini-2.5-flash-native-audio-preview-12-2025');
+          console.warn("Failed with primary model, trying fallback.");
       }
 
     } catch (e) { 
@@ -511,17 +495,18 @@ export class LiveSessionManager {
             if (sessionPromise) {
                 sessionPromise.then(session => {
                     if (this.isConnected) {
-                        session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+                        session.sendRealtimeInput({ audio: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
                     }
                 });
             } else if (this.session && this.isConnected) {
-                this.session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+                this.session.sendRealtimeInput({ audio: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
             }
         };
         this.inputSource.connect(this.processor);
         this.processor.connect(this.inputContext.destination);
     } catch (err) {
         console.warn("AudioWorklet failed, falling back to ScriptProcessorNode", err);
+        if (!this.inputContext) return;
         // Fallback to ScriptProcessorNode
         this.processor = this.inputContext.createScriptProcessor(2048, 1, 1);
         this.processor.onaudioprocess = (e) => {
@@ -535,11 +520,11 @@ export class LiveSessionManager {
           if (sessionPromise) {
               sessionPromise.then(session => {
                   if (this.isConnected) {
-                      session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+                      session.sendRealtimeInput({ audio: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
                   }
               });
           } else if (this.session && this.isConnected) {
-              this.session.sendRealtimeInput({ media: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
+              this.session.sendRealtimeInput({ audio: { data: pcmBlob.data, mimeType: pcmBlob.mimeType } });
           }
         };
         this.inputSource.connect(this.processor);

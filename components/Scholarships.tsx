@@ -79,7 +79,7 @@ export const Scholarships = ({
       )}
 
       {results && !isSearching && (
-        <div className="flex-1 overflow-y-auto bg-white/40 dark:bg-black/30 backdrop-blur-3xl border border-white/60 dark:border-white/10 rounded-[32px] p-6 md:p-8 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm">
           <div className="markdown-body">
              <Markdown>{results}</Markdown>
           </div>
