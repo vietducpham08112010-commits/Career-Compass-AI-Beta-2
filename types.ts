@@ -20,7 +20,9 @@ export enum DashboardTab {
   QUIZ = 'QUIZ',
   PROGRESS = 'PROGRESS',
   PORTFOLIO = 'PORTFOLIO',
-  SCHOLARSHIPS = 'SCHOLARSHIPS'
+  SCHOLARSHIPS = 'SCHOLARSHIPS',
+  SCORES = 'SCORES',
+  COMPARE = 'COMPARE'
 }
 
 export enum AIProvider {
@@ -50,6 +52,7 @@ export interface ChatSession {
   title: string;
   date: Date;
   messages: ChatMessage[];
+  isStarred?: boolean;
 }
 
 export interface PortfolioItem {

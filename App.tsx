@@ -5,17 +5,20 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Language, Theme, AppMode, DashboardTab, ChatMessage, ChatSession, AuthState, Transcript, UserProfile, AIProvider, Milestone, PortfolioItem, Clarification } from './types';
 import { AVATARS, CAREER_TAGS, CAREER_QUOTES, SUGGESTION_PROMPTS, TRANSLATIONS, HOT_INDUSTRIES } from './constants';
-import { sendChatMessage, LiveSessionManager } from './services/geminiService';
+import { sendChatMessage, LiveSessionManager, generateChatTitle } from './services/geminiService';
 import { decode, encode, decodeAudioData, createPcmBlob } from './utils/audio';
 import { Visualizer } from './components/Visualizer';
 import { ProgressBoard } from './components/ProgressBoard';
 import { Portfolio } from './components/Portfolio';
 import { Scholarships } from './components/Scholarships';
+import { UniversityScores } from './components/UniversityScores';
+import { CareerCompare } from './components/CareerCompare';
 import { ClarificationCard } from './components/ClarificationCard';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { storage } from './utils/storage';
+import bcrypt from 'bcryptjs';
 
 // --- CONFIGURATION ---
 const EMAILJS_CONFIG = {
@@ -27,13 +30,13 @@ const EMAILJS_CONFIG = {
 // --- FIREBASE CONFIGURATION ---
 // Restoring hardcoded config to ensure the app runs immediately for you.
 const firebaseConfig = {
-  apiKey: "AIzaSyCT-Aw--rfLeQQVVy_ozrmQJ7dFwVGaa3Q",
-  authDomain: "career-compass-ai-40718.firebaseapp.com",
-  projectId: "career-compass-ai-40718",
-  storageBucket: "career-compass-ai-40718.firebasestorage.app",
-  messagingSenderId: "20883129610",
-  appId: "1:20883129610:web:f88ef27af7f011858526f3",
-  measurementId: "G-CWQHNXHX5R"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase safely
@@ -393,6 +396,115 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
 
 // --- Main Component ---
 
+const SidebarChatItem = ({ 
+    session, 
+    onClick, 
+    onRename, 
+    onStar, 
+    onDelete, 
+    t 
+}: { 
+    session: ChatSession, 
+    onClick: () => void, 
+    onRename: (id: string, newTitle: string) => void,
+    onStar: (id: string) => void,
+    onDelete: (e: React.MouseEvent, id: string) => void,
+    t: any
+}) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState(session.title);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+        if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isMenuOpen]);
+
+    const handleSaveEdit = () => {
+        if (editValue.trim() && editValue !== session.title) {
+            onRename(session.id, editValue.trim());
+        } else {
+            setEditValue(session.title);
+        }
+        setIsEditing(false);
+    };
+
+    if (isEditing) {
+        return (
+            <div className="w-full flex items-center px-2 py-1 mb-1">
+                <input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveEdit();
+                        if (e.key === 'Escape') { setIsEditing(false); setEditValue(session.title); }
+                    }}
+                    onBlur={handleSaveEdit}
+                    autoFocus
+                    className="w-full bg-white dark:bg-[#111111] border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1 text-sm text-gray-900 dark:text-white outline-none focus:border-indigo-500"
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative group flex items-center w-full mb-1" ref={menuRef}>
+            <motion.button 
+                whileHover={{ scale: 1.01, x: 2 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={onClick} 
+                className="flex-1 flex items-center gap-2 text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors pr-8"
+            >
+                {session.isStarred && <Icons.Star className="w-3 h-3 text-yellow-500 flex-shrink-0" fill="currentColor" />}
+                <span className="truncate">{session.title}</span>
+            </motion.button>
+            <button
+                onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }}
+                className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-white/20 rounded-md transition-all z-10"
+            >
+                <Icons.MoreVertical className="w-4 h-4 text-gray-400" />
+            </button>
+
+            <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="absolute right-0 top-10 w-40 bg-white dark:bg-[#111111] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden z-50 flex flex-col p-1 text-sm text-gray-700 dark:text-gray-300"
+                    >
+                        <button
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-left"
+                            onClick={(e) => { e.stopPropagation(); onStar(session.id); setIsMenuOpen(false); }}
+                        >
+                            <Icons.Star className="w-4 h-4" /> {session.isStarred ? 'Unstar' : 'Star'}
+                        </button>
+                        <button
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-left"
+                            onClick={(e) => { e.stopPropagation(); setIsEditing(true); setIsMenuOpen(false); }}
+                        >
+                            <Icons.Edit2 className="w-4 h-4" /> Rename
+                        </button>
+                        <button
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg text-left mt-1 border-t border-gray-100 dark:border-white/5 pt-2"
+                            onClick={(e) => { onDelete(e, session.id); setIsMenuOpen(false); }}
+                        >
+                            <Icons.Trash2 className="w-4 h-4" /> Delete
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 export default function App() {
   const [lang, setLang] = useState<Language>(Language.VI);
   const t = TRANSLATIONS[lang];
@@ -427,8 +539,10 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [currentChatTitle, setCurrentChatTitle] = useState<string>('');
   const [welcomePhrase, setWelcomePhrase] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const recognitionRef = useRef<any>(null);
   
   const greeting = useMemo(() => {
@@ -464,6 +578,7 @@ export default function App() {
   useEffect(() => {
     const loadChatData = async () => {
       if (auth.user?.email || auth.user?.isGuest) {
+        setIsLoadingData(true);
         const userKey = auth.user?.email || 'guest';
         
         // Load History
@@ -495,6 +610,7 @@ export default function App() {
         } else {
           setMessages([]);
         }
+        setIsLoadingData(false);
       }
     };
     loadChatData();
@@ -908,11 +1024,14 @@ export default function App() {
         return;
     }
 
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+
     const newUser: UserProfile = { 
         name, 
         email, 
         // @ts-ignore
-        password, 
+        password: hashedPassword, 
         careerGoal: t.undecided, 
         avatar: getRandomAvatar(),
         aiProvider: AIProvider.GEMINI,
@@ -937,9 +1056,9 @@ export default function App() {
     if (!email || !password) return setAuthError(t.fillAllFields);
 
     const users = getUsers();
-    const user = users.find(u => u.email === email && u.password === password);
+    const user = users.find(u => u.email === email);
 
-    if (user) {
+    if (user && user.password && bcrypt.compareSync(password, user.password as string)) {
         if (!user.provider) user.provider = 'local';
         localStorage.setItem('currentUser', JSON.stringify(user));
         setAuth({ isAuthenticated: true, user });
@@ -999,7 +1118,11 @@ export default function App() {
       setIsResetSending(true);
 
       const randomCode = Math.floor(10000000 + Math.random() * 90000000).toString();
-      setGeneratedResetCode(randomCode);
+      
+      const salt = bcrypt.genSaltSync(10);
+      const hashedCode = bcrypt.hashSync(randomCode, salt);
+      sessionStorage.setItem('resetCodeHash', hashedCode);
+      sessionStorage.setItem('resetCodeExpiry', (Date.now() + 15 * 60 * 1000).toString()); // 15 mins expiry
 
       try {
           await emailjs.send(
@@ -1022,7 +1145,13 @@ export default function App() {
       e.preventDefault();
       setIsVerifyingCode(true);
       setTimeout(() => {
-          if (resetCodeInput === generatedResetCode) {
+          const storedHash = sessionStorage.getItem('resetCodeHash');
+          const expiryStr = sessionStorage.getItem('resetCodeExpiry');
+          const isValid = storedHash && expiryStr && 
+              parseInt(expiryStr) > Date.now() && 
+              bcrypt.compareSync(resetCodeInput, storedHash);
+          
+          if (isValid) {
               setAuthType('new-password');
               setResetCodeInput(''); 
           } else {
@@ -1048,14 +1177,16 @@ export default function App() {
       const userIndex = users.findIndex(u => u.email === resetTokenEmail);
       
       if (userIndex > -1) {
-          users[userIndex].password = pass;
+          const salt = bcrypt.genSaltSync(10);
+          users[userIndex].password = bcrypt.hashSync(pass, salt);
           localStorage.setItem('users', JSON.stringify(users));
           showToast(t.passwordUpdated, 'success');
           setAuthType('login');
           setAuthError('');
           setIsResetSent(false); 
           setResetCodeInput('');
-          setGeneratedResetCode(null); 
+          sessionStorage.removeItem('resetCodeHash'); 
+          sessionStorage.removeItem('resetCodeExpiry'); 
       } else {
           setAuthError(t.userNotFound);
       }
@@ -1088,6 +1219,22 @@ export default function App() {
     showToast(t.sessionCleared, 'info');
   };
 
+  const renameSession = (id: string, newTitle: string) => {
+      setChatHistory(prev => prev.map(s => s.id === id ? { ...s, title: newTitle } : s));
+  };
+
+  const toggleStarSession = (id: string) => {
+      setChatHistory(prev => prev.map(s => s.id === id ? { ...s, isStarred: !s.isStarred } : s));
+  };
+
+  const deleteSession = (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      setChatHistory(prev => prev.filter(s => s.id !== id));
+      if (currentSessionId === id) {
+          startNewChat();
+      }
+  };
+
   const handleLogout = async () => {
     try {
         if (firebaseAuth) await signOut(firebaseAuth);
@@ -1104,23 +1251,27 @@ export default function App() {
 
   const startNewChat = () => {
       if (messages.length > 0 && !isTemporaryChat) {
-          const newSession: ChatSession = { id: currentSessionId || Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
+          const title = currentChatTitle || messages[0].text.substring(0, 30) + "...";
+          const newSession: ChatSession = { id: currentSessionId || Date.now().toString(), title, date: new Date(), messages: [...messages] };
           setChatHistory(prev => [newSession, ...prev.filter(s => s.id !== newSession.id)]);
       }
       setMessages([]);
       setCurrentSessionId(null);
+      setCurrentChatTitle('');
       setTab(DashboardTab.CHAT);
   };
 
   const loadSession = (session: ChatSession) => {
       if (messages.length > 0 && !isTemporaryChat) {
-           const currentSession: ChatSession = { id: currentSessionId || Date.now().toString(), title: messages[0].text.substring(0, 30) + "...", date: new Date(), messages: [...messages] };
+           const title = currentChatTitle || messages[0].text.substring(0, 30) + "...";
+           const currentSession: ChatSession = { id: currentSessionId || Date.now().toString(), title, date: new Date(), messages: [...messages] };
            setChatHistory(prev => [currentSession, ...prev.filter(s => s.id !== currentSession.id && s.id !== session.id)]);
       } else {
            setChatHistory(prev => prev.filter(s => s.id !== session.id));
       }
       setMessages(session.messages);
       setCurrentSessionId(session.id);
+      setCurrentChatTitle(session.title);
       setIsTemporaryChat(false); // Turn off temporary chat when loading a saved session
       setTab(DashboardTab.CHAT);
   };
@@ -1138,6 +1289,13 @@ export default function App() {
     if (!overrideText) {
         setInputMsg('');
         setPastedTexts([]);
+    }
+    
+    // Auto generate chat title if it's the first message
+    if (messages.length === 0 && !currentChatTitle) {
+         generateChatTitle(textToSend, lang)
+             .then(title => { if (title) setCurrentChatTitle(title); })
+             .catch(e => console.error("Auto title failed:", e));
     }
     
     setThinkingText(getThinkingMessage(textToSend, lang));
@@ -1764,13 +1922,22 @@ export default function App() {
       {/* Mobile Sidebar Drawer */}
       <AnimatePresence>
         {isMobileSidebarOpen && (
-          <motion.aside
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0a0a0a] z-[70] md:hidden flex flex-col border-r border-gray-200 dark:border-white/5 shadow-2xl"
-          >
+          <>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[65] md:hidden"
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0a0a0a] z-[70] md:hidden flex flex-col border-r border-gray-200 dark:border-white/5 shadow-2xl"
+            >
             <div className="p-4 flex items-center justify-between">
                 <AnimatedLogoButton 
                     onClick={() => { setMode(AppMode.LANDING); setIsMobileSidebarOpen(false); }} 
@@ -1799,22 +1966,34 @@ export default function App() {
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />{t.progress}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.PORTFOLIO); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Briefcase className="w-5 h-5" />{t.portfolio}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.SCHOLARSHIPS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.SCHOLARSHIPS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Search className="w-5 h-5" />{t.scholarships}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.SCORES); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.SCORES ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.BookOpen className="w-5 h-5" />{t.universityScores}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.COMPARE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.COMPARE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Activity className="w-5 h-5" />{t.careerCompare}</motion.button>
                 
-                {chatHistory.length > 0 && (
+                {chatHistory.length > 0 ? (
                     <div className="mt-8">
                         <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div>
                         <div className="space-y-1">
                             {chatHistory.slice(0, 10).map((session) => (
-                                <motion.button 
-                                    key={session.id} 
-                                    whileHover={{ scale: 1.02, x: 4 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => { loadSession(session); setIsMobileSidebarOpen(false); }} 
-                                    className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors"
-                                >
-                                    {session.title}
-                                </motion.button>
+                                <SidebarChatItem
+                                    key={session.id}
+                                    session={session}
+                                    onClick={() => { loadSession(session); setIsMobileSidebarOpen(false); }}
+                                    onRename={renameSession}
+                                    onStar={toggleStarSession}
+                                    onDelete={deleteSession}
+                                    t={t}
+                                />
                             ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="mt-8 animate-fade-in">
+                        <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div>
+                        </div>
+                        <div className="text-center p-4 border border-dashed border-gray-200 dark:border-white/10 rounded-xl mx-2">
+                            <Icons.MessageSquare className="w-6 h-6 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{lang === Language.VI ? 'Chưa có lịch sử trò chuyện. Hãy bắt đầu một cuộc hội thoại mới!' : 'No chat history yet. Start a new conversation!'}</p>
                         </div>
                     </div>
                 )}
@@ -1853,6 +2032,7 @@ export default function App() {
                 </div>
             </div>
           </motion.aside>
+          </>
         )}
       </AnimatePresence>
 
@@ -1883,8 +2063,10 @@ export default function App() {
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PROGRESS)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.progress}><Icons.Target className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.progress}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.Briefcase className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.SCHOLARSHIPS)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.SCHOLARSHIPS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.scholarships}><Icons.Search className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.scholarships}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.SCORES)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.SCORES ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.universityScores}><Icons.BookOpen className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.universityScores}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.COMPARE)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.COMPARE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerCompare}><Icons.Activity className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.careerCompare}</span>}</motion.button>
                 
-                {chatHistory.length > 0 && isSidebarOpen && (
+                {chatHistory.length > 0 && isSidebarOpen ? (
                 <div className="mt-8 animate-fade-in">
                     <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div>
@@ -1895,20 +2077,30 @@ export default function App() {
                     </div>
                     <div className="space-y-1">
                         {filteredHistory.map((session) => (
-                            <motion.button 
-                                key={session.id} 
-                                whileHover={{ scale: 1.02, x: 4 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => loadSession(session)} 
-                                className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg truncate transition-colors"
-                            >
-                                {session.title}
-                            </motion.button>
+                            <SidebarChatItem
+                                key={session.id}
+                                session={session}
+                                onClick={() => loadSession(session)}
+                                onRename={renameSession}
+                                onStar={toggleStarSession}
+                                onDelete={deleteSession}
+                                t={t}
+                            />
                         ))}
                         {filteredHistory.length === 0 && <div className="text-xs text-center py-2 text-gray-400">{t.noResultsFound}</div>}
                     </div>
                 </div>
-            )}
+            ) : isSidebarOpen ? (
+                <div className="mt-8 animate-fade-in">
+                    <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2"><Icons.History className="w-3 h-3" />{t.chatHistory}</div>
+                    </div>
+                    <div className="text-center p-4 border border-dashed border-gray-200 dark:border-white/10 rounded-xl">
+                        <Icons.MessageSquare className="w-6 h-6 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{lang === Language.VI ? 'Chưa có lịch sử trò chuyện. Hãy bắt đầu một cuộc hội thoại mới!' : 'No chat history yet. Start a new conversation!'}</p>
+                    </div>
+                </div>
+            ) : null}
         </nav>
         
         <div className="p-4 border-t border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm flex flex-col gap-2">
@@ -2051,30 +2243,45 @@ export default function App() {
             {tab === DashboardTab.CHAT && (
             <div className={`flex-1 flex flex-col h-full overflow-hidden relative ${messages.length === 0 ? 'w-full max-w-3xl mx-auto' : ''}`}>
                 <div className={`overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6 scroll-smooth ${messages.length === 0 ? 'flex flex-col items-center justify-end h-auto pb-4' : 'flex-1'}`}>
-                    {messages.length === 0 && (
-                        <div className="w-full flex-col flex justify-center items-center mt-20 md:mt-32 mb-8">
-                            <motion.div 
-                                initial={{ opacity: 0, y: 40 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                                className="w-full flex justify-center items-center gap-3"
-                            >
-                                <CareerGuideLogo className="w-8 h-8 md:w-12 md:h-12 text-[#E3AA8B] dark:text-[#D4A373] flex-shrink-0" />
-                                <h1 className="text-3xl md:text-5xl font-sans font-medium text-[#E3AA8B] dark:text-[#D4A373] tracking-tight">
-                                    {greeting.text}, {greeting.name}
-                                </h1>
-                            </motion.div>
-                            <motion.p
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                                className="text-gray-500 dark:text-gray-400 text-lg md:text-xl text-center max-w-2xl mt-4"
-                            >
-                                {welcomePhrase}
-                            </motion.p>
+                    {isLoadingData ? (
+                        <div className="w-full h-full flex flex-col justify-end gap-6 p-4">
+                            <div className="flex items-start gap-4 animate-pulse">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+                                <div className="space-y-3 flex-1 max-w-[70%]">
+                                    <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded-2xl rounded-tl-none w-full" />
+                                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-lg w-2/3" />
+                                </div>
+                            </div>
+                            <div className="flex justify-end animate-pulse">
+                                <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded-2xl rounded-tr-none w-1/2" />
+                            </div>
                         </div>
-                    )}
-                    {messages.map((m) => (
+                    ) : (
+                        <>
+                            {messages.length === 0 && (
+                                <div className="w-full flex-col flex justify-center items-center mt-20 md:mt-32 mb-8">
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 40 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                        className="w-full flex justify-center items-center gap-3"
+                                    >
+                                        <CareerGuideLogo className="w-8 h-8 md:w-12 md:h-12 text-[#E3AA8B] dark:text-[#D4A373] flex-shrink-0" />
+                                        <h1 className="text-3xl md:text-5xl font-sans font-medium text-[#E3AA8B] dark:text-[#D4A373] tracking-tight">
+                                            {greeting.text}, {greeting.name}
+                                        </h1>
+                                    </motion.div>
+                                    <motion.p
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                                        className="text-gray-500 dark:text-gray-400 text-lg md:text-xl text-center max-w-2xl mt-4"
+                                    >
+                                        {welcomePhrase}
+                                    </motion.p>
+                                </div>
+                            )}
+                            {messages.map((m) => (
                         <motion.div 
                             key={m.id} 
                             initial={{ opacity: 0, y: 20 }}
@@ -2135,6 +2342,8 @@ export default function App() {
                             </div>
                         </motion.div>
                     ))}
+                    </>
+                    )}
                     {isChatLoading && (
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }}
@@ -2464,6 +2673,16 @@ export default function App() {
         )}
         {tab === DashboardTab.SCHOLARSHIPS && (
             <Scholarships language={lang} userProfile={auth.user} />
+        )}
+        {tab === DashboardTab.SCORES && (
+            <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505] overflow-y-auto p-4 md:p-8">
+              <UniversityScores lang={lang} t={t} Icons={Icons} />
+            </div>
+        )}
+        {tab === DashboardTab.COMPARE && (
+            <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505] overflow-y-auto p-4 md:p-8">
+              <CareerCompare lang={lang} t={t} Icons={Icons} />
+            </div>
         )}
         </motion.div>
         </AnimatePresence>

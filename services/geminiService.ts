@@ -568,6 +568,149 @@ export class LiveSessionManager {
   }
 }
 
+export const generateChatTitle = async (message: string, language: Language) => {
+  const systemInstruction = "Generate a short, concise, and descriptive title (maximum 4 words) for a chat conversation that starts with the given user message. Return ONLY the title text, nothing else. No quotes.";
+  
+  const callApi = async () => {
+    const apiKey = await getGeminiApiKey();
+    const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            history: [],
+            message: `Generate title for this message: "${message}"\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.`,
+            systemInstruction,
+            apiKey
+        })
+    });
+    
+    // Direct fallback if proxy is missing
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+    if (!isJson) {
+        const ai = new GoogleGenAI({ apiKey });
+        const aiResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [{ role: 'user', parts: [{ text: `Generate title for this message: "${message}"\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
+            config: { systemInstruction }
+        });
+        return aiResponse.text?.trim() || 'New Chat';
+    }
+
+    const textResponse = await response.text();
+    let data;
+    try { data = JSON.parse(textResponse); } catch(e) { throw new Error('Invalid JSON'); }
+    if (data.error) throw new Error(data.error);
+    return data.text?.trim() || 'New Chat';
+  };
+
+  try {
+    return await retryWithBackoff(callApi);
+  } catch (error) {
+    console.error("Title generation error:", error);
+    return 'New Chat';
+  }
+};
+
+export const searchUniversityScores = async (query: string, language: Language) => {
+  const systemInstruction = "You are a university admission advisor. Search for university admission scores (điểm chuẩn) matching the user's query. Provide a clean table or list of universities, majors, subject groups, and scores for the most recent available year. If explicit data is not found, provide the best estimate based on historical data and clearly state it's an estimate. Use markdown formatting.";
+  
+  const callApi = async () => {
+    const apiKey = await getGeminiApiKey();
+    const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            history: [],
+            message: `Find university admission scores for: ${query}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.`,
+            systemInstruction,
+            apiKey
+        })
+    });
+    
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+    if (!isJson) {
+        const ai = new GoogleGenAI({ apiKey });
+        const aiResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [{ role: 'user', parts: [{ text: `Find university admission scores for: ${query}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
+            config: { systemInstruction }
+        });
+        return aiResponse.text || TRANSLATIONS[language].noAiResponse;
+    }
+
+    const textResponse = await response.text();
+    let data;
+    try { data = JSON.parse(textResponse); } catch(e) { throw new Error('Invalid JSON'); }
+    if (data.error) throw new Error(data.error);
+    return data.text || TRANSLATIONS[language].noAiResponse;
+  };
+
+  try {
+    return await retryWithBackoff(callApi);
+  } catch (error) {
+    console.error("University score search error:", error);
+    throw error;
+  }
+};
+
+export const compareCareers = async (career1: string, career2: string, language: Language) => {
+  const systemInstruction = "You are a career analyst. Return ONLY a valid JSON object comparing two given careers. The structure must be EXACTLY: { career1: { name, salary, demand, competition, workLife, description }, career2: { name, salary, demand, competition, workLife, description } }. Do not include markdown formatting like ```json.";
+  
+  const callApi = async () => {
+    const apiKey = await getGeminiApiKey();
+    const prompt = `Compare these two careers: "${career1}" and "${career2}". Language: ${language === Language.EN ? 'English' : 'Vietnamese'}. Values for salary, demand, competition, workLife MUST be concise (e.g. 'High', 'Cao', '$2000').`;
+    
+    const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            history: [], message: prompt, systemInstruction, apiKey
+        })
+    });
+    
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+    
+    let jsonStr = '';
+    if (!isJson) {
+        const ai = new GoogleGenAI({ apiKey });
+        const aiResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            config: { systemInstruction }
+        });
+        jsonStr = aiResponse.text || '';
+    } else {
+        const textResponse = await response.text();
+        let data;
+        try { data = JSON.parse(textResponse); } catch(e) {}
+        if (data && data.error) throw new Error(data.error);
+        jsonStr = data?.text || '';
+    }
+
+    jsonStr = jsonStr.trim();
+    if (jsonStr.startsWith('```json')) {
+        jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    }
+    
+    try {
+        return JSON.parse(jsonStr);
+    } catch (e) {
+        console.error("Failed to parse career comparison JSON:", jsonStr);
+        throw new Error("Format mismatch from AI.");
+    }
+  };
+
+  try {
+    return await retryWithBackoff(callApi);
+  } catch (error) {
+    console.error("Career compare error:", error);
+    throw error;
+  }
+};
+
 export const searchScholarships = async (
   query: string,
   language: Language,
