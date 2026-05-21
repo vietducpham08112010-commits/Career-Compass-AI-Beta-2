@@ -23,8 +23,7 @@ export enum DashboardTab {
   SCHOLARSHIPS = 'SCHOLARSHIPS',
   SCORES = 'SCORES',
   COMPARE = 'COMPARE',
-  TRENDING = 'TRENDING',
-  INTERVIEW = 'INTERVIEW'
+  TRENDING = 'TRENDING'
 }
 
 export enum AIProvider {
