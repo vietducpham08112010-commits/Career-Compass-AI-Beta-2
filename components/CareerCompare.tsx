@@ -3,6 +3,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../types';
 import { compareCareers } from '../services/geminiService';
 
+const CAREERS = [
+  { id: 'se', name: 'Software Engineer', nameVi: 'Kỹ sư phần mềm', salary: '$1,000 - $3,500', salaryVi: '20 - 60 triệu VNĐ', demand: 'Very High', demandVi: 'Rất cao', competition: 'High', competitionVi: 'Cao', workLife: 'Medium', workLifeVi: 'Trung bình', description: 'Design, develop, and test software systems and applications.', descriptionVi: 'Thiết kế, phát triển và kiểm thử các hệ thống phần mềm và ứng dụng.' },
+  { id: 'ds', name: 'Data Scientist', nameVi: 'Khoa học dữ liệu', salary: '$1,200 - $4,000', salaryVi: '25 - 80 triệu VNĐ', demand: 'High', demandVi: 'Cao', competition: 'Medium', competitionVi: 'Trung bình', workLife: 'High', workLifeVi: 'Tốt', description: 'Analyze distinct data sources to draw meaningful business insights.', descriptionVi: 'Phân tích dữ liệu để đưa ra các insights kinh doanh quan trọng.' },
+];
+
 export const CareerCompare = ({ lang, t, Icons }: { lang: Language, t: any, Icons: any }) => {
   const [career1, setCareer1] = useState<string>('');
   const [career2, setCareer2] = useState<string>('');
@@ -158,6 +163,73 @@ export const CareerCompare = ({ lang, t, Icons }: { lang: Language, t: any, Icon
                         <div className={`text-lg font-bold ${getMetricColor(result.career2?.workLife || '')}`}>{result.career2?.workLife}</div>
                     </div>
                 </div>
+            </div>
+          </motion.div>
+        )}
+        {!result && !isComparing && !error && (
+          <motion.div key="default" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 pl-2">
+              {lang === Language.VI ? 'Ví dụ so sánh:' : 'Example Comparison:'}
+            </h3>
+            <div className="w-full bg-white dark:bg-[#111111] border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm flex flex-col md:flex-row mb-8">
+              {/* Career 1 */}
+              <div className="flex-1 p-6 md:p-8 flex flex-col items-center text-center opacity-80">
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex justify-center items-center mb-4">
+                      <Icons.Target className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{lang === Language.VI ? CAREERS[0].nameVi : CAREERS[0].name}</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 min-h-[40px]">{lang === Language.VI ? CAREERS[0].descriptionVi : CAREERS[0].description}</p>
+                  
+                  <div className="w-full space-y-6 text-left">
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">{lang === Language.VI ? 'Thu nhập trung bình' : 'Average Salary'}</div>
+                          <div className="text-lg font-bold text-gray-900 dark:text-white">{lang === Language.VI ? CAREERS[0].salaryVi : CAREERS[0].salary}</div>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">{lang === Language.VI ? 'Nhu cầu tuyển dụng' : 'Market Demand'}</div>
+                          <div className={`text-lg font-bold ${getMetricColor(lang === Language.VI ? CAREERS[0].demandVi : CAREERS[0].demand)}`}>{lang === Language.VI ? CAREERS[0].demandVi : CAREERS[0].demand}</div>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">{lang === Language.VI ? 'Mức độ cạnh tranh' : 'Competition Level'}</div>
+                          <div className={`text-lg font-bold ${getMetricColor(lang === Language.VI ? CAREERS[0].competitionVi : CAREERS[0].competition)}`}>{lang === Language.VI ? CAREERS[0].competitionVi : CAREERS[0].competition}</div>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">{lang === Language.VI ? 'Cân bằng công việc' : 'Work-life Balance'}</div>
+                          <div className={`text-lg font-bold ${getMetricColor(lang === Language.VI ? CAREERS[0].workLifeVi : CAREERS[0].workLife)}`}>{lang === Language.VI ? CAREERS[0].workLifeVi : CAREERS[0].workLife}</div>
+                      </div>
+                  </div>
+              </div>
+
+              {/* Divider */}
+              <div className="w-full h-px md:w-px md:h-auto bg-gray-200 dark:bg-white/10 hidden md:block"></div>
+
+              {/* Career 2 */}
+              <div className="flex-1 p-6 md:p-8 flex flex-col items-center text-center opacity-80">
+                  <div className="w-16 h-16 rounded-2xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex justify-center items-center mb-4">
+                      <Icons.Target className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{lang === Language.VI ? CAREERS[1].nameVi : CAREERS[1].name}</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 min-h-[40px]">{lang === Language.VI ? CAREERS[1].descriptionVi : CAREERS[1].description}</p>
+                  
+                  <div className="w-full space-y-6 text-left">
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">{lang === Language.VI ? 'Thu nhập trung bình' : 'Average Salary'}</div>
+                          <div className="text-lg font-bold text-gray-900 dark:text-white">{lang === Language.VI ? CAREERS[1].salaryVi : CAREERS[1].salary}</div>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">{lang === Language.VI ? 'Nhu cầu tuyển dụng' : 'Market Demand'}</div>
+                          <div className={`text-lg font-bold ${getMetricColor(lang === Language.VI ? CAREERS[1].demandVi : CAREERS[1].demand)}`}>{lang === Language.VI ? CAREERS[1].demandVi : CAREERS[1].demand}</div>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">{lang === Language.VI ? 'Mức độ cạnh tranh' : 'Competition Level'}</div>
+                          <div className={`text-lg font-bold ${getMetricColor(lang === Language.VI ? CAREERS[1].competitionVi : CAREERS[1].competition)}`}>{lang === Language.VI ? CAREERS[1].competitionVi : CAREERS[1].competition}</div>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">{lang === Language.VI ? 'Cân bằng công việc' : 'Work-life Balance'}</div>
+                          <div className={`text-lg font-bold ${getMetricColor(lang === Language.VI ? CAREERS[1].workLifeVi : CAREERS[1].workLife)}`}>{lang === Language.VI ? CAREERS[1].workLifeVi : CAREERS[1].workLife}</div>
+                      </div>
+                  </div>
+              </div>
             </div>
           </motion.div>
         )}

@@ -33,6 +33,68 @@ const retryWithBackoff = async <T>(
   throw lastError;
 };
 
+const generateClientContentWithFallback = async (
+    aiInstance: GoogleGenAI,
+    options: {
+        model?: string;
+        contents: any;
+        config?: any;
+    }
+): Promise<any> => {
+    const modelsToTry = [
+        options.model || 'gemini-3.5-flash',
+        'gemini-1.5-flash',
+        'gemini-2.1-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-1.5-flash-8b'
+    ];
+
+    const uniqueModels = Array.from(new Set(modelsToTry));
+
+    if (options.config?.tools && options.config.tools.length > 0) {
+        for (const model of uniqueModels) {
+            try {
+                console.log(`[Client Fallback] Attempting WITH tools using model ${model}...`);
+                const response = await aiInstance.models.generateContent({
+                    model: model,
+                    contents: options.contents,
+                    config: options.config
+                });
+                return response;
+            } catch (error: any) {
+                console.warn(`[Client Fallback] Attempt WITH tools failed for model ${model}:`, error.message || error);
+                if (error.message?.includes("API_KEY_INVALID") || error.message?.includes("403")) {
+                    throw error;
+                }
+            }
+        }
+    }
+
+    const configWithoutTools = { ...options.config };
+    if (configWithoutTools.tools) {
+        delete configWithoutTools.tools;
+    }
+
+    for (const model of uniqueModels) {
+        try {
+            console.log(`[Client Fallback] Attempting WITHOUT tools using model ${model}...`);
+            const response = await aiInstance.models.generateContent({
+                model: model,
+                contents: options.contents,
+                config: configWithoutTools
+            });
+            return response;
+        } catch (error: any) {
+            console.warn(`[Client Fallback] Attempt WITHOUT tools failed for model ${model}:`, error.message || error);
+            if (error.message?.includes("API_KEY_INVALID") || error.message?.includes("403")) {
+                throw error;
+            }
+        }
+    }
+
+    throw new Error("All client model fallback attempts exhausted / Tất cả các phương án kết nối mô hình khách đều thất bại.");
+};
+
 export const generateRoadmap = async (
   chatHistory: { role: string; text: string }[],
   language: Language,
@@ -64,8 +126,8 @@ export const generateRoadmap = async (
         const ai = new GoogleGenAI({ apiKey });
             const contents = chatHistory.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.text }] }));
             contents.push({ role: 'user', parts: [{ text: prompt }] });
-            const aiResponse = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+            const aiResponse = await generateClientContentWithFallback(ai, {
+                model: 'gemini-3.5-flash',
                 contents,
                 config: { systemInstruction: "You are an expert career counselor. Output ONLY valid JSON array. No other text." }
             });
@@ -102,10 +164,7 @@ export const generateRoadmap = async (
     return await retryWithBackoff(callApi);
   } catch (error: any) {
       console.error("Roadmap generation error:", error);
-      if (error.message?.includes('503') || error.message?.includes('high demand')) {
-          throw new Error(t.aiBusy);
-      }
-      throw error;
+      throw new Error(cleanFrontEndErrorMessage(error, language));
   }
 };
 
@@ -137,6 +196,42 @@ export const getGeminiApiKey = async () => {
         apiKey = k1 + k2;
     }
     return apiKey;
+};
+
+export const cleanFrontEndErrorMessage = (error: any, language: Language): string => {
+  const errMsg = error?.message || String(error);
+  const isVi = language === Language.VI;
+  
+  if (errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("Quota exceeded")) {
+    return isVi 
+      ? "Hệ thống AI đang tạm thời đạt giới hạn dùng thử miễn phí (AI Quota Limit). Vui lòng thử lại sau vài giây hoặc kết nối tài khoản dịch vụ riêng của bạn trong phần Cài đặt."
+      : "The AI service has temporarily reached its free trial quota limit. Please try again in a few seconds or configure a custom AI provider in Settings.";
+  }
+  if (errMsg.includes("503") || errMsg.includes("overloaded") || errMsg.includes("busy") || errMsg.includes("UNAVAILABLE")) {
+    return isVi
+      ? "Hệ thống AI hiện đang xử lý nhiều yêu cầu, vui lòng ấn gửi lại sau giây lát."
+      : "The AI model is currently busy. Please retry in a moment.";
+  }
+  try {
+    const parsed = JSON.parse(errMsg);
+    if (parsed.error && parsed.error.message) {
+      const msg = parsed.error.message;
+      if (msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota") || msg.includes("Quota exceeded") || msg.includes("429")) {
+        return isVi 
+          ? "Hệ thống AI đang tạm thời đạt giới hạn dùng thử miễn phí (AI Quota Limit). Vui lòng thử lại sau vài giây hoặc kết nối tài khoản dịch vụ riêng của bạn trong phần Cài đặt."
+          : "The AI service has temporarily reached its free trial quota limit. Please try again in a few seconds or configure a custom AI provider in Settings.";
+      }
+      if (msg.includes("503") || msg.includes("overloaded") || msg.includes("busy") || msg.includes("UNAVAILABLE")) {
+        return isVi
+          ? "Hệ thống AI hiện đang xử lý nhiều yêu cầu, vui lòng ấn gửi lại sau giây lát."
+          : "The AI model is currently busy. Please retry in a moment.";
+      }
+      return msg;
+    }
+  } catch (e) {
+    // No-op
+  }
+  return errMsg;
 };
 
 export const sendChatMessage = async (
@@ -191,8 +286,8 @@ export const sendChatMessage = async (
         if (file) userParts.push({ inlineData: { mimeType: file.mimeType, data: file.data } });
         contents.push({ role: 'user', parts: userParts });
         
-        const aiResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+        const aiResponse = await generateClientContentWithFallback(ai, {
+            model: 'gemini-3.5-flash',
             contents,
             config: { systemInstruction }
         });
@@ -222,10 +317,7 @@ export const sendChatMessage = async (
     return await retryWithBackoff(callGemini);
   } catch (error: any) {
     console.error("Chat API Error:", error);
-    if (error.message?.includes('503') || error.message?.includes('high demand')) {
-        throw new Error(t.aiBusy);
-    }
-    throw new Error(error.message || t.failedToCommunicate);
+    throw new Error(cleanFrontEndErrorMessage(error, language));
   }
 };
 
@@ -589,8 +681,8 @@ export const generateChatTitle = async (message: string, language: Language) => 
     const isJson = contentType && contentType.includes('application/json');
     if (!isJson) {
         const ai = new GoogleGenAI({ apiKey });
-        const aiResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+        const aiResponse = await generateClientContentWithFallback(ai, {
+            model: 'gemini-3.5-flash',
             contents: [{ role: 'user', parts: [{ text: `Generate title for this message: "${message}"\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
             config: { systemInstruction }
         });
@@ -632,8 +724,8 @@ export const searchUniversityScores = async (query: string, language: Language) 
     const isJson = contentType && contentType.includes('application/json');
     if (!isJson) {
         const ai = new GoogleGenAI({ apiKey });
-        const aiResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+        const aiResponse = await generateClientContentWithFallback(ai, {
+            model: 'gemini-3.5-flash',
             contents: [{ role: 'user', parts: [{ text: `Find university admission scores for: ${query}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
             config: { systemInstruction }
         });
@@ -649,18 +741,18 @@ export const searchUniversityScores = async (query: string, language: Language) 
 
   try {
     return await retryWithBackoff(callApi);
-  } catch (error) {
+  } catch (error: any) {
     console.error("University score search error:", error);
-    throw error;
+    throw new Error(cleanFrontEndErrorMessage(error, language));
   }
 };
 
 export const compareCareers = async (career1: string, career2: string, language: Language) => {
-  const systemInstruction = "You are a career analyst. Return ONLY a valid JSON object comparing two given careers. The structure must be EXACTLY: { career1: { name, salary, demand, competition, workLife, description }, career2: { name, salary, demand, competition, workLife, description } }. Do not include markdown formatting like ```json.";
+  const systemInstruction = "You are a career analyst. Return ONLY a valid JSON object comparing two given careers. The structure must be EXACTLY: { career1: { name, salary, demand, competition, workLife, description }, career2: { name, salary, demand, competition, workLife, description } }. For salary, demand, competition, workLife, provide specific numeric examples, ranges or detailed concrete facts (e.g. '20 - 50 triệu/tháng', '90% placement rate'). Do not include markdown formatting like ```json.";
   
   const callApi = async () => {
     const apiKey = await getGeminiApiKey();
-    const prompt = `Compare these two careers: "${career1}" and "${career2}". Language: ${language === Language.EN ? 'English' : 'Vietnamese'}. Values for salary, demand, competition, workLife MUST be concise (e.g. 'High', 'Cao', '$2000').`;
+    const prompt = `Compare these two careers: "${career1}" and "${career2}". Language: ${language === Language.EN ? 'English' : 'Vietnamese'}. Values for salary, demand, competition, workLife MUST be specific and concise, including numbers or percentages.`;
     
     const response = await fetch('/api/chat', {
         method: 'POST',
@@ -676,8 +768,8 @@ export const compareCareers = async (career1: string, career2: string, language:
     let jsonStr = '';
     if (!isJson) {
         const ai = new GoogleGenAI({ apiKey });
-        const aiResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+        const aiResponse = await generateClientContentWithFallback(ai, {
+            model: 'gemini-3.5-flash',
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: { systemInstruction }
         });
@@ -705,9 +797,9 @@ export const compareCareers = async (career1: string, career2: string, language:
 
   try {
     return await retryWithBackoff(callApi);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Career compare error:", error);
-    throw error;
+    throw new Error(cleanFrontEndErrorMessage(error, language));
   }
 };
 
@@ -741,8 +833,8 @@ export const searchScholarships = async (
     if (!isJson) {
         console.warn("Backend proxy not found. Falling back to direct API call...");
         const ai = new GoogleGenAI({ apiKey });
-        const aiResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+        const aiResponse = await generateClientContentWithFallback(ai, {
+            model: 'gemini-3.5-flash',
             contents: [{ role: 'user', parts: [{ text: `Find scholarships for: ${query}${profileDetails}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
             config: { systemInstruction }
         });
@@ -773,6 +865,6 @@ export const searchScholarships = async (
     return await retryWithBackoff(callApi);
   } catch (error: any) {
       console.error("Scholarship search error:", error);
-      throw error;
+      throw new Error(cleanFrontEndErrorMessage(error, language));
   }
 };

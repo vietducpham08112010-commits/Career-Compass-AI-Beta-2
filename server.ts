@@ -51,6 +51,93 @@ const formatHistoryForGemini = (history: { role: string; text: string }[], newMe
   return formatted;
 };
 
+const cleanGeminiErrorMessage = (error: any): string => {
+  const errMsg = error.message || String(error);
+  if (errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("Quota exceeded")) {
+    return "Hệ thống AI đang tạm thời đạt giới hạn dùng thử miễn phí (AI Quota Limit). Vui lòng thử lại sau vài giây hoặc kết nối tài khoản dịch vụ riêng của bạn trong phần Cài đặt. / The AI service has temporarily reached its free trial quota limit. Please try again in a few seconds or configure a custom AI provider in Settings.";
+  }
+  if (errMsg.includes("503") || errMsg.includes("overloaded") || errMsg.includes("busy") || errMsg.includes("UNAVAILABLE")) {
+    return "Hệ thống AI hiện đang xử lý nhiều yêu cầu, vui lòng ấn gửi lại sau giây lát. / The AI model is currently busy. Please retry in a moment.";
+  }
+  try {
+    const parsed = JSON.parse(errMsg);
+    if (parsed.error && parsed.error.message) {
+      const msg = parsed.error.message;
+      if (msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota") || msg.includes("Quota exceeded") || msg.includes("429")) {
+        return "Hệ thống AI đang tạm thời đạt giới hạn dùng thử miễn phí (AI Quota Limit). Vui lòng thử lại sau vài giây hoặc kết nối tài khoản dịch vụ riêng của bạn trong phần Cài đặt. / The AI service has temporarily reached its free trial quota limit. Please try again in a few seconds or configure a custom AI provider in Settings.";
+      }
+      if (msg.includes("503") || msg.includes("overloaded") || msg.includes("busy") || msg.includes("UNAVAILABLE")) {
+        return "Hệ thống AI hiện đang xử lý nhiều yêu cầu, vui lòng ấn gửi lại sau giây lát. / The AI model is currently busy. Please retry in a moment.";
+      }
+      return msg;
+    }
+  } catch (e) {
+    // No-op
+  }
+  return errMsg;
+};
+
+async function generateContentWithFallback(
+    aiInstance: GoogleGenAI,
+    options: {
+        contents: any;
+        systemInstruction?: string;
+        tools?: any[];
+    }
+) {
+    const modelsToTry = [
+        'gemini-3.5-flash',
+        'gemini-1.5-flash',
+        'gemini-2.1-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-1.5-flash-8b'
+    ];
+
+    if (options.tools && options.tools.length > 0) {
+        for (const model of modelsToTry) {
+            try {
+                console.log(`[Fallback API] Attempting WITH tools using model ${model}...`);
+                const response = await aiInstance.models.generateContent({
+                    model: model,
+                    contents: options.contents,
+                    config: {
+                        systemInstruction: options.systemInstruction || "You are a helpful assistant.",
+                        tools: options.tools
+                    }
+                });
+                return response;
+            } catch (error: any) {
+                console.warn(`[Fallback API] Attempt WITH tools failed for model ${model}:`, error.message || error);
+                if (error.message?.includes("API_KEY_INVALID") || error.message?.includes("403")) {
+                    throw error;
+                }
+            }
+        }
+    }
+
+    // Try without tools
+    for (const model of modelsToTry) {
+        try {
+            console.log(`[Fallback API] Attempting WITHOUT tools using model ${model}...`);
+            const response = await aiInstance.models.generateContent({
+                model: model,
+                contents: options.contents,
+                config: {
+                    systemInstruction: options.systemInstruction || "You are a helpful assistant."
+                }
+            });
+            return response;
+        } catch (error: any) {
+            console.warn(`[Fallback API] Attempt WITHOUT tools failed for model ${model}:`, error.message || error);
+            if (error.message?.includes("API_KEY_INVALID") || error.message?.includes("403")) {
+                throw error;
+            }
+        }
+    }
+
+    throw new Error("All model fallback attempts exhausted / Tất cả các phương án kết nối mô hình đều thất bại.");
+}
+
 // --- API Routes ---
 app.get("/api/get-gemini-key", (req, res) => {
   if (API_KEY) {
@@ -87,41 +174,15 @@ app.post("/api/chat", async (req, res) => {
       }
     }
 
-    try {
-        const response = await aiInstance.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: contents,
-            config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
-        });
-        return res.json({ text: response.text });
-    } catch (error: any) {
-        console.error("Model generation failed with primary model:", error);
-        try {
-            console.log("Attempting fallback to gemini-2.0-flash...");
-            const fallbackResponse = await aiInstance.models.generateContent({
-                model: 'gemini-2.0-flash',
-                contents: contents,
-                config: { systemInstruction: systemInstruction || "You are a helpful assistant." }
-            });
-            return res.json({ text: fallbackResponse.text });
-        } catch (fallbackError: any) {
-            console.error("Model generation failed with fallback model:", fallbackError);
-            throw fallbackError;
-        }
-    }
+    const response = await generateContentWithFallback(aiInstance, {
+        contents,
+        systemInstruction: systemInstruction || "You are an expert career counselor."
+    });
+    return res.json({ text: response.text });
 
   } catch (error: any) {
     console.error("Chat API Error:", error);
-    let errorMessage = error.message || "Internal Server Error";
-    try {
-        // If the error message is a JSON string, try to parse it to extract the actual message
-        const parsedError = JSON.parse(errorMessage);
-        if (parsedError.error && parsedError.error.message) {
-            errorMessage = parsedError.error.message;
-        }
-    } catch (e) {
-        // Not a JSON string, ignore
-    }
+    const errorMessage = cleanGeminiErrorMessage(error);
     res.status(500).json({ error: errorMessage });
   }
 });
@@ -138,37 +199,17 @@ app.post("/api/search", async (req, res) => {
 
     const contents = formatHistoryForGemini(history || [], message || "");
 
-    try {
-        const response = await aiInstance.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: contents,
-            config: { 
-              systemInstruction: systemInstruction || "You are a helpful assistant.",
-              tools: [{ googleSearch: {} }] as any
-            }
-        });
-        return res.json({ text: response.text });
-    } catch (error: any) {
-        console.error("Model generation failed with primary model:", error);
-        try {
-            console.log("Attempting fallback to gemini-2.0-flash...");
-            const fallbackResponse = await aiInstance.models.generateContent({
-                model: 'gemini-2.0-flash',
-                contents: contents,
-                config: { 
-                  systemInstruction: systemInstruction || "You are a helpful assistant.",
-                  tools: [{ googleSearch: {} }] as any
-                }
-            });
-            return res.json({ text: fallbackResponse.text });
-        } catch (fallbackError: any) {
-            console.error("Model generation failed with fallback model:", fallbackError);
-            throw fallbackError;
-        }
-    }
+    const response = await generateContentWithFallback(aiInstance, {
+        contents,
+        systemInstruction: systemInstruction || "You are a university admission advisor.",
+        tools: [{ googleSearch: {} }] as any
+    });
+    return res.json({ text: response.text });
+
   } catch (error: any) {
     console.error("Search API Error:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    const errorMessage = cleanGeminiErrorMessage(error);
+    res.status(500).json({ error: errorMessage });
   }
 });
 

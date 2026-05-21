@@ -5,6 +5,14 @@ import remarkGfm from 'remark-gfm';
 import { Language } from '../types';
 import { searchUniversityScores } from '../services/geminiService';
 
+const MOCK_DATA = [
+  { id: 1, name: 'Đại học Bách Khoa Hà Nội', major: 'Khoa học Máy tính (IT1)', year: 2023, score: 29.42, group: 'A00, A01' },
+  { id: 2, name: 'Đại học Bách Khoa Hà Nội', major: 'Kỹ thuật Máy tính (IT2)', year: 2023, score: 28.29, group: 'A00, A01' },
+  { id: 3, name: 'Đại học Công nghệ - ĐHQGHN', major: 'Công nghệ Thông tin', year: 2023, score: 27.85, group: 'A00, A01' },
+  { id: 4, name: 'Đại học Kinh tế Quốc dân', major: 'Logistics và QLCCTU', year: 2023, score: 27.4, group: 'A00, A01, D01, D07' },
+  { id: 5, name: 'Đại học Ngoại thương', major: 'Kinh tế đối ngoại', year: 2023, score: 28.3, group: 'A00, A01, D01' },
+];
+
 export const UniversityScores = ({ lang, t, Icons }: { lang: Language, t: any, Icons: any }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [aiResult, setAiResult] = useState<string | null>(null);
@@ -82,12 +90,34 @@ export const UniversityScores = ({ lang, t, Icons }: { lang: Language, t: any, I
         )}
 
         {!aiResult && !isSearching && !error && (
-          <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center py-16 text-center">
-            <div className="w-16 h-16 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
-              <Icons.BookOpen className="w-8 h-8 text-gray-400" />
+          <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 pl-2">
+              {lang === Language.VI ? 'Dữ liệu tham khảo (Năm 2023):' : 'Reference Data (2023):'}
+            </h3>
+            <div className="w-full bg-white dark:bg-[#111111] border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                    <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+                        <th className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-200">{lang === Language.VI ? 'Trường' : 'University'}</th>
+                        <th className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-200">{lang === Language.VI ? 'Ngành' : 'Major'}</th>
+                        <th className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-200">{lang === Language.VI ? 'Tổ hợp' : 'Group'}</th>
+                        <th className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-200 text-right">{lang === Language.VI ? 'Điểm chuẩn' : 'Score'}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {MOCK_DATA.map((item) => (
+                        <tr key={item.id} className="border-b border-gray-100 dark:border-white/5 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4 text-gray-800 dark:text-gray-300">{item.name}</td>
+                            <td className="px-6 py-4 font-medium text-indigo-600 dark:text-indigo-400">{item.major}</td>
+                            <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{item.group}</td>
+                            <td className="px-6 py-4 font-bold text-gray-900 dark:text-white text-right">{item.score}</td>
+                        </tr>
+                        ))}
+                    </tbody>
+                </table>
+                </div>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{lang === Language.VI ? 'Bắt đầu tìm kiếm' : 'Start searching'}</h3>
-            <p className="text-gray-500 max-w-sm">{lang === Language.VI ? 'Nhập tên trường hoặc ngành học để AI giúp bạn tìm kiếm thông tin điểm chuẩn mới nhất.' : 'Enter a university or major to let AI find the latest admission scores for you.'}</p>
           </motion.div>
         )}
       </AnimatePresence>

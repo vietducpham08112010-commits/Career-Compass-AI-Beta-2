@@ -16,6 +16,7 @@ import { CareerCompare } from './components/CareerCompare';
 import { ClarificationCard } from './components/ClarificationCard';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
+import firebaseConfig from './firebase-applet-config.json';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { storage } from './utils/storage';
 import bcrypt from 'bcryptjs';
@@ -28,8 +29,7 @@ const EMAILJS_CONFIG = {
 };
 
 // --- FIREBASE CONFIGURATION ---
-// Restoring hardcoded config to ensure the app runs immediately for you.
-const firebaseConfig = {
+const fallbackConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -39,13 +39,19 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+const activeFirebaseConfig = (firebaseConfig && firebaseConfig.apiKey) ? firebaseConfig : fallbackConfig;
+
 // Initialize Firebase safely
 let firebaseAuth: any;
 let googleProvider: any;
 try {
-    const app = initializeApp(firebaseConfig);
+  if (activeFirebaseConfig && activeFirebaseConfig.apiKey) {
+    const app = initializeApp(activeFirebaseConfig);
     firebaseAuth = getAuth(app);
     googleProvider = new GoogleAuthProvider();
+  } else {
+      console.warn("Firebase config is missing API key. Firebase will not initialize.");
+  }
 } catch (error) {
     console.warn("Firebase initialization failed:", error);
 }
@@ -100,6 +106,10 @@ const Icons = {
   CheckCircle2: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>,
   AlertCircle: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
   Info: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+  MoreVertical: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>,
+  Edit2: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
+  Trash2: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+  Star: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   FolderOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>,
 };
 
@@ -1231,7 +1241,7 @@ export default function App() {
       e.stopPropagation();
       setChatHistory(prev => prev.filter(s => s.id !== id));
       if (currentSessionId === id) {
-          startNewChat();
+          startNewChat(false);
       }
   };
 
@@ -1249,9 +1259,10 @@ export default function App() {
     if (isVoiceActive) handleVoiceToggle();
   };
 
-  const startNewChat = () => {
-      if (messages.length > 0 && !isTemporaryChat) {
-          const title = currentChatTitle || messages[0].text.substring(0, 30) + "...";
+  const startNewChat = (saveCurrent = true) => {
+      if (saveCurrent && messages.length > 0 && !isTemporaryChat) {
+          const firstText = messages[0]?.text || 'New Chat';
+          const title = currentChatTitle || (firstText.length > 30 ? firstText.substring(0, 30) + "..." : firstText);
           const newSession: ChatSession = { id: currentSessionId || Date.now().toString(), title, date: new Date(), messages: [...messages] };
           setChatHistory(prev => [newSession, ...prev.filter(s => s.id !== newSession.id)]);
       }
@@ -1262,16 +1273,18 @@ export default function App() {
   };
 
   const loadSession = (session: ChatSession) => {
+      if (!session) return;
       if (messages.length > 0 && !isTemporaryChat) {
-           const title = currentChatTitle || messages[0].text.substring(0, 30) + "...";
+           const firstText = messages[0]?.text || 'New Chat';
+           const title = currentChatTitle || (firstText.length > 30 ? firstText.substring(0, 30) + "..." : firstText);
            const currentSession: ChatSession = { id: currentSessionId || Date.now().toString(), title, date: new Date(), messages: [...messages] };
            setChatHistory(prev => [currentSession, ...prev.filter(s => s.id !== currentSession.id && s.id !== session.id)]);
       } else {
            setChatHistory(prev => prev.filter(s => s.id !== session.id));
       }
-      setMessages(session.messages);
+      setMessages(session.messages || []);
       setCurrentSessionId(session.id);
-      setCurrentChatTitle(session.title);
+      setCurrentChatTitle(session.title || 'Chat');
       setIsTemporaryChat(false); // Turn off temporary chat when loading a saved session
       setTab(DashboardTab.CHAT);
   };
@@ -1903,7 +1916,7 @@ export default function App() {
   };
 
   const renderDashboard = () => {
-    const filteredHistory = chatHistory.filter(session => session.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filteredHistory = chatHistory.filter(session => (session.title || '').toLowerCase().includes((searchQuery || '').toLowerCase()));
     return (
     <div className="flex h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden transition-colors duration-300 relative font-sans">
       {/* Mobile Sidebar Overlay */}
@@ -2049,7 +2062,7 @@ export default function App() {
             <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={startNewChat} 
+                onClick={() => startNewChat()} 
                 className={`w-full flex items-center justify-center gap-3 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl transition-all font-bold shadow-lg ${isSidebarOpen ? 'px-4' : 'px-0'}`}
             >
                 <span className="text-xl leading-none">+</span> {isSidebarOpen && t.newChat}
@@ -2224,7 +2237,7 @@ export default function App() {
             <motion.button 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={startNewChat} 
+                onClick={() => startNewChat()} 
                 className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-colors"
             >
                 <Icons.Plus className="w-5 h-5" />
