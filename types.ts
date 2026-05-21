@@ -22,7 +22,9 @@ export enum DashboardTab {
   PORTFOLIO = 'PORTFOLIO',
   SCHOLARSHIPS = 'SCHOLARSHIPS',
   SCORES = 'SCORES',
-  COMPARE = 'COMPARE'
+  COMPARE = 'COMPARE',
+  TRENDING = 'TRENDING',
+  INTERVIEW = 'INTERVIEW'
 }
 
 export enum AIProvider {
@@ -79,6 +81,9 @@ export interface UserProfile {
   lastCheckIn?: string;
   provider?: 'google' | 'local';
   portfolio?: PortfolioItem[];
+  points?: number;
+  level?: number;
+  badges?: string[];
 }
 
 export interface AuthState {

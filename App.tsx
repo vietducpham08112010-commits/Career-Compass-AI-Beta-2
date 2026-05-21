@@ -14,6 +14,19 @@ import { Scholarships } from './components/Scholarships';
 import { UniversityScores } from './components/UniversityScores';
 import { CareerCompare } from './components/CareerCompare';
 import { ClarificationCard } from './components/ClarificationCard';
+import { HotCareersVietnam } from './components/HotCareersVietnam';
+import { MockInterviewCoach } from './components/MockInterviewCoach';
+import { FeedbackModal } from './components/FeedbackModal';
+import { 
+  syncUserProfileToCloud, 
+  fetchUserProfileFromCloud, 
+  syncRoadmapToCloud, 
+  fetchRoadmapFromCloud, 
+  syncChatSessionToCloud, 
+  fetchChatSessionsFromCloud, 
+  deleteChatSessionFromCloud,
+  saveFeedbackToCloud 
+} from './services/firestoreService';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
 import firebaseConfig from './firebase-applet-config.json';
@@ -531,6 +544,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [auth, setAuth] = useState<AuthState>({ isAuthenticated: false, user: null });
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [authType, setAuthType] = useState<'login' | 'register' | 'forgot-password' | 'new-password'>('login');
   const [authError, setAuthError] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -896,7 +910,7 @@ export default function App() {
   useEffect(() => {
       if (!firebaseAuth) return;
 
-      const unsubscribe = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
           if (firebaseUser) {
               let avatarUrl = firebaseUser.photoURL || AVATARS[Math.floor(Math.random() * AVATARS.length)];
               
@@ -922,6 +936,31 @@ export default function App() {
                   // Add new Google user to the users list
                   users.push(user);
                   localStorage.setItem('users', JSON.stringify(users));
+              }
+
+              // Pull cloud synchronization from Firebase Firestore
+              try {
+                  const cloudProfile = await fetchUserProfileFromCloud(firebaseUser.uid);
+                  if (cloudProfile) {
+                      user = { ...user, ...cloudProfile };
+                  } else {
+                      // First time logging in with a new account - synchronize initial profile settings
+                      await syncUserProfileToCloud(firebaseUser.uid, user);
+                  }
+
+                  // Retrieve their saved roadmaps/milestones
+                  const cloudRoadmap = await fetchRoadmapFromCloud(firebaseUser.uid);
+                  if (cloudRoadmap && cloudRoadmap.length > 0) {
+                      setMilestones(cloudRoadmap);
+                  }
+
+                  // Retrieve all chat sessions
+                  const cloudSessions = await fetchChatSessionsFromCloud(firebaseUser.uid);
+                  if (cloudSessions && cloudSessions.length > 0) {
+                      setChatHistory(cloudSessions);
+                  }
+              } catch (cloudErr) {
+                  console.error("Failed to fetch cloud sync on login:", cloudErr);
               }
 
               setAuth({ isAuthenticated: true, user });
@@ -1015,11 +1054,61 @@ export default function App() {
                   localStorage.setItem('users', JSON.stringify(users));
               }
           }
+          if (firebaseAuth?.currentUser) {
+              syncUserProfileToCloud(firebaseAuth.currentUser.uid, newUser).catch(e => console.error("Cloud profile sync failed:", e));
+          }
       } catch (e) {
           console.error("Failed to save user profile to localStorage", e);
           showToast(t.failedToSaveProfile, 'error');
       }
   };
+
+  const awardExperiencePoints = (earned: number, newBadgeId?: string) => {
+      if (!auth.user) return;
+      const currentPoints = auth.user.points || 0;
+      const updatedPoints = currentPoints + earned;
+      const updatedLevel = Math.floor(updatedPoints / 300) + 1;
+      
+      const updatedBadges = [...(auth.user.badges || [])];
+      if (newBadgeId && !updatedBadges.includes(newBadgeId)) {
+          updatedBadges.push(newBadgeId);
+          showToast(lang === Language.VI 
+            ? `🎉 Bạn đã mở khóa huy hiệu: ${newBadgeId.toUpperCase()}` 
+            : `🎉 Unlocked badge! ${newBadgeId.toUpperCase()}`, 'success');
+      }
+
+      updateUserProfile({
+          points: updatedPoints,
+          level: updatedLevel,
+          badges: updatedBadges
+      });
+
+      showToast(lang === Language.VI ? `✨ +${earned} Điểm kinh nghiệm!` : `✨ +${earned} XP!`, 'success');
+  };
+
+  // Synchronize milestones to Firestore cloud persistently
+  React.useEffect(() => {
+      if (firebaseAuth?.currentUser && milestones.length > 0) {
+          syncRoadmapToCloud(firebaseAuth.currentUser.uid, milestones).catch(e => console.error("Milestones sync failed:", e));
+      }
+  }, [milestones]);
+
+  // Synchronize active chat session to cloud persistently
+  React.useEffect(() => {
+      if (messages.length > 0 && !isTemporaryChat && firebaseAuth?.currentUser) {
+          const firstText = messages[0]?.text || 'New Chat';
+          const title = currentChatTitle || (firstText.length > 30 ? firstText.substring(0, 30) + "..." : firstText);
+          const activeSessionId = currentSessionId || Date.now().toString();
+          
+          const activeSession: ChatSession = {
+              id: activeSessionId,
+              title,
+              date: new Date(),
+              messages: [...messages]
+          };
+          syncChatSessionToCloud(firebaseAuth.currentUser.uid, activeSession).catch(e => console.error("Cloud chat sync failed:", e));
+      }
+  }, [messages, currentChatTitle, currentSessionId, isTemporaryChat]);
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1988,6 +2077,8 @@ export default function App() {
             <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.CHAT); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.MessageSquare className="w-5 h-5" />{t.chatMode}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.VOICE); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Microphone className="w-5 h-5" />{t.voiceMode}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.TRENDING); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.TRENDING ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Flame className="w-5 h-5" />{t.trendingCareers}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.INTERVIEW); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.INTERVIEW ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Stars className="w-5 h-5" />{t.mockInterview}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.QUIZ); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Zap className="w-5 h-5" />{t.careerQuizTitle}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.PROGRESS); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Target className="w-5 h-5" />{t.progress}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setTab(DashboardTab.PORTFOLIO); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}><Icons.Briefcase className="w-5 h-5" />{t.portfolio}</motion.button>
@@ -2085,6 +2176,8 @@ export default function App() {
             <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto overflow-x-hidden">
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.CHAT)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.CHAT ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.chatMode}><Icons.MessageSquare className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.chatMode}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.VOICE)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.VOICE ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.voiceMode}><Icons.Microphone className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.voiceMode}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.TRENDING)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.TRENDING ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.trendingCareers}><Icons.Flame className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.trendingCareers}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.INTERVIEW)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.INTERVIEW ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.mockInterview}><Icons.Stars className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.mockInterview}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.QUIZ)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PROGRESS)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.progress}><Icons.Target className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.progress}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.Briefcase className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</motion.button>
@@ -2143,6 +2236,19 @@ export default function App() {
                             <div className="overflow-hidden flex-1">
                                 <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{auth.user?.name}</p>
                                 <p className="text-[10px] text-gray-500 truncate">{auth.user?.isGuest ? t.guestSession : auth.user?.email}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[9px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-extrabold px-1.5 py-0.5 rounded">
+                                        LV {auth.user?.level || 1}
+                                    </span>
+                                    <span className="text-[9px] font-mono text-gray-400 font-bold">
+                                        {auth.user?.points || 0} XP
+                                    </span>
+                                    {auth.user?.badges && auth.user.badges.length > 0 && (
+                                        <span className="text-[9px] text-amber-500 font-bold" title={`${auth.user.badges.join(', ').toUpperCase()}`}>
+                                            🏆 {auth.user.badges.length}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         {auth.user?.streak !== undefined && auth.user.streak > 0 && (
@@ -2152,6 +2258,15 @@ export default function App() {
                             </div>
                         )}
                     </motion.div>
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setIsFeedbackOpen(true)} 
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-extrabold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl hover:bg-amber-500/20 transition-all cursor-pointer"
+                    >
+                        <Icons.Star className="w-3.5 h-3.5 fill-current text-yellow-500 dark:text-yellow-400" />
+                        <span>{lang === Language.VI ? 'Đánh Giá & Góp Ý' : 'Rate & Feedback'}</span>
+                    </motion.button>
                     <div className="flex gap-2 mb-2">
                         <motion.button 
                             whileHover={{ scale: 1.05 }}
@@ -2710,6 +2825,30 @@ export default function App() {
               <CareerCompare lang={lang} t={t} Icons={Icons} />
             </div>
         )}
+        {tab === DashboardTab.TRENDING && (
+            <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505] overflow-y-auto p-4 md:p-8">
+              <HotCareersVietnam 
+                  lang={lang} 
+                  onConsult={(jobTitle) => {
+                      setTab(DashboardTab.CHAT);
+                      setTimeout(() => {
+                          handleSendMessage(undefined, lang === Language.VI 
+                            ? `Tôi muốn được tư vấn định hướng kỹ lưỡng về ngành nghề "${jobTitle}" hiện tại tại Việt Nam.` 
+                            : `I would like structured counseling about the "${jobTitle}" career in Vietnam.`);
+                      }, 50);
+                  }} 
+              />
+            </div>
+        )}
+        {tab === DashboardTab.INTERVIEW && (
+            <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#050505] overflow-y-auto p-4 md:p-8">
+              <MockInterviewCoach 
+                  lang={lang} 
+                  user={auth.user} 
+                  onUpdatePoints={awardExperiencePoints} 
+              />
+            </div>
+        )}
         </motion.div>
         </AnimatePresence>
         
@@ -2879,6 +3018,15 @@ export default function App() {
             </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Feedback Modal */}
+      <FeedbackModal 
+          isOpen={isFeedbackOpen} 
+          onClose={() => setIsFeedbackOpen(false)} 
+          userId={firebaseAuth?.currentUser?.uid || auth.user?.email || 'guest'} 
+          lang={lang} 
+          onAddEarnedPoints={awardExperiencePoints} 
+      />
     </div>
     );
   };
