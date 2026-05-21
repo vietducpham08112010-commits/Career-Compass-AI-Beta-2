@@ -44,6 +44,7 @@ const activeFirebaseConfig = (firebaseConfig && firebaseConfig.apiKey) ? firebas
 // Initialize Firebase safely
 let firebaseAuth: any;
 let googleProvider: any;
+let firebaseInitError: any = null;
 try {
   if (activeFirebaseConfig && activeFirebaseConfig.apiKey) {
     const app = initializeApp(activeFirebaseConfig);
@@ -52,7 +53,8 @@ try {
   } else {
       console.warn("Firebase config is missing API key. Firebase will not initialize.");
   }
-} catch (error) {
+} catch (error: any) {
+    firebaseInitError = error;
     console.warn("Firebase initialization failed:", error);
 }
 
@@ -1081,6 +1083,17 @@ export default function App() {
   const handleGoogleLogin = async () => {
     setAuthError('');
     if (!firebaseAuth || !googleProvider) {
+        if (firebaseInitError) {
+            const errMsg = firebaseInitError.message || String(firebaseInitError);
+            if (errMsg.includes("invalid-api-key") || errMsg.includes("invalid-credential") || errMsg.includes("API key")) {
+                setAuthError(lang === Language.VI 
+                    ? "Lỗi kết nối Firebase (auth/invalid-api-key): Khóa API Key của bạn bị Google thu hồi hoặc từ chối do lộ tệp cấu hình trên Git công khai. Vui lòng vào Google Cloud / Firebase Console để kích hoạt lại danh mục khóa API Key hoặc Tạo khóa mới và cập nhật trong tệp cấu hình."
+                    : "Firebase connection error (auth/invalid-api-key): Your API Key was revoked or deactivated by Google because it was exposed publicly on Git. Please visit Firebase/Google Cloud Console to reactivate your API Key, or create a new key and update your configuration.");
+                return;
+            }
+            setAuthError(`${t.firebaseNotConfigured}: ${errMsg}`);
+            return;
+        }
         setAuthError(t.firebaseNotConfigured);
         return;
     }
