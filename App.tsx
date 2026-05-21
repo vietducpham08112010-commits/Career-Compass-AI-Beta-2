@@ -28,10 +28,16 @@ import {
 } from './services/firestoreService';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
-import firebaseConfig from './firebase-applet-config.json';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { storage } from './utils/storage';
 import bcrypt from 'bcryptjs';
+
+let firebaseConfig: any = {};
+const configs = import.meta.glob('./firebase-applet-config.json', { eager: true });
+const configFiles = Object.keys(configs);
+if (configFiles.length > 0) {
+  firebaseConfig = (configs[configFiles[0]] as any).default || {};
+}
 
 // --- CONFIGURATION ---
 const EMAILJS_CONFIG = {
