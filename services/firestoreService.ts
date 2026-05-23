@@ -25,7 +25,8 @@ const fallbackConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'default'
 };
 
 const activeFirebaseConfig = (firebaseConfig && firebaseConfig.apiKey) ? firebaseConfig : fallbackConfig;
@@ -33,7 +34,9 @@ const activeFirebaseConfig = (firebaseConfig && firebaseConfig.apiKey) ? firebas
 // Safe double-initialization check
 const app = getApps().length > 0 ? getApp() : initializeApp(activeFirebaseConfig);
 
-export const db = getFirestore(app); // Note: standard v9+ style
+export const db = activeFirebaseConfig.firestoreDatabaseId && activeFirebaseConfig.firestoreDatabaseId !== 'default'
+  ? getFirestore(app, activeFirebaseConfig.firestoreDatabaseId)
+  : getFirestore(app);
 export const auth = getApps().length > 0 ? getApp() : app;
 
 enum OperationType {
