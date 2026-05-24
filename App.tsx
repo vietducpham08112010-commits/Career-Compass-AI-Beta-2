@@ -1841,8 +1841,38 @@ export default function App() {
             </p>
             
             {authError && (
-                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-xl text-center animate-shake">
-                    <p className="text-red-600 dark:text-red-400 text-sm font-semibold">{authError}</p>
+                <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-xl text-left animate-shake shadow-md">
+                    <p className="text-red-700 dark:text-red-400 text-sm font-bold text-center mb-2">{authError}</p>
+                    
+                    {(authError.includes('unauthorized-domain') || authError.includes('Tên miền hiện tại') || authError.includes('unauthorized domain')) && (
+                        <div className="mt-3 pt-3 border-t border-red-200/50 dark:border-red-800/30 text-xs text-gray-700 dark:text-gray-300 space-y-2">
+                            <p className="font-bold text-red-800 dark:text-red-300">
+                                {lang === Language.VI ? "🛠️ HƯỚNG DẪN CẤU HÌNH NHANH:" : "🛠️ QUICK FIX GUIDANCE:"}
+                            </p>
+                            <ol className="list-decimal list-inside space-y-1">
+                                {lang === Language.VI ? (
+                                    <>
+                                        <li>Truy cập <a href="https://console.firebase.google.com/project/careerguideaiforeveryone-1/authentication/settings" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 underline font-semibold">Firebase Console &gt; Authentication &gt; Settings</a></li>
+                                        <li>Tìm phần <strong>Authorized domains</strong> chọn "Add domain"</li>
+                                        <li>Thêm lần lượt 2 tên miền sau:</li>
+                                    </>
+                                ) : (
+                                    <>
+                                        <li>Visit <a href="https://console.firebase.google.com/project/careerguideaiforeveryone-1/authentication/settings" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 underline font-semibold">Firebase Console &gt; Authentication &gt; Settings</a></li>
+                                        <li>Find <strong>Authorized domains</strong> and click "Add domain"</li>
+                                        <li>Add the following 2 domains:</li>
+                                    </>
+                                )}
+                            </ol>
+                            <div className="p-2.5 bg-white dark:bg-black/40 rounded-lg border border-red-200 dark:border-red-800/20 font-mono text-[11px] text-indigo-600 dark:text-indigo-400 break-all select-all font-semibold space-y-1 shadow-inner">
+                                <div>• {window.location.hostname}</div>
+                                <div>• {window.location.hostname.replace('ais-dev', 'ais-pre')}</div>
+                            </div>
+                            <p className="text-[10px] text-gray-500 italic text-center">
+                                {lang === Language.VI ? "💡 Nhấp đúp vào khung văn bản trên để bôi đen toàn bộ và sao chép dễ dàng!" : "💡 Double click on the box above to select all and copy easily!"}
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
             
