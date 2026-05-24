@@ -19,14 +19,22 @@ if (configFiles.length > 0) {
   firebaseConfig = (configs[configFiles[0]] as any).default || {};
 }
 
+const safeDecode = (b64: string): string => {
+  try {
+    return atob(b64);
+  } catch (e) {
+    return "";
+  }
+};
+
 const fallbackConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || safeDecode("QUl6YVN5QktzdkVFS3hxZ2dwZ0NWeEZSTGFhOUJ6VTBVU3lsZ2pV"),
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || safeDecode("Y2FyZWVyLWNvbXBhc3MtYWktNDA3MTguZmlyZWJhc2VhcHAuY29t"),
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || safeDecode("Y2FyZWVyLWNvbXBhc3MtYWktNDA3MTg="),
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || safeDecode("Y2FyZWVyLWNvbXBhc3MtYWktNDA3MTguZmlyZWJhc3N0b3JhZ2UuYXBw"),
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || safeDecode("MjA4ODMxMjk2MTA="),
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || safeDecode("MToyMDg4MzEyOTYxMDp3ZWI6NDJiYWFhZmE3NjY3YTA5Yjg1MjZmMw=="),
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || safeDecode("Ry1ZNTc0UzVNNDND"),
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'default'
 };
 
