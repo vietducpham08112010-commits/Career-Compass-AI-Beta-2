@@ -27,7 +27,7 @@ import {
   saveFeedbackToCloud 
 } from './services/firestoreService';
 import emailjs from '@emailjs/browser';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { storage } from './utils/storage';
 import bcrypt from 'bcryptjs';
@@ -65,7 +65,7 @@ let googleProvider: any;
 let firebaseInitError: any = null;
 try {
   if (activeFirebaseConfig && activeFirebaseConfig.apiKey) {
-    const app = initializeApp(activeFirebaseConfig);
+    const app = getApps().length > 0 ? getApp() : initializeApp(activeFirebaseConfig);
     firebaseAuth = getAuth(app);
     googleProvider = new GoogleAuthProvider();
   } else {
