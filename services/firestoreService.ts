@@ -28,7 +28,7 @@ const safeDecode = (b64: string): string => {
 };
 
 const fallbackConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || safeDecode("QUl6YVN5RFJ2MmJmdzBuY0xZQ1VzakdyVWVHb1R3Z2x5cnBDUmRV"),
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || safeDecode("QUl6YVN5RFJ2MmJmdzBuY0xZQ1VzaldyVWVHb1R3Z2x5cnBDUmRV"),
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTEuZmlyZWJhc2VhcHAuY29t"),
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTE="),
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTEuZmlyZWJhc3N0b3JhZ2UuYXBw"),
