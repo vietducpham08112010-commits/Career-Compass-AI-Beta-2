@@ -43,10 +43,9 @@ const generateClientContentWithFallback = async (
 ): Promise<any> => {
     const modelsToTry = [
         options.model || 'gemini-3.5-flash',
-        'gemini-1.5-flash',
-        'gemini-2.1-flash',
+        'gemini-3.5-flash',
         'gemini-3.1-flash-lite',
-        'gemini-1.5-flash-8b'
+        'gemini-flash-latest'
     ];
 
     const uniqueModels = Array.from(new Set(modelsToTry));

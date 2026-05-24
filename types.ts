@@ -78,7 +78,7 @@ export interface UserProfile {
   customModelName?: string; // e.g., llama3 (Not used for n8n)
   streak?: number;
   lastCheckIn?: string;
-  provider?: 'google' | 'local';
+  provider?: 'google' | 'local' | 'email';
   portfolio?: PortfolioItem[];
   points?: number;
   level?: number;
@@ -101,4 +101,7 @@ export interface Milestone {
   description: string;
   status: 'todo' | 'in-progress' | 'done';
   comments?: string[];
+  deadline?: string; // YYYY-MM-DD format
+  isSyncedCalendar?: boolean;
+  isSyncedEmail?: boolean;
 }

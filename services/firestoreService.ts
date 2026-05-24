@@ -19,22 +19,14 @@ if (configFiles.length > 0) {
   firebaseConfig = (configs[configFiles[0]] as any).default || {};
 }
 
-const safeDecode = (b64: string): string => {
-  try {
-    return atob(b64);
-  } catch (e) {
-    return "";
-  }
-};
-
 const fallbackConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || safeDecode("QUl6YVN5RFJ2MmJmdzBuY0xZQ1VzaldyVWVHb1R3Z2x5cnBDUmRV"),
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTEuZmlyZWJhc2VhcHAuY29t"),
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTE="),
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTEuZmlyZWJhc3N0b3JhZ2UuYXBw"),
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || safeDecode("MTAyNDY0NDgxMzc3MQ=="),
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || safeDecode("MToxMDI0NjQ0ODEzNzcxOndlYjoxOTZhYzUzOTk5NjhmZThiZWZkYzRl"),
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || safeDecode("Ry1DNTJQNldOM0hF"),
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'default'
 };
 
@@ -88,18 +80,31 @@ interface FirestoreErrorInfo {
   }
 }
 
+const isOfflineError = (error: unknown): boolean => {
+  const msg = error instanceof Error ? error.message : String(error);
+  const code = (error as any)?.code;
+  return (
+    msg.toLowerCase().includes('offline') ||
+    msg.toLowerCase().includes('network') ||
+    msg.toLowerCase().includes('unreachable') ||
+    msg.toLowerCase().includes('internet') ||
+    code === 'unavailable' ||
+    code === 'failed-precondition'
+  );
+};
+
 // Global error handler as mandated by skill
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
-  const currentUser = getApps().length > 0 ? null : null; // Safe fallback
+  const currentUser = firebaseAuth?.currentUser;
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     operationType,
     path,
     authInfo: {
-      userId: null, 
-      email: null,
-      emailVerified: null,
-      isAnonymous: null
+      userId: currentUser?.uid || null, 
+      email: currentUser?.email || null,
+      emailVerified: currentUser?.emailVerified || null,
+      isAnonymous: currentUser?.isAnonymous || null
     }
   };
   console.error('[Firestore Error]: ', JSON.stringify(errInfo));
@@ -127,6 +132,10 @@ export const syncUserProfileToCloud = async (userId: string, profile: UserProfil
 
     await setDoc(docRef, payload, { merge: true });
   } catch (error) {
+    if (isOfflineError(error)) {
+      console.warn("Firestore syncUserProfileToCloud failed (client is offline). Cloud sync deferred.");
+      return;
+    }
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 };
@@ -141,6 +150,14 @@ export const fetchUserProfileFromCloud = async (userId: string): Promise<UserPro
     }
     return null;
   } catch (error) {
+    if (isOfflineError(error)) {
+      console.warn("Firestore fetchUserProfileFromCloud failed (client is offline). Returning cached local state if available.");
+      try {
+        const stored = localStorage.getItem('currentUser');
+        if (stored) return JSON.parse(stored) as UserProfile;
+      } catch (_) {}
+      return null;
+    }
     handleFirestoreError(error, OperationType.GET, path);
   }
 };
@@ -162,6 +179,10 @@ export const syncRoadmapToCloud = async (userId: string, milestones: Milestone[]
       updatedAt: new Date().toISOString()
     });
   } catch (error) {
+    if (isOfflineError(error)) {
+      console.warn("Firestore syncRoadmapToCloud failed (client is offline). Sync deferred.");
+      return;
+    }
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 };
@@ -177,10 +198,15 @@ export const fetchRoadmapFromCloud = async (userId: string): Promise<Milestone[]
     }
     return null;
   } catch (error) {
+    if (isOfflineError(error)) {
+      console.warn("Firestore fetchRoadmapFromCloud failed (client is offline). Returning null to use local state.");
+      return null;
+    }
     handleFirestoreError(error, OperationType.GET, path);
   }
 };
 
+// Backwards compatibility syncChatSessionToCloud
 export const syncChatSessionToCloud = async (userId: string, session: ChatSession): Promise<void> => {
   const path = `users/${userId}/chats/${session.id}`;
   try {
@@ -202,6 +228,10 @@ export const syncChatSessionToCloud = async (userId: string, session: ChatSessio
       updatedAt: new Date().toISOString()
     });
   } catch (error) {
+    if (isOfflineError(error)) {
+      console.warn(`Firestore syncChatSessionToCloud failed (client is offline) for session: ${session.id}. Saved locally.`);
+      return;
+    }
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 };
@@ -234,6 +264,10 @@ export const fetchChatSessionsFromCloud = async (userId: string): Promise<ChatSe
     sessions.sort((a, b) => b.date.getTime() - a.date.getTime());
     return sessions;
   } catch (error) {
+    if (isOfflineError(error)) {
+      console.warn("Firestore fetchChatSessionsFromCloud failed (client is offline). Returning empty list so local storage can load history.");
+      return [];
+    }
     handleFirestoreError(error, OperationType.LIST, path);
   }
 };
@@ -244,6 +278,10 @@ export const deleteChatSessionFromCloud = async (userId: string, chatId: string)
     const docRef = doc(db, 'users', userId, 'chats', chatId);
     await deleteDoc(docRef);
   } catch (error) {
+    if (isOfflineError(error)) {
+      console.warn("Firestore deleteChatSessionFromCloud failed (client is offline). Session deleted locally only.");
+      return;
+    }
     handleFirestoreError(error, OperationType.DELETE, path);
   }
 };
@@ -260,6 +298,10 @@ export const saveFeedbackToCloud = async (userId: string, rating: number, commen
       createdAt: new Date().toISOString()
     });
   } catch (error) {
+    if (isOfflineError(error)) {
+      console.warn("Firestore saveFeedbackToCloud failed (client is offline). Feedback cannot be saved.");
+      return;
+    }
     handleFirestoreError(error, OperationType.CREATE, path);
   }
 };

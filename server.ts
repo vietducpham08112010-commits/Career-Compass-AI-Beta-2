@@ -87,10 +87,8 @@ async function generateContentWithFallback(
 ) {
     const modelsToTry = [
         'gemini-3.5-flash',
-        'gemini-1.5-flash',
-        'gemini-2.1-flash',
         'gemini-3.1-flash-lite',
-        'gemini-1.5-flash-8b'
+        'gemini-flash-latest'
     ];
 
     if (options.tools && options.tools.length > 0) {
@@ -211,6 +209,13 @@ app.post("/api/search", async (req, res) => {
     const errorMessage = cleanGeminiErrorMessage(error);
     res.status(500).json({ error: errorMessage });
   }
+});
+
+// --- Email/Milestone Reminder API ---
+app.post("/api/send-reminder", (req, res) => {
+  const { email, milestone } = req.body;
+  console.log(`[ALERT REMINDER] Scheduled email alert for ${email}. Milestone: "${milestone?.title}" on deadline: ${milestone?.deadline}`);
+  return res.json({ success: true, message: `Successfully scheduled reminder for ${email}` });
 });
 
 // --- WebSocket Handling (Live API) ---

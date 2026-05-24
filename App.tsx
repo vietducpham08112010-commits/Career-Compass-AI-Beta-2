@@ -29,16 +29,22 @@ import {
   googleProvider,
   firebaseInitError
 } from './services/firestoreService';
-import emailjs from '@emailjs/browser';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  GoogleAuthProvider
+} from 'firebase/auth';
 import { storage } from './utils/storage';
-import bcrypt from 'bcryptjs';
 
 // --- CONFIGURATION ---
 const EMAILJS_CONFIG = {
-  SERVICE_ID: 'service_u6njafq',
-  TEMPLATE_ID: 'template_7yqlm9c',
-  PUBLIC_KEY: '8ABxIIEqUTEI3I-oL'
+  SERVICE_ID: import.meta.env.VITE_EMAILJS_SERVICE_ID || "",
+  TEMPLATE_ID: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "",
+  PUBLIC_KEY: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || ""
 };
 
 // --- Icons ---
@@ -515,7 +521,7 @@ export default function App() {
 
   const [auth, setAuth] = useState<AuthState>({ isAuthenticated: false, user: null });
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [authType, setAuthType] = useState<'login' | 'register' | 'forgot-password' | 'new-password'>('login');
+  const [authType, setAuthType] = useState<'login' | 'register' | 'forgot-password'>('login');
   const [authError, setAuthError] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -523,14 +529,9 @@ export default function App() {
   const [isResetSending, setIsResetSending] = useState(false);
   const [isResetSent, setIsResetSent] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'success' | 'failed' | null>(null);
-  const [resetTokenEmail, setResetTokenEmail] = useState<string | null>(null);
-  
-  // State for Random Code Verification
-  const [resetCodeInput, setResetCodeInput] = useState('');
-  const [generatedResetCode, setGeneratedResetCode] = useState<string | null>(null);
-  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
@@ -868,13 +869,6 @@ export default function App() {
     if (theme === Theme.DARK) { document.documentElement.classList.add('dark'); } 
     else { document.documentElement.classList.remove('dark'); }
   }, [theme]);
-
-  // Initialize EmailJS public key
-  useEffect(() => {
-      try {
-          emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
-      } catch (e) { console.error("EmailJS Init Error", e); }
-  }, []);
   
   // Listen for Firebase Auth State Changes
   useEffect(() => {
@@ -894,18 +888,17 @@ export default function App() {
                   provider: 'google'
               };
 
-              // Merge with stored user to preserve updates (avatar, careerGoal, etc.)
-              const users = getUsers();
-              const existingUser = users.find(u => u.email === user.email);
-              
-              if (existingUser) {
-                  user = { ...user, ...existingUser, name: existingUser.name || user.name, email: user.email };
-                  // Ensure provider is set if it was missing
-                  if (!user.provider) user.provider = 'google';
-              } else {
-                  // Add new Google user to the users list
-                  users.push(user);
-                  localStorage.setItem('users', JSON.stringify(users));
+              // Check if we already have a cached 'currentUser' in local storage for this email to retain progress
+              const storedUserStr = localStorage.getItem('currentUser');
+              if (storedUserStr) {
+                  try {
+                      const cachedUser = JSON.parse(storedUserStr);
+                      if (cachedUser.email === user.email) {
+                          user = { ...user, ...cachedUser };
+                      }
+                  } catch (e) {
+                      console.error("Failed to parse cached user:", e);
+                  }
               }
 
               // Immediately authenticate locally and redirect to dashboard to prevent freezing/hanging
@@ -973,33 +966,6 @@ export default function App() {
       if (auth.user?.customModelName) setCustomModelName(auth.user.customModelName);
   }, [auth.user]);
 
-  // Handle URL Query Params for Reset Token
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    
-    if (token) {
-        try {
-            const decoded = JSON.parse(atob(token));
-            if (decoded.expiry > Date.now()) {
-                setResetTokenEmail(decoded.email);
-                setMode(AppMode.AUTH);
-                setAuthType('new-password');
-            } else {
-                setAuthError('Reset link has expired.');
-                setMode(AppMode.AUTH);
-                setAuthType('login');
-            }
-        } catch (e) {
-            console.error(e);
-            setAuthError('Invalid reset link.');
-            setMode(AppMode.AUTH);
-            setAuthType('login');
-        }
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
-
   // Removed redundant localStorage check since it's handled in onAuthStateChanged
 
   const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
@@ -1009,11 +975,6 @@ export default function App() {
   const toggleLang = () => { setLang(l => l === Language.EN ? Language.VI : Language.EN); };
   const toggleTheme = () => { setTheme(t => t === Theme.LIGHT ? Theme.DARK : Theme.LIGHT); };
   const getRandomAvatar = () => AVATARS[Math.floor(Math.random() * AVATARS.length)];
-
-  const getUsers = (): any[] => {
-      const users = localStorage.getItem('users');
-      return users ? JSON.parse(users) : [];
-  }
   
   const updateUserProfile = (updates: Partial<UserProfile>) => {
       if (!auth.user) return;
@@ -1023,14 +984,6 @@ export default function App() {
       
       try {
           localStorage.setItem('currentUser', JSON.stringify(newUser));
-          if (!newUser.isGuest) {
-              const users = getUsers();
-              const idx = users.findIndex(u => u.email === newUser.email);
-              if (idx !== -1) {
-                  users[idx] = newUser;
-                  localStorage.setItem('users', JSON.stringify(users));
-              }
-          }
           if (firebaseAuth?.currentUser) {
               syncUserProfileToCloud(firebaseAuth.currentUser.uid, newUser).catch(e => console.error("Cloud profile sync failed:", e));
           }
@@ -1087,7 +1040,7 @@ export default function App() {
       }
   }, [messages, currentChatTitle, currentSessionId, isTemporaryChat]);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
     const name = nameRef.current?.value;
@@ -1096,36 +1049,50 @@ export default function App() {
 
     if (!name || !email || !password) return setAuthError(t.fillAllFields);
 
-    const users = getUsers();
-    if (users.find(u => u.email === email)) {
-        setAuthError(t.emailRegistered);
-        return;
+    if (!firebaseAuth) {
+        return setAuthError(t.firebaseNotConfigured);
     }
 
-    const salt = bcrypt.genSaltSync(10);
-    const hashedPassword = bcrypt.hashSync(password, salt);
+    setIsGoogleLoading(true);
+    try {
+        const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+        const firebaseUser = userCredential.user;
 
-    const newUser: UserProfile = { 
-        name, 
-        email, 
-        // @ts-ignore
-        password: hashedPassword, 
-        careerGoal: t.undecided, 
-        avatar: getRandomAvatar(),
-        aiProvider: AIProvider.GEMINI,
-        customEndpoint: 'http://localhost:11434/v1/chat/completions',
-        customModelName: 'llama3',
-        provider: 'local'
-    };
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    setAuth({ isAuthenticated: true, user: newUser });
-    setMode(AppMode.DASHBOARD);
+        const newUser: UserProfile = { 
+            name, 
+            email, 
+            careerGoal: t.undecided || 'Undecided', 
+            avatar: getRandomAvatar(),
+            aiProvider: AIProvider.GEMINI,
+            customEndpoint: 'http://localhost:11434/v1/chat/completions',
+            customModelName: 'llama3',
+            provider: 'email'
+        };
+
+        // Sync initially to cloud
+        await syncUserProfileToCloud(firebaseUser.uid, newUser);
+        
+        localStorage.setItem('currentUser', JSON.stringify(newUser));
+        setAuth({ isAuthenticated: true, user: newUser });
+        setMode(AppMode.DASHBOARD);
+    } catch (error: any) {
+        console.error("Firebase Register Error", error);
+        let errMsg = error.message || String(error);
+        if (error.code === 'auth/email-already-in-use') {
+            setAuthError(t.emailRegistered || "This email is already registered.");
+        } else if (error.code === 'auth/weak-password') {
+            setAuthError(lang === Language.VI ? "Mật khẩu quá yếu (tối thiểu 6 ký tự)." : "Password is too weak (minimum 6 characters).");
+        } else if (error.code === 'auth/invalid-email') {
+            setAuthError(lang === Language.VI ? "Địa chỉ email không hợp lệ." : "Invalid email address.");
+        } else {
+            setAuthError(errMsg);
+        }
+    } finally {
+        setIsGoogleLoading(false);
+    }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
     const email = emailRef.current?.value;
@@ -1133,16 +1100,24 @@ export default function App() {
 
     if (!email || !password) return setAuthError(t.fillAllFields);
 
-    const users = getUsers();
-    const user = users.find(u => u.email === email);
+    if (!firebaseAuth) {
+        return setAuthError(t.firebaseNotConfigured);
+    }
 
-    if (user && user.password && bcrypt.compareSync(password, user.password as string)) {
-        if (!user.provider) user.provider = 'local';
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        setAuth({ isAuthenticated: true, user });
-        setMode(AppMode.DASHBOARD);
-    } else {
-        setAuthError(t.invalidLogin);
+    setIsGoogleLoading(true);
+    try {
+        await signInWithEmailAndPassword(firebaseAuth, email, password);
+    } catch (error: any) {
+        console.error("Firebase Login Error", error);
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+            setAuthError(t.invalidLogin || "Invalid email or password.");
+        } else if (error.code === 'auth/invalid-email') {
+            setAuthError(lang === Language.VI ? "Địa chỉ email không hợp lệ." : "Invalid email address.");
+        } else {
+            setAuthError(error.message || t.invalidLogin);
+        }
+    } finally {
+        setIsGoogleLoading(false);
     }
   };
   
@@ -1166,7 +1141,11 @@ export default function App() {
 
     setIsGoogleLoading(true);
     try {
-        await signInWithPopup(firebaseAuth, googleProvider);
+        const result = await signInWithPopup(firebaseAuth, googleProvider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+            setGoogleAccessToken(credential.accessToken);
+        }
     } catch (error: any) {
         console.error("Google Auth Error", error);
         if (error.code === 'auth/unauthorized-domain' || error.message?.includes('auth/unauthorized-domain')) {
@@ -1184,104 +1163,57 @@ export default function App() {
         setIsGoogleLoading(false);
     }
   };
+
+  const handleGoogleCalendarConnect = async (): Promise<string | null> => {
+    if (!firebaseAuth || !googleProvider) {
+        showToast(lang === Language.VI ? "Lỗi: Chưa cấu hình Firebase." : "Error: Firebase is not configured.", 'error');
+        return null;
+    }
+    try {
+        googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
+        googleProvider.addScope('https://www.googleapis.com/auth/calendar');
+        
+        const result = await signInWithPopup(firebaseAuth, googleProvider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+            setGoogleAccessToken(credential.accessToken);
+            showToast(lang === Language.VI ? "Kết nối Google Calendar thành công!" : "Connected to Google Calendar successfully!", 'success');
+            return credential.accessToken;
+        }
+        return null;
+    } catch (error: any) {
+        console.error("Calendar integration error:", error);
+        showToast(lang === Language.VI ? "Kết nối Google Calendar thất bại." : "Failed to connect to Google Calendar.", 'error');
+        return null;
+    }
+  };
   
   const handleSendResetCode = async (e: React.FormEvent) => {
       e.preventDefault();
       setAuthError('');
-      setEmailStatus(null);
       const email = emailRef.current?.value;
       if (!email) return setAuthError(t.enterEmail);
 
-      const users = getUsers();
-      let user = users.find(u => u.email === email);
-      
-      if (user && user.provider === 'google') {
-          return setAuthError(t.googleLoginRequired);
+      if (!firebaseAuth) {
+          return setAuthError(t.firebaseNotConfigured);
       }
-      
-      if (!user && (email === 'demo@example.com' || email.includes('test'))) {
-           user = { name: 'Demo User', email: email, password: 'password123', careerGoal: t.undecided, avatar: getRandomAvatar() };
-           users.push(user);
-           localStorage.setItem('users', JSON.stringify(users));
-      }
-      
-      if (!user) return setAuthError(t.emailNotFound);
-      
-      setResetTokenEmail(user.email);
+
       setIsResetSending(true);
-
-      const randomCode = Math.floor(10000000 + Math.random() * 90000000).toString();
-      
-      const salt = bcrypt.genSaltSync(10);
-      const hashedCode = bcrypt.hashSync(randomCode, salt);
-      sessionStorage.setItem('resetCodeHash', hashedCode);
-      sessionStorage.setItem('resetCodeExpiry', (Date.now() + 15 * 60 * 1000).toString()); // 15 mins expiry
-
       try {
-          await emailjs.send(
-            EMAILJS_CONFIG.SERVICE_ID,
-            EMAILJS_CONFIG.TEMPLATE_ID,
-            { to_email: email, reply_to: email, message: `Your verification code is: ${randomCode}`, code: randomCode, to_name: user.name || 'User' }
-          );
-          
+          await sendPasswordResetEmail(firebaseAuth, email);
           setIsResetSent(true);
-          setEmailStatus('success');
-      } catch (error) {
-          console.error("EmailJS Error:", error);
-          setAuthError(t.failedToSendEmail);
+          showToast(t.linkSent || "Success! Please check your email for the reset link.", 'success');
+      } catch (error: any) {
+          console.error("Firebase Reset Error:", error);
+          if (error.code === 'auth/user-not-found') {
+              setAuthError(t.emailNotFound || "Email address not found.");
+          } else if (error.code === 'auth/invalid-email') {
+              setAuthError(lang === Language.VI ? "Địa chỉ email không hợp lệ." : "Invalid email address.");
+          } else {
+              setAuthError(error.message || String(error));
+          }
       } finally {
           setIsResetSending(false);
-      }
-  };
-
-  const handleVerifyCode = (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsVerifyingCode(true);
-      setTimeout(() => {
-          const storedHash = sessionStorage.getItem('resetCodeHash');
-          const expiryStr = sessionStorage.getItem('resetCodeExpiry');
-          const isValid = storedHash && expiryStr && 
-              parseInt(expiryStr) > Date.now() && 
-              bcrypt.compareSync(resetCodeInput, storedHash);
-          
-          if (isValid) {
-              setAuthType('new-password');
-              setResetCodeInput(''); 
-          } else {
-              setAuthError(t.invalidCode);
-          }
-          setIsVerifyingCode(false);
-      }, 800);
-  };
-  
-  const handleNewPasswordSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      const pass = passwordRef.current?.value;
-      const confirmPass = confirmPasswordRef.current?.value;
-      
-      if (!pass || !confirmPass) {
-          setAuthError(t.fillAllFields); return;
-      }
-      if (pass !== confirmPass) {
-          setAuthError(t.passwordsDoNotMatch); return;
-      }
-      
-      const users = getUsers();
-      const userIndex = users.findIndex(u => u.email === resetTokenEmail);
-      
-      if (userIndex > -1) {
-          const salt = bcrypt.genSaltSync(10);
-          users[userIndex].password = bcrypt.hashSync(pass, salt);
-          localStorage.setItem('users', JSON.stringify(users));
-          showToast(t.passwordUpdated, 'success');
-          setAuthType('login');
-          setAuthError('');
-          setIsResetSent(false); 
-          setResetCodeInput('');
-          sessionStorage.removeItem('resetCodeHash'); 
-          sessionStorage.removeItem('resetCodeExpiry'); 
-      } else {
-          setAuthError(t.userNotFound);
       }
   };
 
@@ -1845,10 +1777,10 @@ export default function App() {
                 <CareerGuideLogo className="w-16 h-16" />
             </div>
             <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2 tracking-tight">
-                {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? t.resetPasswordTitle : t.resetPasswordTitle}
+                {authType === 'login' ? t.login : authType === 'register' ? t.register : t.resetPasswordTitle}
             </h2>
             <p className="text-center text-gray-500 dark:text-gray-400 mb-8 text-sm">
-                {authType === 'forgot-password' ? (isResetSent ? t.enterResetCode : t.resetPasswordDesc) : authType === 'new-password' ? t.enterNewPassword : t.tagline}
+                {authType === 'forgot-password' ? (isResetSent ? (lang === Language.VI ? 'Kiểm tra hộp thư' : 'Check your inbox') : t.resetPasswordDesc) : t.tagline}
             </p>
             
             {authError && (
@@ -1913,64 +1845,38 @@ export default function App() {
             )}
             
             {authType === 'forgot-password' && isResetSent ? (
-                <form onSubmit={handleVerifyCode} className="text-center animate-fade-in-up space-y-6">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                         <div className="bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 p-2 rounded-full">
-                            <Icons.Zap className="w-5 h-5" />
+                <div className="text-center animate-fade-in-up space-y-6">
+                    <div className="flex flex-col items-center justify-center gap-4 mb-2">
+                         <div className="bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 p-4 rounded-full">
+                            <Icons.Check className="w-10 h-10 animate-bounce" />
                          </div>
-                         <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{t.codeSent}</span>
-                    </div>
-
-                    <div className="space-y-4">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">{t.verificationCode}</label>
-                        <input 
-                            type="text" 
-                            maxLength={8}
-                            value={resetCodeInput}
-                            onChange={(e) => setResetCodeInput(e.target.value.replace(/[^0-9]/g, ''))}
-                            className="w-full text-center text-3xl tracking-[0.5em] font-mono font-bold px-4 py-4 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-300" 
-                            placeholder="00000000"
-                            autoFocus
-                        />
+                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-2">
+                             {lang === Language.VI ? "Đã gửi liên kết thành công!" : "Reset Link Sent Successfully!"}
+                         </h3>
+                         <p className="text-sm font-medium text-gray-500 dark:text-gray-300 px-2 leading-relaxed">
+                             {t.linkSent || (lang === Language.VI 
+                                 ? "Thành công! Vui lòng kiểm tra hộp thư đến của bạn để lấy liên kết cài đặt lại mật khẩu của bạn." 
+                                 : "Success! Please check your email inbox for the link to reset your password.")}
+                         </p>
                     </div>
 
                     <motion.button 
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        type="submit" 
-                        disabled={isVerifyingCode || resetCodeInput.length !== 8} 
-                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="button" 
+                        onClick={() => { setIsResetSent(false); setAuthType('login'); setAuthError(''); }}
+                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
                     >
-                        {isVerifyingCode ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : t.verifyCode}
+                        {t.backToLogin}
                     </motion.button>
-
-                    <button type="button" onClick={() => { setIsResetSent(false); setResetCodeInput(''); setAuthError(''); }} className="text-xs text-gray-400 hover:text-indigo-500 underline">{t.resendCode}</button>
-                </form>
+                </div>
             ) : (
-                <form onSubmit={authType === 'forgot-password' ? handleSendResetCode : authType === 'new-password' ? handleNewPasswordSubmit : authType === 'login' ? handleLogin : handleRegister} className="space-y-4">
+                <form onSubmit={authType === 'forgot-password' ? handleSendResetCode : authType === 'login' ? handleLogin : handleRegister} className="space-y-4">
                     {authType === 'register' && (<div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.fullName}</label><input ref={nameRef} type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderName} /></div>)}
                     
-                    {authType === 'new-password' ? (
-                        <>
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.newPassword}</label>
-                                <div className="relative">
-                                    <input ref={passwordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderPassword} />
-                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500">{showPassword ? <Icons.EyeOff className="w-5 h-5" /> : <Icons.Eye className="w-5 h-5" />}</button>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.confirmPassword}</label>
-                                <div className="relative">
-                                    <input ref={confirmPasswordRef} type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderPassword} />
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.email}</label><input ref={emailRef} type="email" required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderEmail} /></div>
-                    )}
+                    <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.email}</label><input ref={emailRef} type="email" required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white" placeholder={t.placeholderEmail} /></div>
                     
-                    {authType !== 'forgot-password' && authType !== 'new-password' && (
+                    {authType !== 'forgot-password' && (
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">{t.password}</label>
                             <div className="relative">
@@ -1990,12 +1896,12 @@ export default function App() {
                         className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg shadow-indigo-500/20 mt-2 flex items-center justify-center gap-2"
                     >
                         {isResetSending && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                        {authType === 'login' ? t.login : authType === 'register' ? t.register : authType === 'new-password' ? t.updatePassword : t.sendVerificationCode}
+                        {authType === 'login' ? t.login : authType === 'register' ? t.register : t.sendLink}
                     </motion.button>
                 </form>
             )}
 
-            {authType !== 'forgot-password' && authType !== 'new-password' && (
+            {authType !== 'forgot-password' && (
                 <>
                     <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-white/10"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-[#111] text-gray-500">{t.or}</span></div></div>
                     <motion.button 
@@ -2833,6 +2739,8 @@ export default function App() {
                 theme={theme}
                 milestones={milestones}
                 setMilestones={setMilestones}
+                googleAccessToken={googleAccessToken}
+                onConnectGoogleCalendar={handleGoogleCalendarConnect}
                 showToast={showToast}
                 onNavigateToChat={() => setTab(DashboardTab.CHAT)} 
             />
