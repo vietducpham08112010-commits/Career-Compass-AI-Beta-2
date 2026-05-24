@@ -48,13 +48,13 @@ const EMAILJS_CONFIG = {
 
 // --- FIREBASE CONFIGURATION ---
 const fallbackConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBKSvEEKxqggpgcVxFRLaa9BzU0USylgjU",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "career-compass-ai-40718.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "career-compass-ai-40718",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "career-compass-ai-40718.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "20883129610",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:20883129610:web:42baaafa7667a09b8526f3",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-Y574S5M43C"
 };
 
 const activeFirebaseConfig = (firebaseConfig && firebaseConfig.apiKey) ? firebaseConfig : fallbackConfig;
