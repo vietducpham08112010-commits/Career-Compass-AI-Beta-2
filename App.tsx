@@ -908,37 +908,44 @@ export default function App() {
                   localStorage.setItem('users', JSON.stringify(users));
               }
 
-              // Pull cloud synchronization from Firebase Firestore
-              try {
-                  const cloudProfile = await fetchUserProfileFromCloud(firebaseUser.uid);
-                  if (cloudProfile) {
-                      user = { ...user, ...cloudProfile };
-                  } else {
-                      // First time logging in with a new account - synchronize initial profile settings
-                      await syncUserProfileToCloud(firebaseUser.uid, user);
-                  }
-
-                  // Retrieve their saved roadmaps/milestones
-                  const cloudRoadmap = await fetchRoadmapFromCloud(firebaseUser.uid);
-                  if (cloudRoadmap && cloudRoadmap.length > 0) {
-                      setMilestones(cloudRoadmap);
-                  }
-
-                  // Retrieve all chat sessions
-                  const cloudSessions = await fetchChatSessionsFromCloud(firebaseUser.uid);
-                  if (cloudSessions && cloudSessions.length > 0) {
-                      setChatHistory(cloudSessions);
-                  }
-              } catch (cloudErr) {
-                  console.error("Failed to fetch cloud sync on login:", cloudErr);
-              }
-
+              // Immediately authenticate locally and redirect to dashboard to prevent freezing/hanging
               setAuth({ isAuthenticated: true, user });
               localStorage.setItem('currentUser', JSON.stringify(user));
               
               if (mode === AppMode.AUTH) {
                   setMode(AppMode.DASHBOARD);
               }
+
+              // Pull cloud synchronization asynchronously in the background so it doesn't block the UI switch
+              (async () => {
+                  try {
+                      let updatedUser = { ...user };
+                      const cloudProfile = await fetchUserProfileFromCloud(firebaseUser.uid);
+                      if (cloudProfile) {
+                          updatedUser = { ...updatedUser, ...cloudProfile };
+                          // Sync local state with refreshed cloud settings
+                          setAuth({ isAuthenticated: true, user: updatedUser });
+                          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                      } else {
+                          // First time logging in with a new account - synchronize initial profile settings
+                          await syncUserProfileToCloud(firebaseUser.uid, updatedUser);
+                      }
+
+                      // Retrieve their saved roadmaps/milestones
+                      const cloudRoadmap = await fetchRoadmapFromCloud(firebaseUser.uid);
+                      if (cloudRoadmap && cloudRoadmap.length > 0) {
+                          setMilestones(cloudRoadmap);
+                      }
+
+                      // Retrieve all chat sessions
+                      const cloudSessions = await fetchChatSessionsFromCloud(firebaseUser.uid);
+                      if (cloudSessions && cloudSessions.length > 0) {
+                          setChatHistory(cloudSessions);
+                      }
+                  } catch (cloudErr) {
+                      console.error("Failed to fetch cloud sync on login:", cloudErr);
+                  }
+              })();
           } else {
               // If not logged in via Firebase, check local storage for custom login or guest
               const storedUser = localStorage.getItem('currentUser');
