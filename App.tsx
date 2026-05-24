@@ -24,20 +24,15 @@ import {
   syncChatSessionToCloud, 
   fetchChatSessionsFromCloud, 
   deleteChatSessionFromCloud,
-  saveFeedbackToCloud 
+  saveFeedbackToCloud,
+  firebaseAuth,
+  googleProvider,
+  firebaseInitError
 } from './services/firestoreService';
 import emailjs from '@emailjs/browser';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { storage } from './utils/storage';
 import bcrypt from 'bcryptjs';
-
-let firebaseConfig: any = {};
-const configs = import.meta.glob('./firebase-applet-config.json', { eager: true });
-const configFiles = Object.keys(configs);
-if (configFiles.length > 0) {
-  firebaseConfig = (configs[configFiles[0]] as any).default || {};
-}
 
 // --- CONFIGURATION ---
 const EMAILJS_CONFIG = {
@@ -45,36 +40,6 @@ const EMAILJS_CONFIG = {
   TEMPLATE_ID: 'template_7yqlm9c',
   PUBLIC_KEY: '8ABxIIEqUTEI3I-oL'
 };
-
-// --- FIREBASE CONFIGURATION ---
-const fallbackConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
-};
-
-const activeFirebaseConfig = (firebaseConfig && firebaseConfig.apiKey) ? firebaseConfig : fallbackConfig;
-
-// Initialize Firebase safely
-let firebaseAuth: any;
-let googleProvider: any;
-let firebaseInitError: any = null;
-try {
-  if (activeFirebaseConfig && activeFirebaseConfig.apiKey) {
-    const app = getApps().length > 0 ? getApp() : initializeApp(activeFirebaseConfig);
-    firebaseAuth = getAuth(app);
-    googleProvider = new GoogleAuthProvider();
-  } else {
-      console.warn("Firebase config is missing API key. Firebase will not initialize.");
-  }
-} catch (error: any) {
-    firebaseInitError = error;
-    console.warn("Firebase initialization failed:", error);
-}
 
 // --- Icons ---
 const Icons = {

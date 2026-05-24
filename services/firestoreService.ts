@@ -9,6 +9,7 @@ import {
   deleteDoc, 
   updateDoc 
 } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { UserProfile, ChatSession, ChatMessage, Milestone } from '../types';
 
 let firebaseConfig: any = {};
@@ -31,13 +32,32 @@ const fallbackConfig = {
 
 const activeFirebaseConfig = (firebaseConfig && firebaseConfig.apiKey) ? firebaseConfig : fallbackConfig;
 
-// Safe double-initialization check
-const app = getApps().length > 0 ? getApp() : initializeApp(activeFirebaseConfig);
+// Initialize Firebase safely inside a single try-catch
+let app: any = null;
+let db: any = null;
+let firebaseAuth: any = null;
+let googleProvider: any = null;
+let firebaseInitError: any = null;
 
-export const db = activeFirebaseConfig.firestoreDatabaseId && activeFirebaseConfig.firestoreDatabaseId !== 'default'
-  ? getFirestore(app, activeFirebaseConfig.firestoreDatabaseId)
-  : getFirestore(app);
-export const auth = getApps().length > 0 ? getApp() : app;
+try {
+  if (activeFirebaseConfig && activeFirebaseConfig.apiKey) {
+    app = getApps().length > 0 ? getApp() : initializeApp(activeFirebaseConfig);
+    db = activeFirebaseConfig.firestoreDatabaseId && activeFirebaseConfig.firestoreDatabaseId !== 'default'
+      ? getFirestore(app, activeFirebaseConfig.firestoreDatabaseId)
+      : getFirestore(app);
+    firebaseAuth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+  } else {
+    console.warn("Firebase config is missing API key. Firebase will not initialize.");
+  }
+} catch (error: any) {
+  firebaseInitError = error;
+  console.warn("Firebase initialization failed in firestoreService:", error);
+}
+
+// Export safe initialized variables
+export { app, db, firebaseAuth, googleProvider, firebaseInitError };
+export const auth = app; // Backwards compatibility if auth is imported as app elsewhere
 
 enum OperationType {
   CREATE = 'create',
