@@ -28,13 +28,13 @@ const safeDecode = (b64: string): string => {
 };
 
 const fallbackConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || safeDecode("QUl6YVN5QktzdkVFS3hxZ2dwZ0NWeEZSTGFhOUJ6VTBVU3lsZ2pV"),
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || safeDecode("Y2FyZWVyLWNvbXBhc3MtYWktNDA3MTguZmlyZWJhc2VhcHAuY29t"),
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || safeDecode("Y2FyZWVyLWNvbXBhc3MtYWktNDA3MTg="),
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || safeDecode("Y2FyZWVyLWNvbXBhc3MtYWktNDA3MTguZmlyZWJhc3N0b3JhZ2UuYXBw"),
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || safeDecode("MjA4ODMxMjk2MTA="),
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || safeDecode("MToyMDg4MzEyOTYxMDp3ZWI6NDJiYWFhZmE3NjY3YTA5Yjg1MjZmMw=="),
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || safeDecode("Ry1ZNTc0UzVNNDND"),
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || safeDecode("QUl6YVN5RFJ2MmJmdzBuY0xZQ1VzakdyVWVHb1R3Z2x5cnBDUmRV"),
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTEuZmlyZWJhc2VhcHAuY29t"),
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTE="),
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || safeDecode("Y2FyZWVyZ3VpZGVhaWZvcmV2ZXJ5b25lLTEuZmlyZWJhc3N0b3JhZ2UuYXBw"),
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || safeDecode("MTAyNDY0NDgxMzc3MQ=="),
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || safeDecode("MToxMDI0NjQ0ODEzNzcxOndlYjoxOTZhYzUzOTk5NjhmZThiZWZkYzRl"),
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || safeDecode("Ry1DNTJQNldOM0hF"),
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'default'
 };
 
