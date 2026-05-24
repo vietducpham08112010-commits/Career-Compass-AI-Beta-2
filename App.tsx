@@ -1166,6 +1166,10 @@ export default function App() {
              setAuthError(lang === Language.VI 
                 ? `Lỗi: Tên miền hiện tại chưa được cấp phép. Vui lòng hướng dẫn thêm "${window.location.hostname}" vào Authorized domains trong Firebase Console > Authentication > Settings.` 
                 : `Error: The current domain is unauthorized. Please add "${window.location.hostname}" to Authorized domains in Firebase Console > Authentication > Settings.`);
+        } else if (error.code === 'auth/popup-closed-by-user' || error.message?.includes('popup-closed-by-user')) {
+             setAuthError(lang === Language.VI
+                ? `Đăng nhập thất bại: Bạn đã đóng cửa sổ đăng nhập Google quá sớm hoặc trình duyệt đang chặn Pop-up (auth/popup-closed-by-user).`
+                : `Login failed: The sign-in popup was closed before completion, or your browser is blocking popups (auth/popup-closed-by-user).`);
         } else {
              setAuthError(`${t.loginFailed} ${error.message}`);
         }
@@ -1871,6 +1875,31 @@ export default function App() {
                             <p className="text-[10px] text-gray-500 italic text-center">
                                 {lang === Language.VI ? "💡 Nhấp đúp vào khung văn bản trên để bôi đen toàn bộ và sao chép dễ dàng!" : "💡 Double click on the box above to select all and copy easily!"}
                             </p>
+                        </div>
+                    )}
+
+                    {(authError.includes('popup-closed-by-user') || authError.includes('đóng cửa sổ') || authError.includes('popup was closed')) && (
+                        <div className="mt-3 pt-3 border-t border-red-200/50 dark:border-red-800/30 text-xs text-gray-700 dark:text-gray-300 space-y-2">
+                            <p className="font-bold text-red-850 dark:text-red-300 flex items-center gap-1">
+                                {lang === Language.VI ? "💡 CÁCH KHẮC PHỤC LỖI POP-UP:" : "💡 HOW TO RESOLVE POP-UP ISSUES:"}
+                            </p>
+                            <ul className="list-disc list-inside space-y-1.5 pl-1">
+                                {lang === Language.VI ? (
+                                    <>
+                                        <li><strong>Không đóng cửa sổ sớm:</strong> Hãy giữ nguyên cửa sổ đăng nhập Google mới mở và hoàn tất đăng nhập cho đến khi nó tự động đóng hoàn toàn.</li>
+                                        <li><strong>Kiểm tra Chặn Pop-up:</strong> Hãy xem ở góc phải thanh địa chỉ trình duyệt xem có biểu tượng "Chặn Pop-up" (có hình biểu tượng cửa sổ kèm dấu x đỏ) không, và nhấn vào chọn "Luôn cho phép hiển thị cửa sổ bật lên" từ trang này.</li>
+                                        <li><strong>Tắt Chặn quảng cáo / Lá chắn:</strong> Nếu bạn dùng Brave, hãy tạm tắt Tấm lá chắn hỗ trợ hoặc tắt trình chặn quảng cáo (như Adblock, uBlock Origin) cho trang này.</li>
+                                        <li><strong>Mở tab mới (Khuyên dùng):</strong> Nhấp vào biểu tượng ↗️ ở góc trên bên phải khung Iframe xem trước của AI Studio để chạy ứng dụng trong màn hình Tab độc lập mới. Việc này sẽ gỡ bỏ tất cả giới hạn bảo mật Iframe.</li>
+                                    </>
+                                ) : (
+                                    <>
+                                        <li><strong>Keep the popup open:</strong> Do not close the Google sign-in popup window manually until the redirection and login are fully finished.</li>
+                                        <li><strong>Check your Popup Blocker:</strong> Check the right side of your browser's address bar for a blocked popup icon. Click on it and choose "Always allow popups and redirects" for this site.</li>
+                                        <li><strong>Disable Shields / Adblockers:</strong> If using Brave browser or plugins like uBlock Origin or Adblock Plus, temporarily disable them for this page.</li>
+                                        <li><strong>Open in a New Tab (Recommended):</strong> Click the ↗️ button in the top-right corner of the AI Studio preview window to open the app in a standalone browser tab, completely avoiding sandbox constraints.</li>
+                                    </>
+                                )}
+                            </ul>
                         </div>
                     )}
                 </div>
