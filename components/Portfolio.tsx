@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Icons from 'lucide-react';
 import { UserProfile, Language, PortfolioItem, Theme } from '../types';
+import { InlineGuide } from './InlineGuide';
 
 interface PortfolioProps {
   user: UserProfile | null;
@@ -123,6 +124,21 @@ export const Portfolio: React.FC<PortfolioProps> = ({ user, language, theme, onU
             </button>
           </div>
         </div>
+
+        <InlineGuide 
+          sectionKey="portfolio-cv"
+          lang={language === Language.VI ? 'vi' : 'en'}
+          title={language === Language.VI ? "💡 Hướng dẫn lưu trữ & kết xuất hồ sơ tuyển sinh" : "💡 Portfolio / CV Guide"}
+          steps={language === Language.VI ? [
+            "Tập hợp các giải thưởng, điểm tổng kết hoặc chứng chỉ ngoại ngữ mà bạn đã gặt hái vào các nhóm chuyên biệt.",
+            "AI tự động bóc tách các mốc này nhằm gia vị cho các cuộc tư vấn lộ trình và buổi phỏng vấn thử đạt độ cá nhân hóa đỉnh cao.",
+            "Click nút 'Xuất Portfolio' ở danh mục bên dưới để in ngay một bản sơ yếu định dạng PDF trang nhã làm hồ sơ xin học bổng."
+          ] : [
+            "Input certificates (IELTS, SAT, etc.), academic grades, or personal projects that you've earned.",
+            "AI integrates these records seamlessly to fine-tune your career guidance sessions and mock interview contexts.",
+            "Click the export action links to compile and download your records into a standard premium formatted CV PDF."
+          ]}
+        />
 
         <AnimatePresence>
           {isAddingItem && (

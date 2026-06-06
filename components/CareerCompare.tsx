@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../types';
 import { compareCareers } from '../services/geminiService';
+import { InlineGuide } from './InlineGuide';
 
 const CAREERS = [
   { id: 'se', name: 'Software Engineer', nameVi: 'Kỹ sư phần mềm', salary: '$1,000 - $3,500', salaryVi: '20 - 60 triệu VNĐ', demand: 'Very High', demandVi: 'Rất cao', competition: 'High', competitionVi: 'Cao', workLife: 'Medium', workLifeVi: 'Trung bình', description: 'Design, develop, and test software systems and applications.', descriptionVi: 'Thiết kế, phát triển và kiểm thử các hệ thống phần mềm và ứng dụng.' },
@@ -41,15 +42,30 @@ export const CareerCompare = ({ lang, t, Icons }: { lang: Language, t: any, Icon
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+    <div className="w-full max-w-5xl mx-auto flex flex-col items-stretch">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t.careerCompare || 'So sánh ngành nghề'}</h2>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {lang === Language.VI 
             ? 'So sánh thu nhập, cơ hội và độ cạnh tranh giữa các ngành nghề bằng AI' 
             : 'Compare salary, opportunities, and competition between careers using AI'}
         </p>
       </motion.div>
+
+      <InlineGuide 
+        sectionKey="compare-careers"
+        lang={lang === Language.VI ? 'vi' : 'en'}
+        title={lang === Language.VI ? "💡 Hướng dẫn so sánh ngành nghề" : "💡 Career Compare Guide"}
+        steps={lang === Language.VI ? [
+          "Nhập tên 2 ngành nghề bất kỳ mà bạn đang phân vân (vd: Kỹ sư phần mềm và Thiết kế UI/UX).",
+          "AI sẽ lập biểu đồ phân tích cụ thể về: mức thu nhập bình quân, triển vọng tương lai, tỷ lệ cạnh tranh và khả năng cân bằng công việc - cuộc sống.",
+          "Tham khảo ý kiến tóm lược từ AI và các lời khuyên định vị giá trị bản thân độc nhất."
+        ] : [
+          "Type in two different career titles you are considering side-by-side (e.g., Software Engineer and UI/UX Designer).",
+          "AI compiles comparative stats covering average salary bands, local career demand outlooks, candidate competition, and work-life balance.",
+          "Review structured advantages and the dedicated AI recommendation formulated based on global statistics."
+        ]}
+      />
 
       <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="flex flex-col gap-2">

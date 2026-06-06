@@ -6,6 +6,7 @@ import * as Icons from 'lucide-react';
 import { ChatSession, UserProfile, Language, ChatMessage, Milestone, Theme } from '../types';
 import { generateRoadmap } from '../services/geminiService';
 import emailjs from '@emailjs/browser';
+import { InlineGuide } from './InlineGuide';
 
 interface ProgressBoardProps {
   chatHistory: ChatSession[];
@@ -694,6 +695,37 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({
       </div>
 
       <div className="w-full p-4 md:p-8 max-w-5xl mx-auto">
+        <InlineGuide 
+          sectionKey={`progress-${activeSubTab}`}
+          lang={language === Language.VI ? 'vi' : 'en'}
+          title={
+            activeSubTab === 'roadmap' 
+              ? (language === Language.VI ? "💡 Hướng dẫn Lộ trình Học 3 tháng" : "💡 3-Month Study Roadmap Guide")
+              : (language === Language.VI ? "💡 Hướng dẫn Bản đồ kỹ năng & Việc làm" : "💡 Competencies & Careers Guide")
+          }
+          steps={
+            activeSubTab === 'roadmap'
+              ? (language === Language.VI ? [
+                  "Lộ trình học tập 3 tháng được AI xây dựng cá nhân hóa dựa trên kết quả khảo sát RIASEC và lịch sử thảo luận của bạn.",
+                  "Kết nối tài khoản Google để lên lịch và tự động đồng bộ hóa tạo nhắc nhở cho từng cột mốc nhiệm vụ hàng tuần.",
+                  "Nhấn 'Lưu ảnh' hoặc 'Xuất PDF' ở góc trên để lưu trữ lộ trình chi tiết làm cẩm nang học tập cá nhân."
+                ] : [
+                  "Your 3-month action roadmap is custom compiled by AI integrating your RIASEC score and chat history.",
+                  "Sync with Google Calendar to automatically map out milestones and weekly study schedules into your personal agenda.",
+                  "Export as detailed images or vectors (PDF) to build your personal offline roadmap guide."
+                ])
+              : (language === Language.VI ? [
+                  "Bản đồ kỹ năng phân loại chuyên môn theo các cấp độ tuyển dụng trực quan: Cơ bản (Junior), Trung cấp (Midweight), Chuyên gia (Senior).",
+                  "Hệ thống tự động liên hợp tin tuyển dụng từ các nhà cung cấp trực tuyến hàng đầu Việt Nam thích ứng với kĩ năng hiện tại.",
+                  "Xem dải lương tối ưu tại Việt Nam cho từng trình độ chuyên môn và nhấp tuyển dụng trực quan."
+                ] : [
+                  "Examine complete job competencies segmented by Junior, Midweight, and Senior specialist levels.",
+                  "System queries live VN career listings from premium providers TopCV and ITviec compatible with matched skills.",
+                  "Compare active compensation statistics and click the listing link to apply instantly."
+                ])
+          }
+        />
+
         <AnimatePresence mode="wait">
           {activeSubTab === 'roadmap' ? (
             /* Roadmap view containing Google Calendar reminders and Deadline Set */

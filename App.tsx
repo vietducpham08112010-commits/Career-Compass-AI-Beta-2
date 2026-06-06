@@ -16,6 +16,8 @@ import { CareerCompare } from './components/CareerCompare';
 import { ClarificationCard } from './components/ClarificationCard';
 import { HotCareersVietnam } from './components/HotCareersVietnam';
 import { FeedbackModal } from './components/FeedbackModal';
+import { MockInterview } from './components/MockInterview';
+import { InlineGuide } from './components/InlineGuide';
 import { 
   syncUserProfileToCloud, 
   fetchUserProfileFromCloud, 
@@ -102,6 +104,7 @@ const Icons = {
   Trash2: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
   Star: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   FolderOpen: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>,
+  HelpCircle: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
 };
 
 // --- CAREER GUIDE AI LOGO ---
@@ -2120,6 +2123,7 @@ export default function App() {
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.TRENDING)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.TRENDING ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.trendingCareers}><Icons.Flame className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.trendingCareers}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.QUIZ)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.QUIZ ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.careerQuizTitle}><Icons.Zap className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.careerQuizTitle}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PROGRESS)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PROGRESS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.progress}><Icons.Target className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.progress}</span>}</motion.button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.MOCK_INTERVIEW)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.MOCK_INTERVIEW ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.mockInterview}><Icons.Cpu className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.mockInterview}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.PORTFOLIO ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.portfolio}><Icons.Briefcase className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.portfolio}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.SCHOLARSHIPS)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.SCHOLARSHIPS ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.scholarships}><Icons.Search className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.scholarships}</span>}</motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setTab(DashboardTab.SCORES)} className={`group w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${tab === DashboardTab.SCORES ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'} ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}`} title={t.universityScores}><Icons.BookOpen className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />{isSidebarOpen && <span className="truncate">{t.universityScores}</span>}</motion.button>
@@ -2715,6 +2719,22 @@ export default function App() {
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.careerQuizTitle}</h2>
                     <p className="text-sm text-gray-500 font-medium">{t.careerQuizDesc}</p>
                 </div>
+                <div className="p-6 pb-0">
+                  <InlineGuide 
+                    sectionKey="riasec-quiz"
+                    lang={lang === Language.VI ? 'vi' : 'en'}
+                    title={lang === Language.VI ? "💡 Hướng dẫn trắc nghiệm RIASEC lý tưởng" : "💡 Career Quiz / RIASEC Guide"}
+                    steps={lang === Language.VI ? [
+                      "Bài khảo sát gồm 36 câu trắc nghiệm khoa học hành vi đo đạc 6 phổ tính cách: Kỹ thuật, Nghiên cứu, Nghệ thuật, Xã hội, Quản lý, Nghiệp vụ.",
+                      "Hãy lựa chọn khách quan theo mức độ hứng thú thật của bản thân mà không cần đắn đo về năng lực chuyên môn hiện thực.",
+                      "Khi làm xong, hệ thống tự động lưu điểm RIASEC vào hồ sơ cá nhân và kích hoạt cuộc tư vấn định vị thế mạnh độc quyền với AI."
+                    ] : [
+                      "The survey contains 36 behavioral indices tracing 6 core traits: Realistic, Investigative, Artistic, Social, Enterprising, Conventional.",
+                      "Respond based on your native passion and real hobby preferences, separate from active skills validation.",
+                      "Once done, points sync with your profile metadata, launching an automated customized consultation plan via AI."
+                    ]}
+                  />
+                </div>
                 <div className="flex-1 flex items-center justify-center p-6">
                     <CareerQuiz lang={lang} t={t} onComplete={(result) => {
                         const prompt = t.quizAdvicePrompt.replace('{{result}}', result || '');
@@ -2743,6 +2763,14 @@ export default function App() {
                 onConnectGoogleCalendar={handleGoogleCalendarConnect}
                 showToast={showToast}
                 onNavigateToChat={() => setTab(DashboardTab.CHAT)} 
+            />
+        )}
+        {tab === DashboardTab.MOCK_INTERVIEW && (
+            <MockInterview 
+                language={lang} 
+                theme={theme} 
+                user={auth.user} 
+                onAddEarnedPoints={awardExperiencePoints} 
             />
         )}
         {tab === DashboardTab.PORTFOLIO && (
@@ -2802,6 +2830,10 @@ export default function App() {
             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.PROGRESS)} className={`group flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PROGRESS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Target className="w-5 h-5 mb-1 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-110" />
                 <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.progress}</span>
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.MOCK_INTERVIEW)} className={`group flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.MOCK_INTERVIEW ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
+                <Icons.Cpu className="w-5 h-5 mb-1 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">{t.mockInterview}</span>
             </motion.button>
             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setTab(DashboardTab.PORTFOLIO)} className={`group flex flex-col items-center justify-center w-16 h-full ${tab === DashboardTab.PORTFOLIO ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}>
                 <Icons.Briefcase className="w-5 h-5 mb-1 transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />
@@ -2960,6 +2992,8 @@ export default function App() {
           lang={lang} 
           onAddEarnedPoints={awardExperiencePoints} 
       />
+
+
     </div>
     );
   };

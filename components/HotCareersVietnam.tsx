@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import { InlineGuide } from './InlineGuide';
 
 interface HotJob {
   id: string;
@@ -100,6 +101,19 @@ export const HotCareersVietnam: React.FC<Props> = ({ lang, onConsult }) => {
 
   const categories = ['All', 'Information Technology', 'Engineering & Environment', 'Management & Logistics', 'Marketing & Multimedia', 'Agriculture & BioTech'];
 
+  const getCategoryLabel = (cat: string) => {
+    if (lang !== 'vi') return cat;
+    const map: Record<string, string> = {
+      'All': 'Tất cả',
+      'Information Technology': 'Công nghệ thông tin',
+      'Engineering & Environment': 'Kỹ thuật & Môi trường',
+      'Management & Logistics': 'Chuỗi cung ứng & Vận tải',
+      'Marketing & Multimedia': 'Tiếp thị & Truyền thông số',
+      'Agriculture & BioTech': 'Nông nghiệp & Sinh học',
+    };
+    return map[cat] || cat;
+  };
+
   const filteredJobs = JOBS_VIETNAM.filter(job => {
     const matchesCat = selectedCategory === 'All' || job.category === selectedCategory;
     const matchesSearch = job.title_vi.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -137,6 +151,23 @@ export const HotCareersVietnam: React.FC<Props> = ({ lang, onConsult }) => {
               : 'All market trends and salary estimates are for informational reference purposes. AI recommendations do NOT substitute for direct strategic consultations with human professional career coaches.'}
           </div>
         </div>
+
+        <div className="mt-4">
+          <InlineGuide 
+            sectionKey="trending-careers"
+            lang={lang === 'vi' ? 'vi' : 'en'}
+            title={lang === 'vi' ? "💡 Hướng dẫn khám phá xu hướng" : "💡 Trending Careers Guide"}
+            steps={lang === 'vi' ? [
+              "Chọn một Danh mục ngành nghề ở bộ lọc (vd: Công nghệ thông tin, Nông nghiệp...) hoặc nhập từ khóa tìm kiếm.",
+              "Đọc kĩ phân tích chi tiết về mức thu nhập trung bình tại Việt Nam, tăng trưởng việc làm và kiến thức cần tích lũy.",
+              "Click 'Thảo luận với AI' ở góc bất kỳ thẻ nghề nghiệp nào. Hệ thống tự động chuyển sang trang Trò chuyện với câu hỏi nạp sẵn về cách dấn thân lập nghiệp cho ngành đó."
+            ] : [
+              "Select an Industry category or type key terms inside the search field.",
+              "Examine custom metrics: Average VN income bands, national growth ratios, core skills, and degrees.",
+              "Click 'Discuss with AI' on any career profile to jump directly to Chat, pre-populated with questions about building a career path for that specific job."
+            ]}
+          />
+        </div>
       </div>
 
       {/* Filter and Search controls */}
@@ -152,7 +183,7 @@ export const HotCareersVietnam: React.FC<Props> = ({ lang, onConsult }) => {
                   : 'bg-white dark:bg-[#111] border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-indigo-400'
               }`}
             >
-              {cat === 'All' ? (lang === 'vi' ? 'Tất cả' : 'All') : cat}
+              {getCategoryLabel(cat)}
             </button>
           ))}
         </div>
@@ -183,7 +214,7 @@ export const HotCareersVietnam: React.FC<Props> = ({ lang, onConsult }) => {
               {/* Category tag */}
               <div className="flex justify-between items-start mb-3">
                 <span className="text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
-                  {job.category}
+                  {getCategoryLabel(job.category)}
                 </span>
                 <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md ${
                   job.outlook === 'very-high' 

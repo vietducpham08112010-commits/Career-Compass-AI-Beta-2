@@ -4,6 +4,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Language } from '../types';
 import { searchUniversityScores } from '../services/geminiService';
+import { InlineGuide } from './InlineGuide';
+import { Globe, ExternalLink, ShieldCheck } from 'lucide-react';
 
 const MOCK_DATA = [
   { id: 1, name: 'Đại học Bách Khoa Hà Nội', major: 'Khoa học Máy tính (IT1)', year: 2023, score: 29.42, group: 'A00, A01' },
@@ -16,6 +18,7 @@ const MOCK_DATA = [
 export const UniversityScores = ({ lang, t, Icons }: { lang: Language, t: any, Icons: any }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [aiResult, setAiResult] = useState<string | null>(null);
+  const [groundingMetadata, setGroundingMetadata] = useState<any | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,9 +26,12 @@ export const UniversityScores = ({ lang, t, Icons }: { lang: Language, t: any, I
     if (!searchTerm.trim()) return;
     setIsSearching(true);
     setError(null);
+    setAiResult(null);
+    setGroundingMetadata(null);
     try {
-      const result = await searchUniversityScores(searchTerm, lang);
-      setAiResult(result);
+      const response = await searchUniversityScores(searchTerm, lang);
+      setAiResult(response.text);
+      setGroundingMetadata(response.groundingMetadata);
     } catch (err: any) {
       setError(err.message || "Failed to fetch scores.");
     } finally {
@@ -34,15 +40,30 @@ export const UniversityScores = ({ lang, t, Icons }: { lang: Language, t: any, I
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+    <div className="w-full max-w-4xl mx-auto flex flex-col items-stretch">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t.universityScores || 'Tra cứu điểm chuẩn'}</h2>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {lang === Language.VI 
             ? 'Theo dõi dữ liệu điểm chuẩn các trường Đại học bằng AI' 
             : 'Track university admission scores with AI'}
         </p>
       </motion.div>
+
+      <InlineGuide 
+        sectionKey="scores"
+        lang={lang === Language.VI ? 'vi' : 'en'}
+        title={lang === Language.VI ? "💡 Hướng dẫn tra cứu điểm chuẩn" : "💡 Admission Lookup Guide"}
+        steps={lang === Language.VI ? [
+          "Gõ tên trường, tên ngành hoặc tổ hợp thi (vd: Đại học Ngoại thương Kinh tế đối ngoại, hoặc Điểm chuẩn Bách khoa khoa học máy tính).",
+          "AI sẽ thu thập thông tin điểm ngưỡng năm ngoái, dự báo xu hướng điểm năm nay và phân tích cơ hội đỗ cho học sinh.",
+          "Bảng tham khảo bên dưới liệt kê một số học viện tiêu biểu và điểm chuẩn khối tự nhiên/xã hội để dọn đường chiến lược."
+        ] : [
+          "Type in your target university, major name, or exam codes (e.g., NEU Business Analytics admision score).",
+          "AI evaluates thresholds, compares trends, and advises you on strategic test sets.",
+          "Reference a selection of baseline school grades listed below for historical reference."
+        ]}
+      />
 
       <div className="w-full relative mb-12">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -79,15 +100,58 @@ export const UniversityScores = ({ lang, t, Icons }: { lang: Language, t: any, I
           </motion.div>
         )}
 
-        {aiResult && !isSearching && (
-          <motion.div key="result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full bg-white dark:bg-[#111111] border border-gray-200 dark:border-white/10 rounded-3xl p-6 md:p-8 shadow-sm">
-            <div className="prose prose-indigo dark:prose-invert max-w-none markdown-body">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {aiResult}
-              </ReactMarkdown>
-            </div>
-          </motion.div>
-        )}
+        {aiResult && !isSearching && (() => {
+          const webCitations = (groundingMetadata?.groundingChunks || [])
+            .map((chunk: any) => chunk?.web)
+            .filter((webItem: any) => webItem && webItem.uri);
+
+          const uniqueCitations: { uri: string; title?: string }[] = [];
+          const seenUris = new Set();
+          for (const webItem of webCitations) {
+            if (webItem && webItem.uri && !seenUris.has(webItem.uri)) {
+              seenUris.add(webItem.uri);
+              uniqueCitations.push(webItem);
+            }
+          }
+
+          return (
+            <motion.div key="result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full bg-white dark:bg-[#111111] border border-gray-200 dark:border-white/10 rounded-3xl p-6 md:p-8 shadow-sm">
+              <div className="prose prose-indigo dark:prose-invert max-w-none markdown-body mb-4">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {aiResult}
+                </ReactMarkdown>
+              </div>
+
+              {uniqueCitations.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5">
+                  <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                    <ShieldCheck className="w-4 h-4 flex-shrink-0" />
+                    <span>
+                      {lang === Language.VI 
+                        ? "Nguồn xác thực uy tín được AI tham khảo thực thời:" 
+                        : "Authoritative sources referenced by AI in real-time:"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {uniqueCitations.map((cit, idx) => (
+                      <a
+                        key={idx}
+                        href={cit.uri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-xs text-gray-700 dark:text-gray-300 rounded-xl border border-gray-100 dark:border-white/10 transition-colors duration-200 font-medium"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="max-w-[200px] md:max-w-[300px] truncate">{cit.title || cit.uri}</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-gray-400 ml-0.5" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          );
+        })()}
 
         {!aiResult && !isSearching && !error && (
           <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full">

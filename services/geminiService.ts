@@ -704,16 +704,23 @@ export const generateChatTitle = async (message: string, language: Language) => 
 };
 
 export const searchUniversityScores = async (query: string, language: Language) => {
-  const systemInstruction = "You are a university admission advisor. Search for university admission scores (điểm chuẩn) matching the user's query. Provide a clean table or list of universities, majors, subject groups, and scores for the most recent available year. If explicit data is not found, provide the best estimate based on historical data and clearly state it's an estimate. Use markdown formatting.";
+  const isVi = language === Language.VI;
+  const systemInstruction = isVi
+    ? "Bạn là một chuyên gia tư vấn tuyển sinh đại học hàng đầu Việt Nam. Hãy sử dụng tính năng Google Search đi kèm để tìm kiếm ĐIỂM CHUẨN (điểm chuẩn học bạ, điểm chuẩn thi tốt nghiệp THPT, hoặc điểm chuẩn ĐGNL) mới nhất và chính xác nhất phù hợp với yêu cầu. Luôn ưu tiên thông tin chính thống từ các nguồn uy tín như VnExpress (vnexpress.net), Báo Tuổi Trẻ (tuoitre.vn), Báo Thanh Niên (thanhnien.vn), hoặc Cổng thông tin tuyển sinh chính thức của trường Đại học. Trình bày thông tin rõ ràng dưới dạng bảng Markdown (gồm các cột: Trường, Ngành/Mã ngành, Tổ hợp xét tuyển, Điểm chuẩn, Năm áp dụng) và đưa ra lời khuyên hữu ích cho học sinh."
+    : "You are an elite university admission advisor in Vietnam. Use the Google Search tool to find the absolute latest and most accurate admission scores ( điểm chuẩn ) matching the university or major requested. Prioritize official and prestigious Vietnamese sources like VnExpress, Tuoi Tre, Thanh Nien, or official university portals. Present results in a neat Markdown table containing: University, Major/Code, Exam Group, Score, and Year. Provide strategic advice below.";
   
   const callApi = async () => {
     const apiKey = await getGeminiApiKey();
+    const promptMessage = isVi
+      ? `Tra cứu điểm chuẩn đại học mới nhất của trường/ngành: "${query}". Chú ý: Hiện tại đang là năm 2026. Hãy tìm kiếm các dữ liệu mới nhất có sẵn (ví dụ điểm chuẩn năm 2025, 2024). Luôn cung cấp tên nguồn báo hoặc trang tuyển sinh chính thống mà bạn lấy dữ liệu.`
+      : `Find the latest university admission scores for: "${query}". Note: The current year is 2026, so look for the most recent data (e.g., 2025, 2024 figures) using actual search grounding and specify the sources clearly.`;
+
     const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             history: [],
-            message: `Find university admission scores for: ${query}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.`,
+            message: promptMessage,
             systemInstruction,
             apiKey
         })
@@ -725,17 +732,26 @@ export const searchUniversityScores = async (query: string, language: Language) 
         const ai = new GoogleGenAI({ apiKey });
         const aiResponse = await generateClientContentWithFallback(ai, {
             model: 'gemini-3.5-flash',
-            contents: [{ role: 'user', parts: [{ text: `Find university admission scores for: ${query}\nLanguage required: ${language === Language.EN ? 'English' : 'Vietnamese'}.` }] }],
-            config: { systemInstruction }
+            contents: [{ role: 'user', parts: [{ text: promptMessage }] }],
+            config: { 
+                systemInstruction,
+                tools: [{ googleSearch: {} }]
+            }
         });
-        return aiResponse.text || TRANSLATIONS[language].noAiResponse;
+        return {
+            text: aiResponse.text || TRANSLATIONS[language].noAiResponse,
+            groundingMetadata: aiResponse.candidates?.[0]?.groundingMetadata || null
+        };
     }
 
     const textResponse = await response.text();
     let data;
     try { data = JSON.parse(textResponse); } catch(e) { throw new Error('Invalid JSON'); }
     if (data.error) throw new Error(data.error);
-    return data.text || TRANSLATIONS[language].noAiResponse;
+    return {
+        text: data.text || TRANSLATIONS[language].noAiResponse,
+        groundingMetadata: data.groundingMetadata || null
+    };
   };
 
   try {

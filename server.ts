@@ -202,7 +202,10 @@ app.post("/api/search", async (req, res) => {
         systemInstruction: systemInstruction || "You are a university admission advisor.",
         tools: [{ googleSearch: {} }] as any
     });
-    return res.json({ text: response.text });
+    return res.json({ 
+      text: response.text, 
+      groundingMetadata: response.candidates?.[0]?.groundingMetadata || null 
+    });
 
   } catch (error: any) {
     console.error("Search API Error:", error);
