@@ -1,4 +1,4 @@
-# 🧭 Career Compass AI (CareerGuide AI)
+# 🧭 CareerGuide AI
 
 > **Xóa tan mọi sự bối rối về sự nghiệp — AI tiên phong định hướng tương lai, đồng hành 24/7 cùng học sinh, sinh viên và người đi làm.**
 
@@ -57,36 +57,3 @@ Dành cho Ban Giám Khảo (BGK) muốn trải nghiệm nhanh toàn bộ luồng
 * **State & Error Handling**: Các trạng thái tải (shimmer loadings), bận hệ thống (AI quota warnings) được thiết kế chi tiết bằng thông tin tiếng Việt thân thiện, rõ ràng, giúp tăng tính tin cậy tuyệt đối đối với ban giám khảo.
 
 ---
-
-## 🛠️ KIẾN TRÚC CÔNG NGHỆ CỐT LÕI (Architecture & Tech Stack)
-
-* **Frontend**: React 18, Vite, Tailwind CSS, TypeScript, Motion (Framer Motion) đem lại hiệu ứng phản hồi siêu mượt.
-* **Backend**: Express API proxy bảo mật, đồng bộ hóa và quản lý kho dữ liệu API Secrets (Che dấu API Keys an toàn trước luồng phân tích F12 của trình duyệt).
-* **Database & Auth**: **Firebase Auth & Firestore Database** chính thức cung cấp khả năng đồng bộ hóa hồ sơ, lịch sử hội thoại, bộ mốc lộ trình và điểm kinh nghiệm (XP accumulation index) theo thời gian thực một cách tối ưu.
-* **Core AI**: Tích hợp Mô hình **Gemini 2.5/Gemini 1.5** tiên tiến thông qua SDK chính thức `@google/genai` giúp đạt tốc độ xử lý nhanh dưới 2 giây.
-
----
-
-## ⚙️ HƯỚNG DẪN CÀI ĐẶT & KHỞI CHẠY (Setup & Run)
-
-Nền tảng chạy trực tiếp trong môi trường sandbox của container. Để khởi chạy tại môi trường nội bộ của bạn:
-
-1. **Cài đặt các gói thư viện cần thiết**:
-   ```bash
-   npm install
-   ```
-
-2. **Cấu hình biến môi trường**:
-   Sao chép `.env.example` thành `.env` và cung cấp khóa của bạn:
-   ```env
-   VITE_GEMINI_API_KEY=your_gemini_api_key
-   # Cấu hình Firebase
-   FIREBASE_API_KEY=your_firebase_api_key
-   ```
-
-3. **Chạy ứng dụng chế độ Phát triển (Dev Mode)**:
-   ```bash
-   npm run dev
-   ```
-
-Ứng dụng sẽ tự động kết nối và mở ở cổng `3000`. Hãy cùng Career Compass AI định hướng tương lai vững vàng ngay hôm nay!
