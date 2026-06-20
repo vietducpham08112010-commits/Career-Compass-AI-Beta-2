@@ -25,8 +25,8 @@ const fallbackConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "careerguideaiforeveryone-1",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "careerguideaiforeveryone-1.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1024644813771",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1024644813771:web:196ac5399968fe8befdc4e",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-C52P6WN3HE",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1024644813771:web:b5ebc74e139031b8efdc4e",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-ST89G4BNL6",
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'default'
 };
 
