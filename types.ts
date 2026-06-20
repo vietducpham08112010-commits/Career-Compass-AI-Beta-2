@@ -84,6 +84,7 @@ export interface UserProfile {
   points?: number;
   level?: number;
   badges?: string[];
+  hasCompletedOnboarding?: boolean;
 }
 
 export interface AuthState {

@@ -18,6 +18,7 @@ import { HotCareersVietnam } from './components/HotCareersVietnam';
 import { FeedbackModal } from './components/FeedbackModal';
 import { MockInterview } from './components/MockInterview';
 import { InlineGuide } from './components/InlineGuide';
+import { Onboarding } from './components/Onboarding';
 import { 
   syncUserProfileToCloud, 
   fetchUserProfileFromCloud, 
@@ -98,6 +99,9 @@ const Icons = {
   RefreshCw: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>,
   CheckCircle2: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>,
   AlertCircle: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  BarChart3: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 3v18h18"/><rect x="7" y="10" width="4" height="8" rx="1"/><rect x="13" y="6" width="4" height="12" rx="1"/><rect x="19" y="12" width="4" height="6" rx="1"/></svg>,
+  Award: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="8" r="7"/><path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/></svg>,
+  Play: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
   Info: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
   MoreVertical: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>,
   Edit2: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
@@ -215,6 +219,61 @@ const AnimatedLogoButton = ({ onClick, text, isCollapsed = false, className = ""
     )}
   </motion.button>
 );
+
+const ScrollReveal = ({ children, delay = 0, duration = 0.65, y = 30 }: { children: React.ReactNode, delay?: number, duration?: number, y?: number }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: duration, delay: delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const StaggerContainer = ({ children, delay = 0, once = true }: { children: React.ReactNode, delay?: number, once?: boolean }) => {
+  return (
+    <motion.div
+      initial="initial"
+      whileInView="animate"
+      viewport={{ once: once, margin: "-40px" }}
+      variants={{
+        initial: {},
+        animate: {
+          transition: {
+            staggerChildren: 0.12,
+            delayChildren: delay,
+          }
+        }
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const StaggerItem = ({ children, y = 24 }: { children: React.ReactNode, y?: number }) => {
+  return (
+    <motion.div
+      variants={{
+        initial: { opacity: 0, y: y },
+        animate: { 
+          opacity: 1, 
+          y: 0,
+          transition: {
+            type: "spring",
+            stiffness: 100,
+            damping: 15
+          }
+        }
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 const ShimmerText = ({ text }: { text: string }) => (
     <div className="inline-block animate-shimmer-text font-medium text-lg tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-gray-500 via-gray-900 to-gray-500 dark:from-gray-400 dark:via-white dark:to-gray-400 bg-[length:200%_auto]">
@@ -1227,6 +1286,128 @@ export default function App() {
     setMode(AppMode.DASHBOARD);
   };
 
+  const handleActivateDemo = async () => {
+    const isVi = lang === Language.VI;
+    const demoEmail = "trial.nextx2026@gmail.com";
+    
+    const demoUserByLanguage: UserProfile = {
+      name: isVi ? "Nguyễn Đức Anh (NextX 2026 Preview)" : "Alex Nguyen (NextX 2026 Preview)",
+      email: demoEmail,
+      careerGoal: isVi 
+        ? "Kỹ sư Trí tuệ Nhân tạo / ML Engineer chuyên sâu Thị giác Máy tính" 
+        : "AI Engineer / ML Specialist focusing on Computer Vision",
+      careerProfile: isVi 
+        ? "Lớp 11 chuyên Tin học. Tổ hợp quan tâm: STEM (A00, A01). Năng lực thế mạnh: Lập trình, Toán Logic. Có điểm RIASEC ưu tiên cao ở tính cách Realistic (Kỹ thuật) dồi dào và Investigative (Nghiên cứu) nhạy bén."
+        : "11th Grade STEM Student. Competency focus: Coding & Tech, Logical Math. High RIASEC prioritizations in Realistic and Investigative traits.",
+      isGuest: true,
+      avatar: "https://avatar.iran.liara.run/public/boy",
+      streak: 7,
+      points: 1550,
+      level: 4,
+      badges: ["NextX 2026 Pioneer", "Code Ninja", "High Achiever", "Scholar Champion"],
+      hasCompletedOnboarding: true,
+      portfolio: [
+        {
+          id: 'p1',
+          type: 'Grade/Score',
+          title: isVi ? 'Điểm Toán THPT học kỳ II' : 'High School Math GPA',
+          description: isVi ? 'Đạt điểm tổng kết môn Toán lớp 11: 9.8/10. Môn Tin học đạt tối đa 10/10.' : 'Completed 11th Grade with 9.8/10 Math Grade and 10/10 Computer Science score.',
+          date: '2025-06-01',
+          score: '9.8 GPA'
+        },
+        {
+          id: 'p2',
+          type: 'Certificate',
+          title: 'IELTS Academic International',
+          description: isVi ? 'Chứng chỉ ngoại ngữ quốc tế cấp bởi IDP Education.' : 'Global Academic English certificate compiled by IDP Education.',
+          date: '2026-01-15',
+          score: '7.5 IELTS'
+        },
+        {
+          id: 'p3',
+          type: 'Personal Project',
+          title: isVi ? 'Hệ thống Robot AI phân loại rác thông minh' : 'Smart Recycling AI classification robot',
+          description: isVi 
+            ? 'Thiết kế Robot sử dụng camera OpenCV, mạng nơ-ron YOLOv8 để phân tách rác thải hữu cơ/ vô cơ. Đạt giải Nhất hội thi Tin học trẻ Thành Phố.'
+            : 'Designed visual sorting arm using OpenCV and custom YOLOv8 deep learning. Awarded 1st place in City Science Fair.',
+          date: '2026-04-20',
+          score: '1st Place'
+        }
+      ]
+    };
+
+    const mockRoadmap: Milestone[] = [
+      {
+        id: 'r1',
+        title: isVi ? 'Tháng 1: Học Python chuyên sâu & Giải thuật ML' : 'Month 1: Advanced Python & ML Architectures',
+        description: isVi 
+          ? 'Nắm chắc kiến thức hồi quy tuyến tính, SVM, mạng nơ-ron nhân tạo thông qua PyTorch.' 
+          : 'Complete linear models, SVMs, neural networks via PyTorch core modules.',
+        status: 'done',
+        deadline: '2026-07-15'
+      },
+      {
+        id: 'r2',
+        title: isVi ? 'Tháng 2: Tích hợp thư viện OpenCV & mô hình YOLOv9' : 'Month 2: OpenCV & YOLOv9 Deployment',
+        description: isVi 
+          ? 'Thử nghiệm xử lý luồng dữ liệu hình ảnh trực tiếp từ camera, tối ưu hóa thời gian xử lý.' 
+          : 'Deploy real-time camera inference models, optimizing CPU bounding box speeds.',
+        status: 'in-progress',
+        deadline: '2026-08-15'
+      },
+      {
+        id: 'r3',
+        title: isVi ? 'Tháng 3: Triển khai Đám mây & Rèn luyện Phỏng vấn thử' : 'Month 3: Cloud API Deploy & Mock Interviews',
+        description: isVi 
+          ? 'Đóng gói sản phẩm qua Docker, thực hành phỏng vấn thử trên ứng dụng để cải thiện câu trả lời.' 
+          : 'Package code with Docker registries and practice multiple mock interview simulations.',
+        status: 'todo',
+        deadline: '2026-09-15'
+      }
+    ];
+
+    const mockSession: ChatSession = {
+      id: 'demo-chat-session',
+      title: isVi ? 'Định hướng Kỹ sư Trí tuệ Nhân tạo' : 'AI Specialist Consultation',
+      date: new Date(),
+      messages: [
+        {
+          id: 'm1',
+          role: 'user',
+          text: isVi ? 'Mình muốn tìm hiểu về lộ trình học tập để trở thành một Kỹ sư Trí tuệ Nhân tạo (AI Engineer) tại Việt Nam trong năm 2026. Nên chuẩn bị những gì?' : 'Show me advice on becoming an AI Engineer in Vietnam with my specific STEM background?',
+          timestamp: new Date(Date.now() - 3600000)
+        },
+        {
+          id: 'm2',
+          role: 'model',
+          text: isVi 
+            ? "### Chào Đức Anh! Chúc mừng bạn đã đăng ký trải nghiệm CareerGuide AI!\n\nDựa trên hồ sơ rực rỡ của bạn với thế mạnh môn Toán học (9.8 GPA), tiếng Anh tự tin (IELTS 7.5) và đạt giải Nhất dự án sáng chế Robot AI, bạn đang sở hữu nền tảng lý tưởng hàng đầu Việt Nam hiện nay để tự tin đạt được hoài bão.\n\nDưới đây là định hướng cập nhật thực tế năm 2026 dành riêng cho bạn:\n\n*   **Về xu hướng tuyển dụng:** Các doanh nghiệp công nghệ lớn của Việt Nam (như FPT, VinAI, VNG) đang ưu tiên các ứng viên có kỹ năng thực hành (Hands-on) tốt và am hiểu Cloud (AWS, GCP). \n*   **Thu nhập trung bình:** Mức thu nhập khởi điểm Junior ML/AI Engineer dao động ở mức **18,000,000đ - 25,000,000đ/tháng**, và có thể đạt **60,000,000đ/tháng** trở lên sau 3 năm lăn lộn.\n*   **Gợi ý Học bổng & Đại học:** Bạn nên nhắm trực tiếp vào Ngành Khoa học Máy tính tiên tiến tại Đại học Bách Khoa TP.HCM (hoặc Hà Nội) hay VinUni để tham khảo thêm học bổng tài trợ tài năng.\n\nHãy nhấp vào tab **Lộ trình (Progress)** để xem bản đồ mạng lưới kỹ năng (Skill Maps) trực quan được thiết kế riêng dựa trên mục tiêu này nhé!"
+            : "### Welcome back, Alex!\n\nGiven your exceptional profile including a 9.8 THPT Math GPA, 7.5 IELTS proficiency, and first-place young creators robotics prize, you are in peak position to master AI/ML applications.\n\n*   **2026 Corporate Demand:** Top R&D hubs like VinAI, FPT, and VNG represent massive recruiting streams, in search of candidates with solid OpenCV foundations and cloud hosting configurations.\n*   **Compensation levels:** Junior AI specialists start at **$800 - $1100 USD/month**, and scale past **$2500 USD/month** at Lead levels.\n*   **Next step:** Choose our Progress tab to inspect the interactive Roadmap calendar we have prepared for you!",
+          timestamp: new Date(Date.now() - 3500000)
+        }
+      ]
+    };
+
+    try {
+      localStorage.setItem('currentUser', JSON.stringify(demoUserByLanguage));
+      localStorage.setItem(`roadmap_${demoEmail}`, JSON.stringify(mockRoadmap));
+      await storage.set(`chatHistory_${demoEmail}`, [mockSession]);
+      
+      // Update main states
+      setAuth({ isAuthenticated: true, user: demoUserByLanguage });
+      setMilestones(mockRoadmap);
+      setChatHistory([mockSession]);
+      setMessages([]);
+      
+      setMode(AppMode.DASHBOARD);
+      setTab(DashboardTab.PROGRESS); 
+      showToast(isVi ? "🎉 Đã kích hoạt Chế độ Thử nghiệm NextX 2026 thành công!" : "🎉 Loaded NextX 2026 Trial Mode successfully!", "success");
+    } catch (e) {
+      console.error(e);
+      showToast("Failed to load demo data", "error");
+    }
+  };
+
   const changeAvatar = () => { 
       updateUserProfile({ avatar: getRandomAvatar() });
   };
@@ -1492,7 +1673,7 @@ export default function App() {
 
   const renderLanding = () => {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#050505] text-slate-900 dark:text-white transition-colors duration-500 overflow-x-hidden">
+      <div className="min-h-screen bg-white dark:bg-[#050505] text-slate-900 dark:text-white transition-colors duration-500 overflow-x-hidden bg-mesh-grid">
         <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-sm bg-white/70 dark:bg-[#050505]/70 border-b border-gray-200 dark:border-white/5">
           <AnimatedLogoButton 
             onClick={() => { setMode(AppMode.LANDING); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
@@ -1544,35 +1725,81 @@ export default function App() {
           <div className="absolute bottom-40 right-10 w-32 h-32 bg-gradient-to-br from-fuchsia-400 to-pink-500 rounded-full blur-2xl opacity-30 dark:opacity-20 animate-float" style={{ animationDelay: '1.5s' }}></div>
           <div className="absolute top-1/3 right-1/4 w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full blur-lg opacity-50 dark:opacity-40 animate-float" style={{ animationDelay: '3s' }}></div>
 
-          <div className="max-w-4xl space-y-8 animate-fade-in-up flex flex-col items-center relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/10 text-sm font-medium text-indigo-600 dark:text-indigo-300">
+          <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.12,
+                  delayChildren: 0.1
+                }
+              }
+            }}
+            className="max-w-4xl space-y-8 flex flex-col items-center relative z-10"
+          >
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0, y: 15, scale: 0.95 },
+                visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 200, damping: 15 } }
+              }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/10 text-sm font-medium text-indigo-600 dark:text-indigo-300"
+            >
                <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                 </span>
                {t.heroBadge}
-            </div>
-            <h1 className="text-6xl md:text-8xl font-bold leading-[1.1] tracking-tight text-balance">
+            </motion.div>
+            
+            <motion.h1 
+              variants={{
+                hidden: { opacity: 0, y: 30 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 150, damping: 18 } }
+              }}
+              className="text-6xl md:text-8xl font-bold leading-[1.1] tracking-tight text-balance"
+            >
               {t.heroTitlePrefix}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-cyan-500 animate-gradient-x">{t.heroTitleSuffix}</span>
-            </h1>
-            <p className="text-xl text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed">
+            </motion.h1>
+            
+            <motion.p 
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 15 } }
+              }}
+              className="text-xl text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed"
+            >
               {t.subTagline}
-            </p>
+            </motion.p>
             
             {auth.isAuthenticated && !auth.user?.isGuest && (
-                <p className="text-indigo-600 dark:text-indigo-400 font-medium mb-2 animate-fade-in-up">
+                <motion.p 
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                  className="text-indigo-600 dark:text-indigo-400 font-medium mb-2"
+                >
                     {t.continueJourney} {auth.user?.name.split(' ')[0]}?
-                </p>
+                </motion.p>
             )}
-
-            <div className="flex flex-col sm:flex-row gap-4">
+ 
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 15 } }
+              }}
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            >
               {auth.isAuthenticated && !auth.user?.isGuest ? (
                   <motion.button 
                       whileHover={{ scale: 1.05, y: -4 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setMode(AppMode.DASHBOARD)} 
-                      className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-bold text-lg transition-shadow shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 flex items-center justify-center gap-2"
+                      className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl font-extrabold text-lg transition-shadow shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 flex items-center justify-center gap-2"
                   >
                       {t.goToDashboard} <Icons.ArrowRight className="w-5 h-5" />
                   </motion.button>
@@ -1582,42 +1809,42 @@ export default function App() {
                         whileHover={{ scale: 1.05, y: -4 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => { setMode(AppMode.AUTH); setAuthType('login'); }} 
-                        className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-bold text-lg transition-shadow shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50"
+                        className="px-8 py-4 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-extrabold text-lg transition-all border border-transparent dark:hover:bg-slate-100"
                     >
                         {t.getStarted}
                     </motion.button>
-                    <motion.button 
-                        whileHover={{ scale: 1.05, y: -4 }}
-                        whileTap={{ scale: 0.95 }}
+
+                    <button 
                         onClick={handleGuestLogin} 
-                        className="px-8 py-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2 backdrop-blur-sm"
+                        className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors py-2 underline hover:underline"
                     >
-                        <Icons.Zap className="w-5 h-5 text-yellow-500" />
                         {t.guestLogin}
-                    </motion.button>
+                    </button>
                   </>
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </section>
 
         <section className="py-12 md:py-20 px-6 max-w-7xl mx-auto">
-             <div className="glass-card rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 bg-gradient-to-br from-indigo-600/5 to-fuchsia-600/5 border border-indigo-500/20 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 md:w-96 h-64 md:h-96 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
-                    <div className="flex-1 text-center md:text-center">
-                        <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">{t.vnLaborMarketTitle}</h2>
-                        <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-6 md:mb-8">
-                            {t.vnLaborMarketDesc}
-                        </p>
-                        <div className="flex flex-wrap justify-center gap-2 md:gap-4">
-                            {t.laborMarketTags.map((tag: any) => (
-                                <span key={tag.en} className="px-3 py-1.5 md:px-4 md:py-2 bg-white dark:bg-white/10 rounded-full text-[10px] md:text-sm font-bold border border-indigo-500/20">{lang === Language.EN ? tag.en : tag.vi}</span>
-                            ))}
+             <ScrollReveal>
+                 <div className="glass-card rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 bg-gradient-to-br from-indigo-600/5 to-fuchsia-600/5 border border-indigo-500/20 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 md:w-96 h-64 md:h-96 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+                        <div className="flex-1 text-center md:text-center">
+                            <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">{t.vnLaborMarketTitle}</h2>
+                            <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-6 md:mb-8">
+                                {t.vnLaborMarketDesc}
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2 md:gap-4">
+                                {t.laborMarketTags.map((tag: any) => (
+                                    <span key={tag.en} className="px-3 py-1.5 md:px-4 md:py-2 bg-white dark:bg-white/10 rounded-full text-[10px] md:text-sm font-bold border border-indigo-500/20">{lang === Language.EN ? tag.en : tag.vi}</span>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-             </div>
+                 </div>
+             </ScrollReveal>
         </section>
 
         <div className="py-10 bg-gray-50 dark:bg-[#0a0a0a] border-y border-gray-200 dark:border-white/5 overflow-hidden relative">
@@ -1630,110 +1857,127 @@ export default function App() {
         </div>
         
         <section className="py-20 px-6 max-w-7xl mx-auto">
-             <div className="mb-12 text-center md:text-left relative">
-                <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl"></div>
-                <h2 className="text-3xl md:text-5xl font-bold mb-4 relative z-10">{t.hotIndustriesTitle}</h2>
-                <p className="text-xl text-gray-500 max-w-2xl relative z-10">{t.hotIndustriesSub}</p>
-             </div>
+             <ScrollReveal>
+                 <div className="mb-12 text-center md:text-left relative">
+                    <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl"></div>
+                    <h2 className="text-3xl md:text-5xl font-bold mb-4 relative z-10">{t.hotIndustriesTitle}</h2>
+                    <p className="text-xl text-gray-500 max-w-2xl relative z-10">{t.hotIndustriesSub}</p>
+                 </div>
+             </ScrollReveal>
              
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {HOT_INDUSTRIES.map((industry) => {
-                     const iconKey = industry.icon as keyof typeof Icons;
-                     const IconComponent = Icons[iconKey] || Icons.TrendingUp;
-                     
-                     return (
-                        <motion.div 
-                            key={industry.id} 
-                            whileHover={{ y: -8, scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                            className="glass-card rounded-3xl p-6 relative overflow-hidden group transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30"
-                        >
-                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent to-white/5 rounded-bl-full pointer-events-none group-hover:to-indigo-500/10 transition-colors"></div>
-                             <motion.div 
-                                 whileHover={{ scale: 1.1, rotate: 3 }}
-                                 className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${industry.color} flex items-center justify-center text-white mb-6 shadow-lg transition-all duration-300`}
-                             >
-                                 <IconComponent className="w-7 h-7" />
-                             </motion.div>
-                             <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">
-                                 {lang === Language.EN ? industry.name_en : industry.name_vi}
-                             </h3>
-                             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
-                                 {lang === Language.EN ? industry.desc_en : industry.desc_vi}
-                             </p>
-                        </motion.div>
-                     );
-                 })}
-             </div>
+             <StaggerContainer>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     {HOT_INDUSTRIES.map((industry) => {
+                         const iconKey = industry.icon as keyof typeof Icons;
+                         const IconComponent = Icons[iconKey] || Icons.TrendingUp;
+                         
+                         return (
+                            <StaggerItem key={industry.id}>
+                                <motion.div 
+                                    whileHover={{ y: -8, scale: 1.02 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                    className="glass-card rounded-3xl p-6 relative overflow-hidden group transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30 h-full"
+                                >
+                                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent to-white/5 rounded-bl-full pointer-events-none group-hover:to-indigo-500/10 transition-colors"></div>
+                                     <motion.div 
+                                         whileHover={{ scale: 1.1, rotate: 3 }}
+                                         className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${industry.color} flex items-center justify-center text-white mb-6 shadow-lg transition-all duration-300`}
+                                     >
+                                         <IconComponent className="w-7 h-7" />
+                                     </motion.div>
+                                     <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">
+                                         {lang === Language.EN ? industry.name_en : industry.name_vi}
+                                     </h3>
+                                     <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+                                         {lang === Language.EN ? industry.desc_en : industry.desc_vi}
+                                     </p>
+                                </motion.div>
+                            </StaggerItem>
+                         );
+                     })}
+                 </div>
+             </StaggerContainer>
         </section>
 
         <section className="py-16 md:py-24 px-6 max-w-7xl mx-auto">
-             <div className="mb-12 md:mb-16">
-                 <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 text-balance">{t.featureHeader} <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-fuchsia-500 italic">{t.featureHeaderHighlight}</span> {t.featureHeaderSuffix}</h2>
-                 <p className="text-lg md:text-xl text-gray-500 max-w-2xl">{t.featureSub}</p>
-             </div>
+             <ScrollReveal>
+                 <div className="mb-12 md:mb-16">
+                     <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 text-balance">{t.featureHeader} <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-fuchsia-500 italic">{t.featureHeaderHighlight}</span> {t.featureHeaderSuffix}</h2>
+                     <p className="text-lg md:text-xl text-gray-500 max-w-2xl">{t.featureSub}</p>
+                 </div>
+             </ScrollReveal>
 
-             <div className="bento-grid">
-                 <motion.div 
-                     whileHover={{ scale: 1.02 }}
-                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                     className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-red-500/50 transition-colors md:col-span-2"
-                 >
-                     <div className="relative z-10">
-                         <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
-                             <Icons.Microphone className="w-5 h-5 md:w-6 md:h-6" />
-                         </div>
-                         <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureVoiceTitle}</h3>
-                         <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureVoiceDesc}</p>
-                     </div>
-                     <div className="absolute right-0 bottom-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-tl from-red-500/10 to-transparent rounded-full translate-x-10 translate-y-10 md:translate-x-20 md:translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
-                 </motion.div>
+             <StaggerContainer>
+                 <div className="bento-grid">
+                     <StaggerItem>
+                         <motion.div 
+                             whileHover={{ scale: 1.02 }}
+                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                             className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-red-500/50 transition-colors md:col-span-2 h-full"
+                         >
+                             <div className="relative z-10">
+                                 <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                                     <Icons.Microphone className="w-5 h-5 md:w-6 md:h-6" />
+                                 </div>
+                                 <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureVoiceTitle}</h3>
+                                 <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureVoiceDesc}</p>
+                             </div>
+                             <div className="absolute right-0 bottom-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-tl from-red-500/10 to-transparent rounded-full translate-x-10 translate-y-10 md:translate-x-20 md:translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
+                         </motion.div>
+                     </StaggerItem>
 
-                 <motion.div 
-                     whileHover={{ scale: 1.02 }}
-                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                     className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors"
-                 >
-                     <div className="relative z-10">
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
-                             <Icons.Stars className="w-5 h-5 md:w-6 md:h-6" />
-                         </div>
-                         <h3 className="text-xl md:text-2xl font-bold mb-2">{t.feature247Title}</h3>
-                         <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.feature247Desc}</p>
-                     </div>
-                     <div className="absolute right-0 top-0 w-24 md:w-32 h-24 md:h-32 bg-blue-500/5 rounded-bl-full group-hover:bg-blue-500/10 transition-colors"></div>
-                 </motion.div>
+                     <StaggerItem>
+                         <motion.div 
+                             whileHover={{ scale: 1.02 }}
+                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                             className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors h-full"
+                         >
+                             <div className="relative z-10">
+                                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                                     <Icons.Stars className="w-5 h-5 md:w-6 md:h-6" />
+                                 </div>
+                                 <h3 className="text-xl md:text-2xl font-bold mb-2">{t.feature247Title}</h3>
+                                 <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.feature247Desc}</p>
+                             </div>
+                             <div className="absolute right-0 top-0 w-24 md:w-32 h-24 md:h-32 bg-blue-500/5 rounded-bl-full group-hover:bg-blue-500/10 transition-colors"></div>
+                         </motion.div>
+                     </StaggerItem>
 
-                 <motion.div 
-                     whileHover={{ scale: 1.02 }}
-                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                     className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-purple-500/50 transition-colors"
-                 >
-                     <div className="relative z-10">
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
-                             <Icons.FileText className="w-5 h-5 md:w-6 md:h-6" />
-                         </div>
-                         <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureScanTitle}</h3>
-                         <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureScanDesc}</p>
-                     </div>
-                     <div className="absolute left-0 bottom-0 w-24 md:w-32 h-24 md:h-32 bg-purple-500/5 rounded-tr-full group-hover:bg-purple-500/10 transition-colors"></div>
-                 </motion.div>
+                     <StaggerItem>
+                         <motion.div 
+                             whileHover={{ scale: 1.02 }}
+                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                             className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-purple-500/50 transition-colors h-full"
+                         >
+                             <div className="relative z-10">
+                                <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                                     <Icons.FileText className="w-5 h-5 md:w-6 md:h-6" />
+                                 </div>
+                                 <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureScanTitle}</h3>
+                                 <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureScanDesc}</p>
+                             </div>
+                             <div className="absolute left-0 bottom-0 w-24 md:w-32 h-24 md:h-32 bg-purple-500/5 rounded-tr-full group-hover:bg-purple-500/10 transition-colors"></div>
+                         </motion.div>
+                     </StaggerItem>
 
-                 <motion.div 
-                     whileHover={{ scale: 1.02 }}
-                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                     className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-green-500/50 transition-colors md:col-span-2"
-                 >
-                     <div className="relative z-10">
-                         <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-red-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
-                             <Icons.Compass className="w-5 h-5 md:w-6 md:h-6" />
-                         </div>
-                         <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureRoadmapTitle}</h3>
-                         <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureRoadmapDesc}</p>
-                     </div>
-                      <div className="absolute right-0 bottom-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-tl from-green-500/10 to-transparent rounded-full translate-x-10 translate-y-10 md:translate-x-20 md:translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
-                 </motion.div>
-             </div>
+                     <StaggerItem>
+                         <motion.div 
+                             whileHover={{ scale: 1.02 }}
+                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                             className="glass-card rounded-[1.5rem] md:rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-green-500/50 transition-colors md:col-span-2 h-full"
+                         >
+                             <div className="relative z-10">
+                                 <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-red-400 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                                     <Icons.Compass className="w-5 h-5 md:w-6 md:h-6" />
+                                  </div>
+                                 <h3 className="text-xl md:text-2xl font-bold mb-2">{t.featureRoadmapTitle}</h3>
+                                 <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">{t.featureRoadmapDesc}</p>
+                             </div>
+                              <div className="absolute right-0 bottom-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-tl from-green-500/10 to-transparent rounded-full translate-x-10 translate-y-10 md:translate-x-20 md:translate-y-20 group-hover:scale-110 transition-transform duration-500"></div>
+                         </motion.div>
+                     </StaggerItem>
+                 </div>
+             </StaggerContainer>
         </section>
 
         <section className="py-20 px-6 bg-gray-100 dark:bg-[#0a0a0a] relative overflow-hidden">
@@ -1751,6 +1995,184 @@ export default function App() {
                      <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-indigo-500"></div>
                  </div>
              </div>
+        </section>
+
+        {/* NextX 2026 Special Presentation Section */}
+        <section className="py-16 px-6 max-w-7xl mx-auto border-t border-gray-200 dark:border-white/5 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            
+            {/* Presentation Left Panel */}
+            <div className="lg:col-span-7 space-y-8">
+              <div className="space-y-3">
+                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-black rounded-full uppercase tracking-wider">
+                  The NextX 2026 Special Entry
+                </span>
+                <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white leading-tight">
+                  {lang === Language.VI 
+                    ? "Tại sao CareerGuide AI thay đổi cách học sinh kiến tạo tương lai?" 
+                    : "How CareerGuide AI is Revolutionizing Career Orientation?"}
+                </h2>
+                <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-gray-500 dark:text-gray-400">
+                  <span>🚀 Team: <strong className="text-indigo-600 dark:text-indigo-400">CareerGuide AI</strong></span>
+                  <span className="text-gray-300 dark:text-white/10">|</span>
+                  <span>🎓 Members: Phạm Việt Đức, Wang Si Qi, Nguyễn Đức Lâm, Phan Bảo Ngọc</span>
+                </div>
+              </div>
+
+
+
+              {/* Differentiators */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Icons.Flame className="w-5 h-5 text-indigo-500" />
+                  <span>{lang === Language.VI ? "Điểm Khác Biệt Độc Nhất So Với Thị Trường" : "How CareerGuide AI Outperforms Standard Options"}</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex gap-3 bg-indigo-50/20 dark:bg-indigo-950/5 p-4 rounded-2xl border border-indigo-500/10 hover:border-indigo-500/25 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <Icons.MessageSquare className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">AI-Powered Interaction & HR Rubric</h4>
+                      <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                        {lang === Language.VI 
+                          ? "Phỏng vấn giả lập chuyên sâu, phản hồi lập tức và chấm điểm theo bộ tiêu chí tiêu chuẩn nhân sự (HR Rubric) thực thụ chứ không chỉ làm trắc nghiệm tĩnh." 
+                          : "High-fidelity mock interviews with instant analytic feedback utilizing real professional HR grading rubrics."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 bg-indigo-50/20 dark:bg-indigo-950/5 p-4 rounded-2xl border border-indigo-500/10 hover:border-indigo-500/25 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <Icons.Target className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">Localized High-School / University Benchmarks</h4>
+                      <p className="text-xs text-gray-405 mt-1 leading-relaxed">
+                        {lang === Language.VI 
+                          ? "Tự động gợi ý nguyện vọng, đối khớp điểm chuẩn học bạ/đại học thực tế tại Việt Nam cùng tính năng tìm kiếm nguồn học bổng có dẫn chứng (Grounding)." 
+                          : "Directly matches high-school benchmarks and real Vietnamese universities combined with Grounded real-time scholarship searches."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 bg-indigo-50/20 dark:bg-indigo-950/5 p-4 rounded-2xl border border-indigo-500/10 hover:border-indigo-500/25 transition-colors md:col-span-2">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <Icons.Award className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">Micro-Actionable 3-Month Radial Skill Roadmap</h4>
+                      <p className="text-xs text-gray-405 mt-1 leading-relaxed">
+                        {lang === Language.VI 
+                          ? "Bản đồ kỹ năng tròn đồng tâm trực quan dựa trên lý thuyết giáo dục tiên tiến, chuyển hóa tầm nhìn sự nghiệp mơ hồ thành các lộ trình hành động 3 tháng cực kỳ rõ ràng." 
+                          : "Interactive radial skill maps of concentric circles that breakdown high-level career concepts into hyper-focused 3-month skill nodes."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Presentation Right Panel: 60s Demo & Interactive Quick Guide */}
+            <div className="lg:col-span-5 bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-white/5 rounded-[2rem] p-6 md:p-8 space-y-6 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-bl-full pointer-events-none"></div>
+              
+              <div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white">
+                  ⚡ {lang === Language.VI ? "Hướng dẫn khám phá trong 60 giây" : "60-Second Demo & Run Scenarios"}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1 font-sans">
+                  {lang === Language.VI ? "Danh sách kịch bản để ban giám khảo chấm điểm nhanh và tối ưu nhất:" : "Follow these preset scenarios for instant product evaluation:"}
+                </p>
+              </div>
+
+              {/* Steps Tracker */}
+              <div className="space-y-4 font-sans text-xs flex flex-col justify-start">
+                {/* Step 1 */}
+                <div className="flex gap-3 text-left">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shrink-0">1</div>
+                  <div className="space-y-1">
+                    <strong className="text-gray-900 dark:text-white">
+                      {lang === Language.VI ? "Bật 1-Click Demo Session" : "Trigger Demo Session with 1-Click"}
+                    </strong>
+                    <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-left">
+                      {lang === Language.VI 
+                        ? "Click nút màu xanh lá phía dưới đây để đăng nhập trực tiếp làm ứng viên Nguyễn Đức Anh (IELTS 7.5, Giải nhất Robot)." 
+                        : "Click the green button directly below to load candidate Alex's high-fidelity context."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="flex gap-3 text-left">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold shrink-0">2</div>
+                  <div className="space-y-1">
+                    <strong className="text-gray-900 dark:text-white">
+                      {lang === Language.VI ? "Kiểm tra Lộ Trình & Bản Đồ" : "Audit Roadmaps & Skill Maps"}
+                    </strong>
+                    <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-left">
+                      {lang === Language.VI 
+                        ? "Xem sơ đồ mạng lưới kĩ năng SVG, lộ trình phát triển 3 tháng chi tiết cho ngành AI Engineer cực kì mượt mà." 
+                        : "Open the Progress tab to inspect calculated Skill Nodes and real historical milestones."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="flex gap-3 text-left">
+                  <div className="w-6 h-6 rounded-full bg-violet-500 text-white flex items-center justify-center font-bold shrink-0">3</div>
+                  <div className="space-y-1">
+                    <strong className="text-gray-900 dark:text-white">
+                      {lang === Language.VI ? "Thử nghiệm Chat & Phỏng vấn" : "Practice Mock Interview"}
+                    </strong>
+                    <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-left">
+                      {lang === Language.VI 
+                        ? "Trải nghiệm hội thoại đính kèm File, và bắt đầu phỏng vấn thử để thấy biểu điểm Rubric đánh giá khoa học!" 
+                        : "Review real-time chats with dynamic citations or complete interview queries to see rubric-based grading."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mock Player Screen representing the Screencast */}
+              <div 
+                onClick={handleActivateDemo}
+                className="group/player cursor-pointer bg-slate-900 border border-white/5 rounded-2xl aspect-video relative overflow-hidden flex flex-col justify-between p-4 shadow-inner"
+              >
+                {/* Visualizer overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent z-10 opacity-80 group-hover/player:opacity-90 transition-opacity"></div>
+                <div className="absolute inset-0 flex items-center justify-center z-20">
+                  <div className="w-16 h-16 rounded-full bg-white/10 group-hover/player:bg-indigo-600/90 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-xl group-hover/player:scale-110 transition-transform duration-300">
+                    <Icons.Play className="w-6 h-6 text-white ml-1 fill-white" />
+                  </div>
+                </div>
+
+                {/* UI top badges */}
+                <div className="relative z-20 flex justify-between items-center text-[10px] text-white/60 font-mono">
+                  <span className="px-2 py-0.5 bg-black/40 rounded backdrop-blur font-bold text-white font-sans">CareerGuide AI</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping text-white"></span> 01:30 DEMO HD</span>
+                </div>
+
+                {/* UI bot labels */}
+                <div className="relative z-20 text-left font-sans">
+                  <p className="text-xs text-indigo-300 font-extrabold tracking-wider uppercase">Screencast Overview</p>
+                  <p className="text-xs text-white font-bold truncate mt-0.5 font-sans">
+                    {lang === Language.VI ? "Nhấn vào đây để khởi chạy nhanh trải nghiệm thực tế" : "Click to launch mock session and see all charts instantly"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Demo CTA Button under the video screen */}
+              <motion.button 
+                  whileHover={{ scale: 1.05, y: -4 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleActivateDemo} 
+                  className="w-full py-4.5 bg-gradient-to-r from-emerald-500 via-teal-600 to-indigo-600 text-white rounded-2xl font-extrabold text-[15px] transition-shadow shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 flex items-center justify-center gap-2.5"
+              >
+                  <Icons.Sparkles className="w-5 h-5 text-yellow-300 animate-bounce shrink-0" />
+                  <span className="font-extrabold tracking-tight">{lang === Language.VI ? "Dùng thử ngay với dữ liệu mẫu (NextX Demo)" : "Try with Sample Demo Data (NextX 1 Click)"}</span>
+              </motion.button>
+
+            </div>
+          </div>
         </section>
 
         <footer className="py-12 px-6 border-t border-gray-200 dark:border-white/5 text-center">
@@ -1966,6 +2388,20 @@ export default function App() {
     const filteredHistory = chatHistory.filter(session => (session.title || '').toLowerCase().includes((searchQuery || '').toLowerCase()));
     return (
     <div className="flex h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden transition-colors duration-300 relative font-sans">
+      {/* Onboarding Overlay */}
+      <AnimatePresence>
+        {auth.isAuthenticated && !auth.user?.hasCompletedOnboarding && (
+          <Onboarding 
+            lang={lang} 
+            theme={theme} 
+            onComplete={(profileUpdates) => {
+              updateUserProfile({ ...profileUpdates, hasCompletedOnboarding: true });
+            }}
+            onActivateDemo={handleActivateDemo}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isMobileSidebarOpen && (

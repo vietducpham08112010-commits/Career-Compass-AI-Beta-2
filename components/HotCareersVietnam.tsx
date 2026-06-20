@@ -207,8 +207,9 @@ export const HotCareersVietnam: React.FC<Props> = ({ lang, onConsult }) => {
         {filteredJobs.map(job => (
           <motion.div
             key={job.id}
-            whileHover={{ y: -4 }}
-            className="rounded-3xl p-6 bg-white dark:bg-[#0c0c0c] border border-gray-100 dark:border-white/5 shadow-sm flex flex-col justify-between"
+            whileHover={{ y: -6, scale: 1.01 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="glow-card rounded-3xl p-6 bg-white dark:bg-[#0c0c0c] border border-gray-100 dark:border-white/5 shadow-sm flex flex-col justify-between cursor-pointer"
           >
             <div>
               {/* Category tag */}

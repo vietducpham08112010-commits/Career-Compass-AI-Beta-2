@@ -355,7 +355,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          summary: `[Career Compass] ${milestone.title}`,
+          summary: `[Career Guide] ${milestone.title}`,
           description: `Định hướng cột mốc học tập:\n\n${milestone.description}\n\nGhi chú cá nhân: ${milestone.comments?.join(', ') || 'Không có'}`,
           start: {
             date: milestone.deadline,
@@ -1103,18 +1103,60 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({
                       </defs>
 
                       {/* Concentric rings bg */}
-                      <circle cx="200" cy="200" r="195" fill="none" stroke="#6366f1" strokeOpacity="0.1" strokeWidth="2" strokeDasharray="4 4" />
-                      <circle cx="200" cy="200" r="130" fill="none" stroke="#6366f1" strokeOpacity="0.15" strokeWidth="2" strokeDasharray="4 4" />
-                      <circle cx="200" cy="200" r="70" fill="none" stroke="#6366f1" strokeOpacity="0.25" strokeWidth="2" />
+                      <motion.circle 
+                        cx="200" 
+                        cy="200" 
+                        r="195" 
+                        fill="none" 
+                        stroke="#6366f1" 
+                        strokeOpacity="0.1" 
+                        strokeWidth="2" 
+                        strokeDasharray="4 4" 
+                        initial={{ pathLength: 0, rotate: -30 }}
+                        animate={{ pathLength: 1, rotate: 0 }}
+                        transition={{ duration: 1.6, ease: "easeInOut" }}
+                      />
+                      <motion.circle 
+                        cx="200" 
+                        cy="200" 
+                        r="130" 
+                        fill="none" 
+                        stroke="#6366f1" 
+                        strokeOpacity="0.15" 
+                        strokeWidth="2" 
+                        strokeDasharray="4 4"
+                        initial={{ pathLength: 0, rotate: 30 }}
+                        animate={{ pathLength: 1, rotate: 0 }}
+                        transition={{ duration: 1.3, ease: "easeInOut", delay: 0.15 }}
+                      />
+                      <motion.circle 
+                        cx="200" 
+                        cy="200" 
+                        r="70" 
+                        fill="none" 
+                        stroke="#6366f1" 
+                        strokeOpacity="0.25" 
+                        strokeWidth="2" 
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.0, ease: "easeOut", delay: 0.3 }}
+                      />
                       <circle cx="200" cy="200" r="70" fill="url(#ring-glow)" />
 
                       {/* Core center node */}
-                      <g className="cursor-pointer">
+                      <motion.g 
+                        className="cursor-pointer"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.4 }}
+                        whileHover={{ scale: 1.1 }}
+                        style={{ transformOrigin: "200px 200px" }}
+                      >
                         <circle cx="200" cy="200" r="28" fill="#4f46e5" filter="url(#glow)" />
                         <text x="200" y="204" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
                           {language === Language.VI ? "CỐT MỐC" : "CORE"}
                         </text>
-                      </g>
+                      </motion.g>
 
                       {/* Mapping skills along Rings */}
                       {careerSkills.map((skill, index) => {
@@ -1145,21 +1187,35 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({
                         const currentProgress = skillProgress[skill.id] || 0;
 
                         return (
-                          <g 
+                          <motion.g 
                             key={skill.id} 
                             onClick={() => setSelectedSkillId(skill.id)} 
                             className="cursor-pointer group select-none"
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ 
+                              type: "spring", 
+                              stiffness: 140, 
+                              damping: 14, 
+                              delay: index * 0.05 + 0.3 
+                            }}
+                            whileHover={{ scale: 1.12 }}
+                            whileTap={{ scale: 0.95 }}
+                            style={{ transformOrigin: `${x}px ${y}px` }}
                           >
                             {/* Line connecting to center */}
-                            <line 
+                            <motion.line 
                               x1="200" 
                               y1="200" 
                               x2={x} 
                               y2={y} 
                               stroke={isSelected ? '#6366f1' : '#cbd5e1'} 
-                              strokeOpacity={isSelected ? '0.7' : '0.15'} 
-                              strokeWidth={isSelected ? '2' : '1'} 
+                              strokeOpacity={isSelected ? '0.75' : '0.15'} 
+                              strokeWidth={isSelected ? '2.5' : '1'} 
                               strokeDasharray={isSelected ? 'none' : '2 2'}
+                              initial={{ pathLength: 0 }}
+                              animate={{ pathLength: 1 }}
+                              transition={{ duration: 0.8, delay: index * 0.04 + 0.1, ease: "easeOut" }}
                             />
 
                             {/* Node border for progress */}
@@ -1174,15 +1230,17 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({
                             />
 
                             {/* Innermost node display representing progress ratio */}
-                            <circle 
+                            <motion.circle 
                               cx={x} 
                               cy={y} 
                               r="15" 
                               fill={theme === Theme.DARK ? '#18181b' : '#ffffff'} 
                               stroke={colour}
                               strokeWidth="2.5"
-                              strokeDasharray={`${(currentProgress / 100) * 94} 94`} // Circumference = 2 * PI * r = 2 * 3.14 * 15 ≈ 94
-                              strokeDashoffset="24 text-center"
+                              strokeDasharray="94"
+                              initial={{ strokeDashoffset: 94 }}
+                              animate={{ strokeDashoffset: 94 - (currentProgress / 100) * 94 }}
+                              transition={{ duration: 1.0, delay: index * 0.04 + 0.4, ease: "easeInOut" }}
                               transform={`rotate(-90 ${x} ${y})`}
                             />
 
@@ -1219,7 +1277,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({
                             >
                               {currentProgress}%
                             </text>
-                          </g>
+                          </motion.g>
                         );
                       })}
                     </svg>
@@ -1307,7 +1365,7 @@ export const ProgressBoard: React.FC<ProgressBoardProps> = ({
                               <Icons.BookOpen className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
                               <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                                 {language === Language.VI 
-                                  ? `Thực hiện 2-3 dự án nhỏ chứa kỹ năng ${selectedSkill.name}. Gợi ý học liệu của CareerCompass tại Coursera / Udemy.` 
+                                  ? `Thực hiện 2-3 dự án nhỏ chứa kỹ năng ${selectedSkill.name}. Gợi ý học liệu của CareerGuide tại Coursera / Udemy.` 
                                   : `Build 2-3 mini projects deploying ${selectedSkill.name}. Read official documentations and Coursera tracks.`
                                 }
                               </p>
