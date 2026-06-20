@@ -21,16 +21,21 @@ if (configFiles.length > 0) {
 
 const fallbackConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "careerguideaiforeveryone-1.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "careerguideaiforeveryone-1",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "careerguideaiforeveryone-1.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1024644813771",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1024644813771:web:196ac5399968fe8befdc4e",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-C52P6WN3HE",
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'default'
 };
 
-const activeFirebaseConfig = (firebaseConfig && firebaseConfig.apiKey) ? firebaseConfig : fallbackConfig;
+// Merge workspace config if it exists, prioritizing the VITE_FIREBASE_API_KEY
+const activeFirebaseConfig = {
+  ...fallbackConfig,
+  ...firebaseConfig,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey || ""
+};
 
 // Initialize Firebase safely inside a single try-catch
 let app: any = null;
@@ -48,7 +53,24 @@ try {
     firebaseAuth = getAuth(app);
     googleProvider = new GoogleAuthProvider();
   } else {
-    console.warn("Firebase config is missing API key. Firebase will not initialize.");
+    firebaseInitError = new Error("Firebase API key is missing. Please configure Firebase variables in your hosting dashboard.");
+    console.warn(
+      `%c[Firebase Setup Guide]%c 
+Nếu bạn đang chạy trên Vercel hoặc môi trường production, vui lòng thêm các Biến môi trường (Environment Variables) sau trong trang cài đặt Vercel / Dashboard của bạn:
+
+- VITE_FIREBASE_API_KEY
+- VITE_FIREBASE_AUTH_DOMAIN
+- VITE_FIREBASE_PROJECT_ID
+- VITE_FIREBASE_STORAGE_BUCKET
+- VITE_FIREBASE_MESSAGING_SENDER_ID
+- VITE_FIREBASE_APP_ID
+- VITE_FIREBASE_MEASUREMENT_ID
+
+Lưu ý: Sau khi thêm hãy Re-deploy dự án trên Vercel để các biến có hiệu lực.
+Xem chi tiết cấu hình và Ủy quyền tên miền tại Hướng dẫn kết nối.`,
+      "color: #ff9800; font-weight: bold; font-size: 14px;",
+      "color: inherit; font-size: 12px;"
+    );
   }
 } catch (error: any) {
   firebaseInitError = error;
