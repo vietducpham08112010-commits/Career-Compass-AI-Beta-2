@@ -20,22 +20,27 @@ if (configFiles.length > 0) {
 }
 
 const fallbackConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "careerguideaiforeveryone-1.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "careerguideaiforeveryone-1",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "careerguideaiforeveryone-1.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1024644813771",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1024644813771:web:b5ebc74e139031b8efdc4e",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-ST89G4BNL6",
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'default'
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCT-Aw--rfLeQQVVy_ozrmQJ7dFwVGaa3Q",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "career-compass-ai-40718.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "career-compass-ai-40718",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "career-compass-ai-40718.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "20883129610",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:20883129610:web:f88ef27af7f011858526f3",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-CWQHNXHX5R",
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'ai-studio-careercompassaib-9a817e3b-b82f-4260-bfa8-3a1843a2c4f2'
 };
 
 // Merge workspace config if it exists, prioritizing the VITE_FIREBASE_API_KEY
 const activeFirebaseConfig = {
   ...fallbackConfig,
   ...firebaseConfig,
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey || ""
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey || fallbackConfig.apiKey
 };
+
+console.log("Firebase Active Config:", {
+  ...activeFirebaseConfig,
+  apiKey: activeFirebaseConfig.apiKey ? `${activeFirebaseConfig.apiKey.substring(0, 6)}...` : "MISSING"
+});
 
 // Initialize Firebase safely inside a single try-catch
 let app: any = null;

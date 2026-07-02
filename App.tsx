@@ -316,24 +316,87 @@ const getThinkingMessage = (input: string, lang: Language) => {
 };
 
 const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplete: (result: string) => void }) => {
+  const isVi = lang === Language.VI;
+  const [quizLength, setQuizLength] = useState<number | null>(null);
   const [step, setStep] = useState(0);
   const [scores, setScores] = useState({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 });
   const [result, setResult] = useState<string | null>(null);
 
-  const questions = [
-    { text: t.quizQ1, type: 'R' },
-    { text: t.quizQ2, type: 'I' },
-    { text: t.quizQ3, type: 'A' },
-    { text: t.quizQ4, type: 'S' },
-    { text: t.quizQ5, type: 'E' },
-    { text: t.quizQ6, type: 'C' },
-    { text: t.quizQ7, type: 'R' },
-    { text: t.quizQ8, type: 'I' },
-    { text: t.quizQ9, type: 'A' },
-    { text: t.quizQ10, type: 'S' },
-    { text: t.quizQ11, type: 'E' },
-    { text: t.quizQ12, type: 'C' },
+  const allQuestions = isVi ? [
+    // Round 1 (1-6)
+    { text: 'Mình thích làm việc với động vật, công cụ hoặc máy móc.', type: 'R' },
+    { text: 'Mình thích giải các bài toán và vấn đề khoa học.', type: 'I' },
+    { text: 'Mình thích các hoạt động sáng tạo như nghệ thuật, kịch hoặc âm nhạc.', type: 'A' },
+    { text: 'Mình thích giúp đỡ, dạy bảo hoặc cung cấp dịch vụ cho người khác.', type: 'S' },
+    { text: 'Mình thích lãnh đạo và thuyết phục mọi người.', type: 'E' },
+    { text: 'Mình thích làm việc với con số, hồ sơ hoặc máy móc một cách ngăn nắp.', type: 'C' },
+    // Round 2 (7-12)
+    { text: 'Mình thích sửa chữa đồ đạc hoặc các thiết bị trong nhà.', type: 'R' },
+    { text: 'Mình thích thực hiện các thí nghiệm hoặc nghiên cứu khoa học.', type: 'I' },
+    { text: 'Mình thích viết lách (truyện, làm thơ, viết blog) hoặc vẽ tranh.', type: 'A' },
+    { text: 'Mình thích tham gia các hoạt động tình nguyện hoặc công tác xã hội.', type: 'S' },
+    { text: 'Mình thích khởi nghiệp, kinh doanh hoặc bán một sản phẩm nào đó.', type: 'E' },
+    { text: 'Mình thích sắp xếp dữ liệu, lưu trữ hồ sơ và tài liệu gọn gàng.', type: 'C' },
+    // Round 3 (13-18)
+    { text: 'Mình thích tự tay lắp ráp mô hình, thiết kế các đồ dùng bằng tay.', type: 'R' },
+    { text: 'Mình thích phân tích số liệu, giải thích các quy luật hoặc xu hướng.', type: 'I' },
+    { text: 'Mình thích thiết kế giao diện, làm áp phích hoặc sáng tạo hình ảnh.', type: 'A' },
+    { text: 'Mình thích trò chuyện, chia sẻ và giải quyết mâu thuẫn cho bạn bè.', type: 'S' },
+    { text: 'Mình thích lập kế hoạch, điều hành các buổi họp hoặc sự kiện.', type: 'E' },
+    { text: 'Mình thích làm việc có quy trình, tuân thủ các quy định rõ ràng.', type: 'C' },
+    // Round 4 (19-24)
+    { text: 'Mình thích hoạt động ngoài trời, thể thao hoặc công việc đòi hỏi thể lực.', type: 'R' },
+    { text: 'Mình thích tìm hiểu nguyên lý hoạt động của công nghệ hoặc cơ thể người.', type: 'I' },
+    { text: 'Mình thích chơi nhạc cụ, ca hát hoặc tham gia các hoạt động biểu diễn.', type: 'A' },
+    { text: 'Mình thích hướng dẫn học tập cho các em nhỏ hoặc người khác.', type: 'S' },
+    { text: 'Mình thích thuyết trình ý tưởng, đàm phán hoặc thuyết phục đám đông.', type: 'E' },
+    { text: 'Mình thích kiểm tra độ chính xác của các số liệu hoặc văn bản.', type: 'C' },
+    // Round 5 (25-30)
+    { text: 'Mình thích vận hành các thiết bị cơ khí, điện tử hoặc lái xe.', type: 'R' },
+    { text: 'Mình thích nghiên cứu khoa học hoặc giải quyết các bài toán hóc búa.', type: 'I' },
+    { text: 'Mình thích sáng tác bài hát, thiết kế thời trang hoặc đồ họa.', type: 'A' },
+    { text: 'Mình thích tư vấn tâm lý, lắng nghe và đưa ra lời khuyên cho mọi người.', type: 'S' },
+    { text: 'Mình thích quản lý một đội nhóm, chịu trách nhiệm về chỉ tiêu doanh số.', type: 'E' },
+    { text: 'Mình thích lập báo cáo chi tiết, thống kê số liệu trên máy tính.', type: 'C' }
+  ] : [
+    // Round 1 (1-6)
+    { text: 'I like to work with animals, tools, or machines.', type: 'R' },
+    { text: 'I like to solve math and science problems.', type: 'I' },
+    { text: 'I like to do creative activities like art, drama, or music.', type: 'A' },
+    { text: 'I like to help, teach, or provide service to others.', type: 'S' },
+    { text: 'I like to lead and persuade people.', type: 'E' },
+    { text: 'I like to work with numbers, records, or files in an orderly way.', type: 'C' },
+    // Round 2 (7-12)
+    { text: 'I enjoy repairing things or home appliances.', type: 'R' },
+    { text: 'I enjoy conducting scientific experiments or research.', type: 'I' },
+    { text: 'I enjoy writing stories, blog posts, or poetry.', type: 'A' },
+    { text: 'I enjoy volunteering for social or charity causes.', type: 'S' },
+    { text: 'I enjoy starting my own business or selling products.', type: 'E' },
+    { text: 'I enjoy organizing data, files, and keeping archives organized.', type: 'C' },
+    // Round 3 (13-18)
+    { text: 'I like to design or build scale models and handcrafts.', type: 'R' },
+    { text: 'I like to analyze data trends, patterns, or formulas.', type: 'I' },
+    { text: 'I like to design websites, posters, or visual layouts.', type: 'A' },
+    { text: 'I like to talk, share, and resolve conflicts for friends.', type: 'S' },
+    { text: 'I like to plan, organize, and direct meetings or events.', type: 'E' },
+    { text: 'I like following clear, structured procedures and rules.', type: 'C' },
+    // Round 4 (19-24)
+    { text: 'I like outdoor activities, sports, or physical work.', type: 'R' },
+    { text: 'I like to research how technology or the human body works.', type: 'I' },
+    { text: 'I like to play musical instruments, sing, or perform.', type: 'A' },
+    { text: 'I like to tutor, teach, or guide children and others.', type: 'S' },
+    { text: 'I like to pitch ideas, negotiate, or speak in public.', type: 'E' },
+    { text: 'I like to verify figures or documents for total accuracy.', type: 'C' },
+    // Round 5 (25-30)
+    { text: 'I like operating mechanical, electronic equipment or driving.', type: 'R' },
+    { text: 'I like doing scientific research or solving complex puzzles.', type: 'I' },
+    { text: 'I like songwriting, fashion design, or graphic illustration.', type: 'A' },
+    { text: 'I like counseling, active listening, and giving life advice.', type: 'S' },
+    { text: 'I like managing a team and being responsible for targets.', type: 'E' },
+    { text: 'I like compiling detailed reports and typing database entries.', type: 'C' }
   ];
+
+  const questions = quizLength ? allQuestions.slice(0, quizLength) : [];
 
   const handleAnswer = (value: number) => {
     const q = questions[step];
@@ -343,12 +406,24 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
     if (step < questions.length - 1) {
       setStep(step + 1);
     } else {
-      calculateResult(newScores);
+      calculateResult(newScores, questions);
     }
   };
 
-  const calculateResult = (finalScores: typeof scores) => {
-    const sorted = Object.entries(finalScores).sort((a, b) => b[1] - a[1]);
+  const calculateResult = (finalScores: typeof scores, activeQuestions: typeof questions) => {
+    const counts = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+    activeQuestions.forEach(q => {
+      const typeKey = q.type as keyof typeof counts;
+      counts[typeKey]++;
+    });
+
+    const normalized = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+    Object.keys(finalScores).forEach(key => {
+      const k = key as keyof typeof scores;
+      normalized[k] = counts[k] > 0 ? (finalScores[k] / counts[k]) : 0;
+    });
+
+    const sorted = Object.entries(normalized).sort((a, b) => b[1] - a[1]);
     const topType = sorted[0][0];
     const descriptions: any = {
       R: t.quizRealistic,
@@ -360,6 +435,97 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
     };
     setResult(descriptions[topType]);
   };
+
+  const resetQuiz = () => {
+    setStep(0);
+    setScores({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 });
+    setResult(null);
+    setQuizLength(null);
+  };
+
+  if (quizLength === null) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto p-6 text-center space-y-6 w-full"
+      >
+        <div className="space-y-2">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {isVi ? 'Chọn phiên bản trắc nghiệm RIASEC' : 'Select RIASEC Quiz Version'}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {isVi 
+              ? 'Lựa chọn số lượng câu hỏi phù hợp với quỹ thời gian của bạn để bắt đầu khám phá bản thân.' 
+              : 'Choose the number of questions that fits your time to begin self-discovery.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+          {[
+            { 
+              length: 13, 
+              title: isVi ? 'Bản Rút gọn' : 'Quick Version', 
+              desc: isVi ? 'Khảo sát nhanh sơ lược' : 'Fast core estimation', 
+              time: isVi ? '⏱️ 2 phút' : '⏱️ 2 mins', 
+              badge: isVi ? 'Nhanh' : 'Fast',
+              color: 'from-amber-500 to-orange-500' 
+            },
+            { 
+              length: 20, 
+              title: isVi ? 'Bản Tiêu chuẩn' : 'Standard Version', 
+              desc: isVi ? 'Cân bằng, tối ưu hóa' : 'Balanced & optimized', 
+              time: isVi ? '⏱️ 4 phút' : '⏱️ 4 mins', 
+              badge: isVi ? 'Khuyên dùng' : 'Recommended',
+              color: 'from-indigo-500 to-purple-500' 
+            },
+            { 
+              length: 30, 
+              title: isVi ? 'Bản Chuyên sâu' : 'In-depth Version', 
+              desc: isVi ? 'Đầy đủ, chính xác cao' : 'Fully comprehensive', 
+              time: isVi ? '⏱️ 6 phút' : '⏱️ 6 mins', 
+              badge: isVi ? 'Toàn diện' : 'Complete',
+              color: 'from-emerald-500 to-teal-500' 
+            },
+          ].map((opt) => (
+            <motion.button 
+              key={opt.length} 
+              whileHover={{ scale: 1.04, y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setQuizLength(opt.length);
+                setStep(0);
+                setScores({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 });
+              }} 
+              className="p-6 rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10 text-left flex flex-col justify-between transition-all shadow-md relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 h-1 w-full bg-gradient-to-r" style={{ backgroundImage: `linear-gradient(to right, var(--tw-gradient-stops))` }} />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full text-white bg-gradient-to-r ${opt.color}`}>
+                    {opt.badge}
+                  </span>
+                  <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {opt.length} {isVi ? 'Câu' : 'Qs'}
+                  </span>
+                </div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mt-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  {opt.title}
+                </h4>
+                <p className="text-xs text-gray-550 dark:text-gray-400 leading-relaxed">
+                  {opt.desc}
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-xs font-bold text-gray-400">
+                <span>{opt.time}</span>
+                <Icons.ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
 
   if (result) {
     return (
@@ -377,14 +543,14 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
           <Icons.Check className="w-10 h-10" />
         </motion.div>
         <h3 className="text-2xl font-bold mb-4">{t.quizResultTitle}</h3>
-        <p className="text-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xl max-w-md">
+        <p className="text-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xl max-w-md leading-relaxed">
           {result}
         </p>
         <div className="flex gap-4 mt-8">
             <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => { setStep(0); setScores({ R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }); setResult(null); }} 
+                onClick={resetQuiz} 
                 className="px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
             >
             {t.retakeQuiz}
@@ -406,7 +572,7 @@ const CareerQuiz = ({ lang, t, onComplete }: { lang: Language, t: any, onComplet
     <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-2xl mx-auto p-6"
+        className="max-w-2xl mx-auto p-6 w-full"
     >
       <div className="mb-8">
         <div className="flex justify-between text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
@@ -1140,7 +1306,11 @@ export default function App() {
     } catch (error: any) {
         console.error("Firebase Register Error", error);
         let errMsg = error.message || String(error);
-        if (error.code === 'auth/email-already-in-use') {
+        if (errMsg.includes("api-key-not-valid") || errMsg.includes("invalid-api-key") || error.code === 'auth/invalid-api-key') {
+            setAuthError(lang === Language.VI 
+                ? "Lỗi khóa API Firebase (auth/api-key-not-valid): Khóa API Key của bạn không hợp lệ hoặc đã bị Google thu hồi/vô hiệu hóa. Vui lòng vào Google Cloud Console hoặc Firebase Console để kích hoạt lại danh mục khóa hoặc tạo khóa mới, sau đó cập nhật trong tệp cấu hình."
+                : "Firebase API Key error (auth/api-key-not-valid): Your API Key is invalid or has been revoked/deactivated by Google. Please check Google Cloud Console or Firebase Console to reactivate or create a new key, then update your configuration.");
+        } else if (error.code === 'auth/email-already-in-use') {
             setAuthError(t.emailRegistered || "This email is already registered.");
         } else if (error.code === 'auth/weak-password') {
             setAuthError(lang === Language.VI ? "Mật khẩu quá yếu (tối thiểu 6 ký tự)." : "Password is too weak (minimum 6 characters).");
@@ -1171,7 +1341,12 @@ export default function App() {
         await signInWithEmailAndPassword(firebaseAuth, email, password);
     } catch (error: any) {
         console.error("Firebase Login Error", error);
-        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        let errMsg = error.message || String(error);
+        if (errMsg.includes("api-key-not-valid") || errMsg.includes("invalid-api-key") || error.code === 'auth/invalid-api-key') {
+            setAuthError(lang === Language.VI 
+                ? "Lỗi khóa API Firebase (auth/api-key-not-valid): Khóa API Key của bạn không hợp lệ hoặc đã bị Google thu hồi/vô hiệu hóa. Vui lòng vào Google Cloud Console hoặc Firebase Console để kích hoạt lại danh mục khóa hoặc tạo khóa mới, sau đó cập nhật trong tệp cấu hình."
+                : "Firebase API Key error (auth/api-key-not-valid): Your API Key is invalid or has been revoked/deactivated by Google. Please check Google Cloud Console or Firebase Console to reactivate or create a new key, then update your configuration.");
+        } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
             setAuthError(t.invalidLogin || "Invalid email or password.");
         } else if (error.code === 'auth/invalid-email') {
             setAuthError(lang === Language.VI ? "Địa chỉ email không hợp lệ." : "Invalid email address.");
@@ -1210,7 +1385,12 @@ export default function App() {
         }
     } catch (error: any) {
         console.error("Google Auth Error", error);
-        if (error.code === 'auth/unauthorized-domain' || error.message?.includes('auth/unauthorized-domain')) {
+        let errMsg = error.message || String(error);
+        if (errMsg.includes("api-key-not-valid") || errMsg.includes("invalid-api-key") || error.code === 'auth/invalid-api-key') {
+            setAuthError(lang === Language.VI 
+                ? "Lỗi khóa API Firebase (auth/api-key-not-valid): Khóa API Key của bạn không hợp lệ hoặc đã bị Google thu hồi/vô hiệu hóa. Vui lòng vào Google Cloud Console hoặc Firebase Console để kích hoạt lại danh mục khóa hoặc tạo khóa mới, sau đó cập nhật trong tệp cấu hình."
+                : "Firebase API Key error (auth/api-key-not-valid): Your API Key is invalid or has been revoked/deactivated by Google. Please check Google Cloud Console or Firebase Console to reactivate or create a new key, then update your configuration.");
+        } else if (error.code === 'auth/unauthorized-domain' || error.message?.includes('auth/unauthorized-domain')) {
              setAuthError(lang === Language.VI 
                 ? `Lỗi: Tên miền hiện tại chưa được cấp phép. Vui lòng hướng dẫn thêm "${window.location.hostname}" vào Authorized domains trong Firebase Console > Authentication > Settings.` 
                 : `Error: The current domain is unauthorized. Please add "${window.location.hostname}" to Authorized domains in Firebase Console > Authentication > Settings.`);
@@ -2220,13 +2400,13 @@ export default function App() {
                             <ol className="list-decimal list-inside space-y-1">
                                 {lang === Language.VI ? (
                                     <>
-                                        <li>Truy cập <a href="https://console.firebase.google.com/project/careerguideaiforeveryone-1/authentication/settings" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 underline font-semibold">Firebase Console &gt; Authentication &gt; Settings</a></li>
+                                        <li>Truy cập <a href="https://console.firebase.google.com/project/career-compass-ai-40718/authentication/settings" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 underline font-semibold">Firebase Console &gt; Authentication &gt; Settings</a></li>
                                         <li>Tìm phần <strong>Authorized domains</strong> chọn "Add domain"</li>
                                         <li>Thêm lần lượt 2 tên miền sau:</li>
                                     </>
                                 ) : (
                                     <>
-                                        <li>Visit <a href="https://console.firebase.google.com/project/careerguideaiforeveryone-1/authentication/settings" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 underline font-semibold">Firebase Console &gt; Authentication &gt; Settings</a></li>
+                                        <li>Visit <a href="https://console.firebase.google.com/project/career-compass-ai-40718/authentication/settings" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 underline font-semibold">Firebase Console &gt; Authentication &gt; Settings</a></li>
                                         <li>Find <strong>Authorized domains</strong> and click "Add domain"</li>
                                         <li>Add the following 2 domains:</li>
                                     </>
@@ -3161,11 +3341,11 @@ export default function App() {
                     lang={lang === Language.VI ? 'vi' : 'en'}
                     title={lang === Language.VI ? "💡 Hướng dẫn trắc nghiệm RIASEC lý tưởng" : "💡 Career Quiz / RIASEC Guide"}
                     steps={lang === Language.VI ? [
-                      "Bài khảo sát gồm 36 câu trắc nghiệm khoa học hành vi đo đạc 6 phổ tính cách: Kỹ thuật, Nghiên cứu, Nghệ thuật, Xã hội, Quản lý, Nghiệp vụ.",
+                      "Bài khảo sát gồm các phiên bản linh hoạt: 13 câu (rút gọn), 20 câu (tiêu chuẩn) hoặc 30 câu (chuyên sâu) đo đạc 6 nhóm sở thích nghề nghiệp RIASEC.",
                       "Hãy lựa chọn khách quan theo mức độ hứng thú thật của bản thân mà không cần đắn đo về năng lực chuyên môn hiện thực.",
                       "Khi làm xong, hệ thống tự động lưu điểm RIASEC vào hồ sơ cá nhân và kích hoạt cuộc tư vấn định vị thế mạnh độc quyền với AI."
                     ] : [
-                      "The survey contains 36 behavioral indices tracing 6 core traits: Realistic, Investigative, Artistic, Social, Enterprising, Conventional.",
+                      "The survey offers flexible versions: 13 (quick), 20 (standard), or 30 (comprehensive) questions measuring the 6 RIASEC interest types.",
                       "Respond based on your native passion and real hobby preferences, separate from active skills validation.",
                       "Once done, points sync with your profile metadata, launching an automated customized consultation plan via AI."
                     ]}
